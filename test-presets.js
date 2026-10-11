@@ -446,6 +446,94 @@ setTimeout(function () {
     fr.onload = function () { cb(String(fr.result)); };
     fr.readAsText(b);
   }
+
+  /* ===== 17. 检查更新（v1.1.0） ===== */
+  function fakeRelease(tag) {
+    return Promise.resolve({
+      ok: true,
+      json: function () {
+        return Promise.resolve({
+          tag_name: tag,
+          html_url: 'https://github.com/steveliuyan/3d-print-cost-cn/releases/tag/v' + tag,
+          body: '测试更新说明',
+          assets: [{ name: '3d-print-cost-1.1.0.apk', browser_download_url: 'https://github.com/x/app.apk' }]
+        });
+      }
+    });
+  }
+  function runUpdateTests(done) {
+    /* Android 壳：发现新版本 → 弹窗 →「立即升级」走原生桥 updateApp */
+    var updCalls = [];
+    var domU = new JSDOM(html, {
+      runScripts: 'dangerously',
+      url: 'https://appassets.androidplatform.net/assets/index.html',
+      pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.AndroidBridge = {
+          saveText: function () {}, printPage: function () { return true; },
+          updateApp: function (u) { updCalls.push(u); return true; }
+        };
+        win.fetch = function (url) { win.__fetchUrl = url; return fakeRelease('9.9.9'); };
+      }
+    });
+    var wU = domU.window, dU = wU.document;
+    ok('更新：footer 显示当前版本号 1.1.0', dU.getElementById('footVer').textContent === '1.1.0',
+       dU.getElementById('footVer').textContent);
+    dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
+    setTimeout(function () {
+      ok('更新：请求 GitHub releases/latest',
+         /api\.github\.com\/repos\/steveliuyan\/3d-print-cost-cn\/releases\/latest/.test(wU.__fetchUrl || ''),
+         wU.__fetchUrl);
+      ok('更新：发现新版弹出更新弹窗', dU.getElementById('updBox').classList.contains('open'));
+      ok('更新：弹窗展示新版本号', /9\.9\.9/.test(dU.getElementById('updBody').textContent));
+      ok('更新：「立即升级」按钮可见', dU.getElementById('updGo').hidden === false);
+      dU.getElementById('updGo').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
+      ok('更新：Android 端升级走原生桥 updateApp', updCalls.length === 1 && /app\.apk$/.test(updCalls[0] || ''),
+         JSON.stringify(updCalls));
+      ok('更新：点升级后弹窗关闭', !dU.getElementById('updBox').classList.contains('open'));
+
+      /* 普通浏览器（无桥）：升级按钮跳转下载链接 */
+      var opened = [];
+      var domU2 = new JSDOM(html, {
+        runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+        beforeParse: function (win) {
+          win.fetch = function () { return fakeRelease('9.9.9'); };
+          win.open = function (u) { opened.push(u); return {}; };
+        }
+      });
+      var wU2 = domU2.window, dU2 = wU2.document;
+      dU2.getElementById('btnCheckUpd').dispatchEvent(new wU2.MouseEvent('click', { bubbles: true }));
+      setTimeout(function () {
+        dU2.getElementById('updGo').dispatchEvent(new wU2.MouseEvent('click', { bubbles: true }));
+        ok('更新：无桥环境用 window.open 跳转下载', opened.length === 1 && /app\.apk$/.test(opened[0] || ''),
+           JSON.stringify(opened));
+
+        /* 已是最新版本：手动检查提示最新，不出现升级按钮 */
+        var domU3 = new JSDOM(html, {
+          runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+          beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.1.0'); }; }
+        });
+        var wU3 = domU3.window, dU3 = wU3.document;
+        dU3.getElementById('btnCheckUpd').dispatchEvent(new wU3.MouseEvent('click', { bubbles: true }));
+        setTimeout(function () {
+          ok('更新：同版本提示已是最新', /已是最新版本/.test(dU3.getElementById('updBody').textContent));
+          ok('更新：已是最新时不显示升级按钮', dU3.getElementById('updGo').hidden === true);
+
+          /* 纯网页（无桥无 Electron UA）启动 3s 内不应自动联网检查 */
+          var autoCalls = 0;
+          var domU4 = new JSDOM(html, {
+            runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+            beforeParse: function (win) { win.fetch = function () { autoCalls++; return fakeRelease('9.9.9'); }; }
+          });
+          setTimeout(function () {
+            ok('更新：纯网页端启动不自动检查（仅壳内自动）', autoCalls === 0, 'calls=' + autoCalls);
+            done();
+          }, 3400);
+        }, 80);
+      }, 80);
+    }, 80);
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -484,7 +572,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      finish();
+      runUpdateTests(finish);
     }, 900);
   });
 }, 300);
