@@ -1018,7 +1018,8 @@
     var spoolPrice   = Math.max(0, num("spoolPrice"));
     var waste        = Math.max(0, num("waste")) / 100;
     var printerPrice = Math.max(0, num("printerPrice"));
-    var lifeHours    = Math.max(1, num("lifeHours"));
+    var lifeRaw     = num("lifeHours");
+    var lifeHours   = lifeRaw > 0 ? lifeRaw : 5000; /* 清空/非法时回落默认寿命，避免折旧按 1 小时爆表 */
     var maintPerHour = Math.max(0, num("maintPerHour"));
     var power        = Math.max(0, num("power"));
     var elecPrice    = Math.max(0, num("elecPrice"));
@@ -1101,6 +1102,7 @@
               '</td><td class="pct"><span class="bar"><i style="--w:' + pct.toFixed(1) + '%"></i></span>' +
               pct.toFixed(1) + "%</td></tr>";
     });
+    if(r.depPerHour > 0) html += '<tr><td>每小时折旧 + 维护</td><td>' + money(r.depPerHour) + ' ¥/h</td><td class="pct">—</td></tr>';
     html += '<tr class="sum"><td>订单总成本（' + r.qty + " 件）</td><td>" + money(r.totalCost) + '</td><td class="pct">100%</td></tr>';
     html += '<tr class="sum2"><td>单件成本</td><td>' + money(r.unitCost) + '</td><td class="pct">—</td></tr>';
     html += "<tr><td>订单收入（含佣金售价）</td><td>" + money(r.revenue) + '</td><td class="pct">—</td></tr>';
