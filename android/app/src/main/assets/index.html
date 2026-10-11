@@ -449,8 +449,8 @@
     .tip > p{display:block!important; padding:0}
     .foot{display:none}
     body.pp .wrap{display:none!important}
-    body.pp .ov{position:static!important; display:block!important}
-    body.pp #exBox{display:none!important}
+    body.pp .ov:not(#pprev){display:none!important}
+    body.pp #pprev{position:static!important; display:block!important}
     body.pp .ov-bg,body.pp .ov-head,body.pp .ov-foot{display:none!important}
     body.pp .ov-panel{margin:0; width:auto; max-width:none; max-height:none; border-radius:0; box-shadow:none;
                       animation:none; overflow:visible; display:block}
@@ -1770,6 +1770,15 @@
   /* 是否运行在嵌入式预览（沙箱 iframe）中——此类环境通常会静默拦截下载与系统打印 */
   function isEmbedded(){ try { return window.self !== window.top; } catch(e){ return true; } }
 
+  /* 是否 iOS / iPadOS —— iPhone、iPad 及桌面 UA 的 iPadOS（Mac 平台 + 多点触控）。
+     iOS 的 Safari 不支持 window.print()（调用后毫无反应），只能引导用户走系统分享菜单 → 打印。 */
+  function isIOS(){
+    try{
+      return /iP(hone|ad|od)/.test(navigator.userAgent) ||
+             (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+    }catch(e){ return false; }
+  }
+
   /* 是否运行在 Android WebView 中（UA 带 wv 标记）——WebView 默认不处理 <a download> */
   function isAndroidWebView(){
     try{ return /Android/i.test(navigator.userAgent) && /\bwv\b/i.test(navigator.userAgent); }
@@ -1787,7 +1796,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.4.1";
+  var APP_VERSION = "1.4.2";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -2614,6 +2623,9 @@
     var b = androidBridge();
     if(b && typeof b.printPage === "function"){
       $("#ppHint").textContent = "点「打印 / 保存为 PDF」会打开系统打印对话框，打印机一栏选「保存为 PDF」即可存到本机。";
+    }else if(isIOS()){
+      $("#ppHint").textContent = "iPhone / iPad 的 Safari 不支持网页直接唤起打印：请点浏览器底部的「分享」按钮 → 打印；" +
+        "或先「分享长图」保存图片后再打印图片。";
     }else if(isEmbedded()){
       $("#ppHint").textContent = "嵌入式预览可能拦截系统打印窗口；需要真实打印 / PDF 时，请在浏览器中直接打开本 HTML 文件。";
     }else{
@@ -2637,6 +2649,7 @@
       try{ if(b.printPage()) return; }catch(e){ /* 桥异常 → 退回 window.print */ }
     }
     try { window.print(); } catch(e){}
+    if(isIOS() && !isEmbedded()) setTimeout(function(){ toast("iOS 无法自动唤起打印：请用 Safari 底部「分享按钮」→ 打印"); }, 400);
     if(isEmbedded()) setTimeout(function(){ toast("若未弹出打印窗口，请在浏览器中打开本文件后打印"); }, 400);
   }
 

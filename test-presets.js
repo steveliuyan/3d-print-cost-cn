@@ -481,7 +481,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.4.1', dU.getElementById('footVer').textContent === '1.4.1',
+    ok('更新：footer 显示当前版本号 1.4.2', dU.getElementById('footVer').textContent === '1.4.2',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -585,7 +585,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.4.1');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.4.2');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -819,6 +819,12 @@ setTimeout(function () {
             var info4 = dS.getElementById('stlInfo').textContent;
             ok('v1.4.1：真实 Deflate 3MF 解析出 8.00 cm³', /8\.00/.test(info4), info4);
             ok('v1.4.1：Deflate 3MF 估算 3.97 克', /3\.97/.test(info4), info4);
+            /* v1.4.2：打印修复 —— 分享长图不再被打成第三页；iOS 打印引导 */
+            ok('v1.4.2：打印时隐藏非预览弹窗（.ov 不含 #pprev）',
+               html.includes('body.pp .ov:not(#pprev){display:none!important}') &&
+               html.includes('body.pp #pprev{position:static!important; display:block!important}'));
+            ok('v1.4.2：iOS 检测 isIOS 存在', html.includes('function isIOS()'));
+            ok('v1.4.2：iOS 打印给出分享菜单引导', /iP\(hone\|ad\|od\)/.test(html) && html.includes('分享按钮'));
             done();
           }, 400);
         }, 400);
