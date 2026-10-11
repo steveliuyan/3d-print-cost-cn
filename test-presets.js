@@ -477,7 +477,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.1.0', dU.getElementById('footVer').textContent === '1.1.0',
+    ok('更新：footer 显示当前版本号 1.2.0', dU.getElementById('footVer').textContent === '1.2.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -534,6 +534,148 @@ setTimeout(function () {
     }, 80);
   }
 
+  /* ===== 18. 批量优惠 / 报价历史 / 分享长图（v1.2.0） ===== */
+  function runV120Tests(done) {
+    var domV = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        /* 画布桩：jsdom 无 canvas，注入 Proxy 2D 上下文与 toDataURL */
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            },
+            set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:share'; };
+        win.URL.revokeObjectURL = function () {};
+      }
+    });
+    var wV = domV.window, dV = wV.document;
+    var anchors = 0;
+    wV.HTMLAnchorElement.prototype.click = function () { anchors++; };
+
+    /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
+    ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.2.0');
+    ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
+       !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
+    var field2 = dV.querySelector('[data-field="qty"]');
+    field2.value = '10';
+    input(field2);
+    var bd = dV.querySelector('[data-field="bulkDisc"]');
+    bd.value = '10';
+    input(bd);
+    setTimeout(function () {
+      var revNum = parseFloat(dV.getElementById('totalRevenue').textContent.replace(/[^0-9.]/g, ''));
+      var sellNum = parseFloat(dV.getElementById('sellPrice').textContent.replace(/[^0-9.]/g, ''));
+      ok('v1.2：批量优惠 10% 后订单收入降为九折', /批量优惠 10%/.test(dV.getElementById('tbody').innerHTML) &&
+         Math.abs(revNum / sellNum - 9) < 0.02, 'rev=' + revNum + ' sell=' + sellNum + ' 比=' + (revNum / sellNum).toFixed(3));
+
+      /* 报价历史：保存 -> 列表 -> 载入 -> 删除 */
+      click(dV.getElementById('btnQuoteSave'));
+      var qs = JSON.parse(wV.localStorage.getItem('dpc_quotes_v1') || '[]');
+      ok('v1.2：保存报价写入 dpc_quotes_v1', qs.length === 1 && qs[0].qty === 10 && qs[0].disc === 0.1,
+         JSON.stringify(qs[0] || {}).slice(0, 80));
+      ok('v1.2：报价快照包含参数字段', !!(qs[0] && qs[0].fields && qs[0].fields.spoolPrice));
+      click(dV.getElementById('btnQuoteList'));
+      ok('v1.2：历史列表打开并渲染 1 条', dV.getElementById('histBox').classList.contains('open') &&
+         dV.querySelectorAll('#histList .hist-item').length === 1);
+      ok('v1.2：历史行含设备材料与金额', /件/.test(dV.getElementById('histList').textContent) &&
+         /¥/.test(dV.getElementById('histList').textContent));
+      dV.querySelector('[data-field="spoolPrice"]').value = '999';
+      input(dV.querySelector('[data-field="spoolPrice"]'));
+      click(dV.querySelector('#histList [data-qload]'));
+      ok('v1.2：载入历史把参数填回（单价恢复快照值 65）',
+         dV.querySelector('[data-field="spoolPrice"]').value === '65' &&
+         !dV.getElementById('histBox').classList.contains('open'));
+      click(dV.getElementById('btnQuoteList'));
+      click(dV.querySelector('#histList [data-qdel]'));
+      ok('v1.2：删除历史生效', (JSON.parse(wV.localStorage.getItem('dpc_quotes_v1')) || []).length === 0);
+      ok('v1.2：清空按钮随列表隐藏', dV.getElementById('histClear').hidden === true);
+      runShareTests(done);
+    }, 700);
+  }
+
+  /* 分享长图：生成 -> 预览 -> Android 桥保存 / 浏览器下载 */
+  function runShareTests(done) {
+    var bitmapCalls = [];
+    var domV2 = new JSDOM(html, {
+      runScripts: 'dangerously',
+      url: 'https://appassets.androidplatform.net/assets/index.html',
+      pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.AndroidBridge = {
+          saveText: function () { return true; },
+          printPage: function () { return true; },
+          saveBitmap: function (n, b) { bitmapCalls.push({ n: n, b: b }); return true; },
+          updateApp: function () { return true; }
+        };
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              return function () {};
+            },
+            set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:share'; };
+        win.URL.revokeObjectURL = function () {};
+      }
+    });
+    var wV2 = domV2.window, dV2 = wV2.document;
+    dV2.getElementById('btnShareImg').dispatchEvent(new wV2.MouseEvent('click', { bubbles: true }));
+    ok('v1.2：生成长图后打开预览层', dV2.getElementById('shareBox').classList.contains('open'));
+    ok('v1.2：预览 img 为 PNG dataURL', /^data:image\/png;base64,/.test(dV2.getElementById('shareImg').src || ''));
+    dV2.getElementById('shareSave').dispatchEvent(new wV2.MouseEvent('click', { bubbles: true }));
+    ok('v1.2：Android 端保存走原生桥 saveBitmap（写相册）',
+       bitmapCalls.length === 1 && /报价单.*\.png$/.test(bitmapCalls[0].n || ''), JSON.stringify(bitmapCalls));
+    dV2.getElementById('btnShareImg').dispatchEvent(new wV2.MouseEvent('click', { bubbles: true }));
+    dV2.getElementById('shareSave').dispatchEvent(new wV2.MouseEvent('click', { bubbles: true }));
+    ok('v1.2：保存后预览层仍可复用（可连续生成）', dV2.getElementById('shareBox').classList.contains('open'));
+
+    /* 无桥浏览器：保存走 a download */
+    var domV3 = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              return function () {};
+            },
+            set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function (b) { shareBlob = b; return 'blob:share'; };
+        win.URL.revokeObjectURL = function () {};
+        win.atob = function (s) { return Buffer.from(s, 'base64').toString('binary'); };
+        win.HTMLAnchorElement.prototype.click = function () {};
+      }
+    });
+    var wV3 = domV3.window, dV3 = wV3.document, shareBlob = null;
+    dV3.getElementById('btnShareImg').dispatchEvent(new wV3.MouseEvent('click', { bubbles: true }));
+    dV3.getElementById('shareSave').dispatchEvent(new wV3.MouseEvent('click', { bubbles: true }));
+    setTimeout(function () {
+      ok('v1.2：无桥环境保存为 PNG Blob 下载', !!shareBlob && shareBlob.type === 'image/png',
+         shareBlob && shareBlob.type);
+      done();
+    }, 60);
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -572,7 +714,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(finish);
+      runUpdateTests(function () { runV120Tests(finish); });
     }, 900);
   });
 }, 300);

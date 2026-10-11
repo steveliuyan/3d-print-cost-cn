@@ -19,6 +19,7 @@ import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
 import android.provider.MediaStore;
+import android.util.Base64;
 import android.util.Log;
 import android.view.ViewGroup;
 import android.webkit.JavascriptInterface;
@@ -226,6 +227,49 @@ public class MainActivity extends Activity {
     }
   }
 
+  /** 把 PNG 长图（base64）写入系统「图片」目录（Android 10+ 走 MediaStore Pictures）。 */
+  private boolean saveBitmapToPictures(String filename, String base64) {
+    byte[] bytes;
+    try {
+      bytes = Base64.decode(base64, Base64.DEFAULT);
+    } catch (Exception e) {
+      toast("图片数据无效"); return false;
+    }
+    String safe = sanitize(filename);
+    try {
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+        ContentValues cv = new ContentValues();
+        cv.put(MediaStore.Images.Media.DISPLAY_NAME, safe);
+        cv.put(MediaStore.Images.Media.MIME_TYPE, "image/png");
+        cv.put(MediaStore.Images.Media.IS_PENDING, 1);
+        ContentResolver cr = getContentResolver();
+        Uri uri = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, cv);
+        if (uri == null) { toast("保存失败"); return false; }
+        try (OutputStream os = cr.openOutputStream(uri)) {
+          if (os == null) { toast("保存失败"); return false; }
+          os.write(bytes); os.flush();
+        }
+        cv.clear(); cv.put(MediaStore.Images.Media.IS_PENDING, 0);
+        cr.update(uri, cv, null, null);
+        toast("长图已保存到「图片」：" + safe);
+      } else {
+        File dir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+        if (dir == null) dir = new File(getFilesDir(), "Pictures");
+        if (!dir.exists() && !dir.mkdirs()) { toast("保存失败"); return false; }
+        File out = new File(dir, safe);
+        try (FileOutputStream fo = new FileOutputStream(out)) {
+          fo.write(bytes); fo.flush();
+        }
+        toast("长图已保存：" + out.getAbsolutePath());
+      }
+      return true;
+    } catch (Exception e) {
+      Log.w(TAG, "saveBitmap failed: " + e);
+      toast("保存失败：" + e.getMessage());
+      return false;
+    }
+  }
+
   private static String sanitize(String name) {
     String s = (name == null || name.trim().isEmpty()) ? "export.txt" : name.trim();
     s = s.replace('\\', '_').replace('/', '_').replace(':', '_')
@@ -340,6 +384,13 @@ public class MainActivity extends Activity {
       if (url == null || !url.startsWith("https://")) return false;
       runOnUiThread(() -> startUpdate(url));
       return true;
+    }
+
+    /** 报价长图保存：前端 Canvas 生成 PNG，base64 传入，写入系统「图片」目录。 */
+    @JavascriptInterface
+    public boolean saveBitmap(String filename, String base64) {
+      if (base64 == null || base64.isEmpty()) return false;
+      return saveBitmapToPictures(filename, base64);
     }
   }
 

@@ -354,6 +354,25 @@
   .foot .lnk{background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer;
              text-decoration:underline; text-underline-offset:3px}
   .foot .lnk:disabled{color:var(--text4); cursor:not-allowed; text-decoration:none}
+  /* ===== 报价操作 / 历史 / 分享长图 ===== */
+  .qact{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line)}
+  .hist-list{display:flex; flex-direction:column; gap:8px}
+  .hist-item{border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex;
+             align-items:center; gap:10px; flex-wrap:wrap; background:var(--bg2,#f8f9fb)}
+  .hist-item .hi-main{flex:1 1 200px; min-width:0}
+  .hist-item .hi-main b{display:block; font-size:13px; letter-spacing:-.005em}
+  .hist-item .hi-main small{color:var(--text3); font-size:11.5px; word-break:break-all}
+  .hist-item .hi-num{text-align:right; flex:0 0 auto}
+  .hist-item .hi-num b{font-size:13.5px}
+  .hist-item .hi-num small{display:block; color:var(--text3); font-size:11px}
+  .hist-empty{color:var(--text3); font-size:12.5px; text-align:center; padding:18px 0}
+  .share-wrap{text-align:center}
+  .share-wrap img{max-width:100%; border:1px solid var(--line); border-radius:10px; box-shadow:0 8px 24px -12px rgba(14,16,21,.25)}
+  .share-tip{margin:10px 0 0; font-size:12px; color:var(--text3); line-height:1.6}
+  @media (max-width:560px){
+    .qact .btn{flex:1 1 calc(33% - 6px); justify-content:center; white-space:nowrap}
+    .hist-item .hi-num{width:100%; text-align:left; display:flex; gap:10px; align-items:baseline}
+  }
   /* ===== 覆盖层：打印预览 / 导出兜底 ===== */  .ov{position:fixed; inset:0; z-index:var(--z-modal); display:none}
   .ov.open{display:block}
   .ov-bg{position:absolute; inset:0; background:rgba(14,16,21,.5); animation:fadeIn .18s var(--ease);
@@ -538,6 +557,8 @@
             <div class="in"><input data-field="commission" type="number" min="0" max="95" step="0.5" value="5"><em class="suf">%</em></div></label>
           <label class="field"><span class="lb">本单运费 / 包装</span>
             <div class="in"><input data-field="shipping" type="number" min="0" step="1" value="0"><em class="suf">¥</em></div></label>
+          <label class="field"><span class="lb">批量优惠（整单折扣）</span>
+            <div class="in"><input data-field="bulkDisc" type="number" min="0" max="90" step="1" value="0"><em class="suf">%</em></div></label>
         </div>
       </section>
 
@@ -557,6 +578,11 @@
           <div class="kpi"><div class="k">单件利润</div><div class="v good" id="unitProfit">¥0.00</div></div>
           <div class="kpi"><div class="k">订单总收入</div><div class="v" id="totalRevenue">¥0.00</div></div>
           <div class="kpi"><div class="k">订单总利润</div><div class="v" id="totalProfit">¥0.00</div></div>
+        </div>
+        <div class="qact">
+          <button class="btn sm" id="btnQuoteSave" type="button">保存报价</button>
+          <button class="btn sm" id="btnQuoteList" type="button">报价历史</button>
+          <button class="btn sm" id="btnShareImg" type="button">分享长图</button>
         </div>
       </section>
 
@@ -708,6 +734,47 @@
       <button class="btn" data-exclose>关闭</button>
       <a class="btn" id="exOpen" target="_blank" rel="noopener">在新标签页打开</a>
       <button class="btn primary" id="exCopy">复制内容</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 报价历史 ===== -->
+<div class="ov" id="histBox" role="dialog" aria-modal="true" aria-label="报价历史">
+  <div class="ov-bg" data-hisclose></div>
+  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:10vh">
+    <div class="ov-head">
+      <h3>报价历史</h3>
+      <button class="x" data-hisclose aria-label="关闭">×</button>
+    </div>
+    <div class="ov-body">
+      <p class="bk-note">每次点「保存报价」都会在这里留档（仅存本机，不上传）。点「载入」可把当时的参数一键填回，方便重新报价或对比价格。</p>
+      <div class="hist-list" id="histList"></div>
+    </div>
+    <div class="ov-foot">
+      <button class="btn" id="histClear" hidden>清空全部</button>
+      <span class="sp"></span>
+      <button class="btn primary" data-hisclose>关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 分享长图 ===== -->
+<div class="ov" id="shareBox" role="dialog" aria-modal="true" aria-label="报价长图">
+  <div class="ov-bg" data-shclose></div>
+  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:6vh">
+    <div class="ov-head">
+      <h3>报价长图</h3>
+      <button class="x" data-shclose aria-label="关闭">×</button>
+    </div>
+    <div class="ov-body">
+      <div class="share-wrap">
+        <img id="shareImg" alt="报价单长图预览">
+        <p class="share-tip" id="shareTip"></p>
+      </div>
+    </div>
+    <div class="ov-foot">
+      <button class="btn" data-shclose>关闭</button>
+      <button class="btn primary" id="shareSave">保存图片</button>
     </div>
   </div>
 </div>
@@ -1050,6 +1117,7 @@
     var markup       = Math.max(0, num("markup"));
     var commission   = Math.min(95, Math.max(0, num("commission"))) / 100;
     var shipping     = Math.max(0, num("shipping"));
+    var bulkDisc     = Math.min(90, Math.max(0, num("bulkDisc"))) / 100;
 
     var material   = grams / 1000 * spoolPrice * qty * (1 + waste);
     var depPerHour = printerPrice / lifeHours + maintPerHour;
@@ -1066,11 +1134,11 @@
 
     var sellUnit = unitCost * markup;
     var sellNet  = commission > 0 ? sellUnit / (1 - commission) : sellUnit;
-    var revenue  = sellNet * qty;
+    var revenue  = sellNet * qty * (1 - bulkDisc);
     var profit   = revenue - totalCost;
 
     return {
-      qty: qty, totalTime: printHours * qty,
+      qty: qty, bulkDisc: bulkDisc, totalTime: printHours * qty,
       items: [
         {name:"材料（含损耗）",  value: material, color: COLORS[0]},
         {name:"设备折旧 + 维护", value: machine,  color: COLORS[1]},
@@ -1124,7 +1192,7 @@
     });
     html += '<tr class="sum"><td>订单总成本（' + r.qty + " 件）</td><td>" + money(r.totalCost) + '</td><td class="pct">100%</td></tr>';
     html += '<tr class="sum2"><td>单件成本</td><td>' + money(r.unitCost) + '</td><td class="pct">—</td></tr>';
-    html += "<tr><td>订单收入（含佣金售价）</td><td>" + money(r.revenue) + '</td><td class="pct">—</td></tr>';
+    html += "<tr><td>订单收入（含佣金售价" + (r.bulkDisc > 0 ? "，批量优惠 " + Math.round(r.bulkDisc * 100) + "%" : "") + "）</td><td>" + money(r.revenue) + '</td><td class="pct">—</td></tr>';
     html += '<tr class="sum2"><td>订单利润 · 毛利率 ' + r.margin.toFixed(1) + "%</td><td>" + money(r.profit) + '</td><td class="pct">—</td></tr>';
     $("#tbody").innerHTML = html;
   }
@@ -1694,7 +1762,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.1.0";
+  var APP_VERSION = "1.2.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -1715,6 +1783,10 @@
   function updHide(){ $("#updBox").classList.remove("open"); }
 
   function checkUpdate(manual){
+    if(typeof fetch !== "function"){
+      if(manual) updShow("<p>当前环境不支持联网检查更新。</p>");
+      return;
+    }
     var btn = $("#btnCheckUpd");
     if(btn){ btn.disabled = true; btn.textContent = "检查中…"; }
     fetch("https://api.github.com/repos/" + UPD_REPO + "/releases/latest", { cache: "no-store" })
@@ -1772,8 +1844,192 @@
     catch(e){ location.href = target; }
   }
 
+  /* ===== 报价历史（仅本机 localStorage） ===== */
+  var QKEY = "dpc_quotes_v1";
+  function loadQuotes(){
+    try{ return JSON.parse(localStorage.getItem(QKEY) || "[]"); }catch(e){ return []; }
+  }
+  function saveQuotes(list){
+    try{ localStorage.setItem(QKEY, JSON.stringify(list.slice(0, 100))); }
+    catch(e){ toast("保存失败：本机存储空间不足"); }
+  }
+  function fieldSnapshot(){
+    var f = {};
+    $$("[data-field]").forEach(function(el){ f[el.getAttribute("data-field")] = el.value; });
+    return f;
+  }
+  function saveQuote(){
+    var r = last || compute();
+    var devP = findPreset("device", cur.device), matP = findPreset("material", cur.material);
+    var list = loadQuotes();
+    list.unshift({
+      t: Date.now(),
+      dev: devP ? devP.name : "自定义设备",
+      mat: matP ? matP.name : "自定义材料",
+      qty: r.qty, disc: r.bulkDisc,
+      unitCost: r.unitCost, sellNet: r.sellNet,
+      revenue: r.revenue, totalCost: r.totalCost, profit: r.profit,
+      fields: fieldSnapshot()
+    });
+    saveQuotes(list);
+    toast("已保存报价（共 " + list.length + " 条）");
+  }
+  function fmtDT(ts){
+    var d = new Date(ts), p2 = function(v){ return (v < 10 ? "0" : "") + v; };
+    return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) +
+           " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
+  }
+  function renderQuotes(){
+    var list = loadQuotes(), box = $("#histList");
+    $("#histClear").hidden = list.length === 0;
+    if(!list.length){ box.innerHTML = '<div class="hist-empty">还没有保存过报价。填好参数后点「保存报价」即可留档。</div>'; return; }
+    var html = "";
+    list.forEach(function(q, i){
+      html += '<div class="hist-item">' +
+        '<div class="hi-main"><b>' + esc(q.dev) + " × " + esc(q.mat) + " · " + q.qty + " 件" +
+        (q.disc > 0 ? "（优惠 " + Math.round(q.disc * 100) + "%）" : "") + "</b>" +
+        "<small>" + fmtDT(q.t) + " · 单件成本 " + money(q.unitCost) + " · 单件售价 " + money(q.sellNet) + "</small></div>" +
+        '<div class="hi-num"><b>' + money(q.revenue) + "</b><small>利润 " + money(q.profit) + "</small></div>" +
+        '<button class="btn sm" data-qload="' + i + '">载入</button>' +
+        '<button class="btn sm del" data-qdel="' + i + '">删除</button>' +
+        "</div>";
+    });
+    box.innerHTML = html;
+  }
+  function openHist(){ renderQuotes(); $("#histBox").classList.add("open"); }
+  function histClick(e){
+    var el = e.target.closest ? e.target.closest("[data-qload],[data-qdel],[data-hisclose]") : null;
+    if(!el) return;
+    if(el.hasAttribute("data-hisclose")){ $("#histBox").classList.remove("open"); return; }
+    var i = +(el.getAttribute("data-qload") || el.getAttribute("data-qdel")), list = loadQuotes();
+    if(!(i >= 0 && i < list.length)) return;
+    if(el.hasAttribute("data-qdel")){
+      list.splice(i, 1); saveQuotes(list); renderQuotes(); toast("已删除该条报价"); return;
+    }
+    var q = list[i], f = q.fields || {};
+    $$("[data-field]").forEach(function(el2){
+      var k = el2.getAttribute("data-field");
+      if(f[k] !== undefined && f[k] !== null && f[k] !== "") el2.value = f[k];
+    });
+    $("#histBox").classList.remove("open");
+    update();
+    toast("已载入 " + fmtDT(q.t) + " 的报价参数");
+  }
+
+  /* ===== 分享长图（Canvas 生成，三端保存适配） ===== */
+  function isIOS(){
+    try{ return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }catch(e){ return false; }
+  }
+  function drawShareImage(){
+    var r = last || compute();
+    var devP = findPreset("device", cur.device), matP = findPreset("material", cur.material);
+    var W = 750, PAD = 40, scale = Math.min(2, window.devicePixelRatio || 1);
+    var rows = [];
+    r.items.forEach(function(it){ if(it.value > 0.0001) rows.push(it); });
+    var H = 300 + rows.length * 46 + 330;
+    var cv = document.createElement("canvas");
+    cv.width = W * scale; cv.height = H * scale;
+    var ctx = null;
+    try{ ctx = cv.getContext("2d"); }catch(e){}
+    if(!ctx) return null;
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#f4f5f8"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, 128);
+    ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 125, W, 3);
+    ctx.fillStyle = "#14161a"; ctx.font = "700 34px system-ui, sans-serif";
+    ctx.fillText("3D 打印成本报价单", PAD, 62);
+    ctx.fillStyle = "#8b93a1"; ctx.font = "22px system-ui, sans-serif";
+    ctx.fillText(fmtDT(Date.now()) + " · 本地计算生成", PAD, 98);
+    var y = 170;
+    ctx.font = "24px system-ui, sans-serif";
+    var info = [
+      ["设备", devP ? devP.name : "自定义设备"],
+      ["材料", matP ? matP.name : "自定义材料"],
+      ["数量", r.qty + " 件" + (r.bulkDisc > 0 ? "（整单优惠 " + Math.round(r.bulkDisc * 100) + "%）" : "")]
+    ];
+    info.forEach(function(kv){
+      ctx.fillStyle = "#8b93a1"; ctx.textAlign = "left"; ctx.fillText(kv[0], PAD, y);
+      ctx.fillStyle = "#14161a"; ctx.fillText(kv[1], PAD + 120, y);
+      y += 42;
+    });
+    y += 16;
+    ctx.fillStyle = "#14161a"; ctx.font = "700 26px system-ui, sans-serif";
+    ctx.fillText("成本构成", PAD, y); y += 34;
+    ctx.font = "24px system-ui, sans-serif";
+    rows.forEach(function(it){
+      ctx.fillStyle = it.color; ctx.fillRect(PAD, y - 17, 14, 14);
+      ctx.fillStyle = "#14161a";
+      ctx.fillText(it.name, PAD + 30, y);
+      ctx.textAlign = "right";
+      ctx.fillText("¥" + it.value.toFixed(2), W - PAD, y);
+      ctx.textAlign = "left";
+      y += 46;
+    });
+    y += 8;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(PAD, y, W - PAD * 2, 4);
+    ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(PAD, y, W - PAD * 2, 4);
+    y += 40;
+    var sums = [
+      ["订单总成本", r.totalCost, false],
+      ["单件综合成本", r.unitCost, true],
+      ["单件建议售价（含佣金）", r.sellNet, true]
+    ];
+    sums.forEach(function(kv){
+      ctx.fillStyle = "#8b93a1"; ctx.fillText(kv[0], PAD, y);
+      ctx.fillStyle = "#14161a"; ctx.font = (kv[2] ? "700 " : "") + "28px system-ui, sans-serif";
+      ctx.textAlign = "right"; ctx.fillText("¥" + kv[1].toFixed(2), W - PAD, y);
+      ctx.textAlign = "left"; ctx.font = "24px system-ui, sans-serif";
+      y += 52;
+    });
+    ctx.fillStyle = "#8b93a1"; ctx.fillText("订单总收入（" + r.qty + " 件）", PAD, y);
+    ctx.fillStyle = "#14161a"; ctx.font = "700 30px system-ui, sans-serif";
+    ctx.textAlign = "right"; ctx.fillText("¥" + r.revenue.toFixed(2), W - PAD, y);
+    ctx.textAlign = "left"; y += 56;
+    ctx.fillStyle = "#8b93a1"; ctx.fillText("订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", PAD, y);
+    ctx.fillStyle = r.profit >= 0 ? "#0a8f4c" : "#c2410c"; ctx.font = "700 30px system-ui, sans-serif";
+    ctx.textAlign = "right"; ctx.fillText("¥" + r.profit.toFixed(2), W - PAD, y);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
+    ctx.fillText("由「3D 打印成本计算器」生成 · 参数与数据仅保存在本机", PAD, H - 30);
+    return cv;
+  }
+  function openShare(){
+    var cv = drawShareImage();
+    if(!cv){ toast("当前环境不支持生成图片"); return; }
+    var url;
+    try{ url = cv.toDataURL("image/png"); }catch(e){ toast("生成图片失败"); return; }
+    $("#shareImg").src = url;
+    $("#shareTip").textContent = isIOS()
+      ? "iPhone / iPad：长按上方图片，选「存储到照片」即可保存。"
+      : "点「保存图片」即可保存到本机；也可直接把图发给客户。";
+    $("#shareBox").classList.add("open");
+  }
+  function saveShareImage(){
+    var img = $("#shareImg");
+    if(!img.src || img.src.indexOf("data:image/png") !== 0){ toast("请先生成长图"); return; }
+    var b64 = img.src.split(",")[1];
+    var name = "3D打印成本报价单-" + fmtDT(Date.now()).replace(/[- :]/g, "") + ".png";
+    var b = androidBridge();
+    if(b && typeof b.saveBitmap === "function"){
+      try{
+        if(b.saveBitmap(name, b64)) return;   /* 原生侧已提示保存位置 */
+      }catch(e){ /* 桥异常 → 落回通用下载 */ }
+    }
+    var bin = atob(b64), buf = new Uint8Array(bin.length);
+    for(var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    var blob = new Blob([buf], { type: "image/png" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = name; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    toast("已生成图片：" + name);
+  }
+
   /* 触发下载。
-     优先级：Android 原生桥（写入系统「下载」目录）→ <a download>。     若两者都不可靠（嵌入式预览 / WebView 无桥），再弹兜底面板保证内容一定拿得到。 */
+     优先级：Android 原生桥（写入系统「下载」目录）→ <a download>。
+     若两者都不可靠（嵌入式预览 / WebView 无桥），再弹兜底面板保证内容一定拿得到。 */
   function download(blob, filename, text){
     var bridge = androidBridge();
     if(bridge && text != null){
@@ -1950,6 +2206,8 @@
       if($("#pprev").classList.contains("open")){ closePrint(); return; }
       if($("#exBox").classList.contains("open")){ closeOv("exBox"); return; }
       if($("#updBox").classList.contains("open")){ updHide(); return; }
+      if($("#histBox").classList.contains("open")){ $("#histBox").classList.remove("open"); return; }
+      if($("#shareBox").classList.contains("open")){ $("#shareBox").classList.remove("open"); return; }
       if($("#picker").classList.contains("open")){ closePicker(); return; }
       if($("#modal").classList.contains("open")) closeModal();
       closePops();
@@ -2099,6 +2357,16 @@
   $("#updGo").addEventListener("click", doUpgrade);
   $("#updBox").addEventListener("click", function(e){
     if(e.target.closest && e.target.closest("[data-upclose]")) updHide();
+  });
+
+  /* ===== 报价历史 / 分享长图事件 ===== */
+  $("#btnQuoteSave").addEventListener("click", saveQuote);
+  $("#btnQuoteList").addEventListener("click", openHist);
+  $("#histBox").addEventListener("click", histClick);
+  $("#btnShareImg").addEventListener("click", openShare);
+  $("#shareSave").addEventListener("click", saveShareImage);
+  $("#shareBox").addEventListener("click", function(e){
+    if(e.target.closest && e.target.closest("[data-shclose]")) $("#shareBox").classList.remove("open");
   });
 
   /* ================= 初始化 ================= */
