@@ -1762,7 +1762,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.2.0";
+  var APP_VERSION = "1.2.1";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -1794,16 +1794,24 @@
       .then(function(rel){
         var tag = String(rel.tag_name || "").replace(/^v/i, "");
         if(isNewerVersion(tag, APP_VERSION)){
-          var apk = "";
+          var apk = "", exe = "", webHtml = "";
           (rel.assets || []).forEach(function(a){
             if(/\.apk$/i.test(a.name) && !apk) apk = a.browser_download_url;
+            else if(/\.exe$/i.test(a.name) && !exe) exe = a.browser_download_url;
+            else if(/\.html?$/i.test(a.name) && !webHtml) webHtml = a.browser_download_url;
           });
-          updInfo = { tag: tag, apk: apk, url: rel.html_url };
+          updInfo = { tag: tag, apk: apk, exe: exe, webHtml: webHtml, url: rel.html_url };
+          var platform = updPlatform();
+          var platTip = platform === "android"
+            ? (apk ? "点击「立即升级」将下载新版安装包（APK）。" : "点击「立即升级」前往发布页下载。")
+            : platform === "electron"
+            ? (exe ? "点击「立即升级」将下载新版 Windows 程序（EXE）。" : "点击「立即升级」前往发布页下载。")
+            : (webHtml ? "点击「立即升级」将下载新版网页文件（HTML）。" : "点击「立即升级」前往发布页下载。");
           updShow(
             "<p>发现新版本 <b>v" + esc(tag) + "</b>（当前 v" + esc(APP_VERSION) + "）。</p>" +
             (rel.body ? '<pre class="upd-notes">' + esc(rel.body) + "</pre>" : "") +
             "<p style=\"margin-top:10px;color:var(--text3);font-size:12px\">" +
-            (apk ? "点击「立即升级」将下载新版安装包。" : "点击「立即升级」前往发布页下载。") + "</p>");
+            platTip + "</p>");
           $("#updGo").hidden = false;
           $("#updHint").textContent = "";
         } else {
@@ -1826,6 +1834,16 @@
       });
   }
 
+  /* 识别运行平台：android（WebView 壳）/ electron / web */
+  function updPlatform(){
+    var b = androidBridge();
+    if(b && typeof b.updateApp === "function") return "android";
+    try{
+      var ua = String(navigator.userAgent || "");
+      if(/electron/i.test(ua)) return "electron";
+    }catch(e){}
+    return "web";
+  }
   function doUpgrade(){
     if(!updInfo) return;
     var b = androidBridge();
@@ -1835,10 +1853,12 @@
         updHide();
         b.updateApp(updInfo.apk);
         return;
-      }catch(e){ /* 桥异常 → 落回浏览器下载 */ }
+      }catch(e){ /* 桥异常 → 落回通用逻辑 */ }
     }
-    /* Electron / 浏览器：跳转下载链接（Electron 主进程会把外链交给系统浏览器） */
-    var target = updInfo.apk || updInfo.url;
+    /* Electron：下载 EXE；网页版：下载 web.html；都没有则去发布页 */
+    var platform = updPlatform();
+    var target = platform === "electron" ? (updInfo.exe || updInfo.url)
+               : (updInfo.webHtml || updInfo.url);
     updHide();
     try{ window.open(target, "_blank", "noopener"); }
     catch(e){ location.href = target; }
@@ -1927,7 +1947,7 @@
     var W = 750, PAD = 40, scale = Math.min(2, window.devicePixelRatio || 1);
     var rows = [];
     r.items.forEach(function(it){ if(it.value > 0.0001) rows.push(it); });
-    var H = 300 + rows.length * 46 + 330;
+    var H = 300 + rows.length * 46 + 420;
     var cv = document.createElement("canvas");
     cv.width = W * scale; cv.height = H * scale;
     var ctx = null;

@@ -456,7 +456,11 @@ setTimeout(function () {
           tag_name: tag,
           html_url: 'https://github.com/steveliuyan/3d-print-cost-cn/releases/tag/v' + tag,
           body: '测试更新说明',
-          assets: [{ name: '3d-print-cost-1.1.0.apk', browser_download_url: 'https://github.com/x/app.apk' }]
+          assets: [
+            { name: '3d-print-cost-1.1.0.apk', browser_download_url: 'https://github.com/x/app.apk' },
+            { name: '3D打印成本计算器-1.1.0-便携版.exe', browser_download_url: 'https://github.com/x/app.exe' },
+            { name: 'web.html', browser_download_url: 'https://github.com/x/web.html' }
+          ]
         });
       }
     });
@@ -477,7 +481,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.2.0', dU.getElementById('footVer').textContent === '1.2.0',
+    ok('更新：footer 显示当前版本号 1.2.1', dU.getElementById('footVer').textContent === '1.2.1',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -505,30 +509,48 @@ setTimeout(function () {
       dU2.getElementById('btnCheckUpd').dispatchEvent(new wU2.MouseEvent('click', { bubbles: true }));
       setTimeout(function () {
         dU2.getElementById('updGo').dispatchEvent(new wU2.MouseEvent('click', { bubbles: true }));
-        ok('更新：无桥环境用 window.open 跳转下载', opened.length === 1 && /app\.apk$/.test(opened[0] || ''),
+        ok('更新：网页版升级下载 web.html（而非 APK）', opened.length === 1 && /web\.html$/.test(opened[0] || ''),
            JSON.stringify(opened));
 
-        /* 已是最新版本：手动检查提示最新，不出现升级按钮 */
-        var domU3 = new JSDOM(html, {
+        /* Electron 壳（UA 含 Electron）：升级下载 EXE */
+        var openedE = [];
+        var domU2e = new JSDOM(html, {
           runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
-          beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.1.0'); }; }
+          beforeParse: function (win) {
+            win.fetch = function () { return fakeRelease('9.9.9'); };
+            win.open = function (u) { openedE.push(u); return {}; };
+            Object.defineProperty(win.navigator, 'userAgent', { value: 'Mozilla/5.0 Electron/33.0 Chrome/130', configurable: true });
+          }
         });
-        var wU3 = domU3.window, dU3 = wU3.document;
-        dU3.getElementById('btnCheckUpd').dispatchEvent(new wU3.MouseEvent('click', { bubbles: true }));
+        var wU2e = domU2e.window, dU2e = wU2e.document;
+        dU2e.getElementById('btnCheckUpd').dispatchEvent(new wU2e.MouseEvent('click', { bubbles: true }));
         setTimeout(function () {
-          ok('更新：同版本提示已是最新', /已是最新版本/.test(dU3.getElementById('updBody').textContent));
-          ok('更新：已是最新时不显示升级按钮', dU3.getElementById('updGo').hidden === true);
+          dU2e.getElementById('updGo').dispatchEvent(new wU2e.MouseEvent('click', { bubbles: true }));
+          ok('更新：Electron 端升级下载 EXE', openedE.length === 1 && /app\.exe$/.test(openedE[0] || ''),
+             JSON.stringify(openedE));
 
-          /* 纯网页（无桥无 Electron UA）启动 3s 内不应自动联网检查 */
-          var autoCalls = 0;
-          var domU4 = new JSDOM(html, {
+          /* 已是最新版本：手动检查提示最新，不出现升级按钮 */
+          var domU3 = new JSDOM(html, {
             runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
-            beforeParse: function (win) { win.fetch = function () { autoCalls++; return fakeRelease('9.9.9'); }; }
+            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.1.0'); }; }
           });
+          var wU3 = domU3.window, dU3 = wU3.document;
+          dU3.getElementById('btnCheckUpd').dispatchEvent(new wU3.MouseEvent('click', { bubbles: true }));
           setTimeout(function () {
-            ok('更新：纯网页端启动不自动检查（仅壳内自动）', autoCalls === 0, 'calls=' + autoCalls);
-            done();
-          }, 3400);
+            ok('更新：同版本提示已是最新', /已是最新版本/.test(dU3.getElementById('updBody').textContent));
+            ok('更新：已是最新时不显示升级按钮', dU3.getElementById('updGo').hidden === true);
+
+            /* 纯网页（无桥无 Electron UA）启动 3s 内不应自动联网检查 */
+            var autoCalls = 0;
+            var domU4 = new JSDOM(html, {
+              runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+              beforeParse: function (win) { win.fetch = function () { autoCalls++; return fakeRelease('9.9.9'); }; }
+            });
+            setTimeout(function () {
+              ok('更新：纯网页端启动不自动检查（仅壳内自动）', autoCalls === 0, 'calls=' + autoCalls);
+              done();
+            }, 3400);
+          }, 80);
         }, 80);
       }, 80);
     }, 80);
@@ -563,7 +585,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.2.0');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.2.1');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
