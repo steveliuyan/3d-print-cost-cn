@@ -1,0 +1,16 @@
+# 统一换行：仓库内一律 LF，检出时按平台/类型决定
+* text=auto eol=lf
+
+# Windows 批处理必须 CRLF
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# Unix 可执行脚本必须 LF（否则 Linux/macOS 上 gradlew 会报 bad interpreter）
+gradlew text eol=lf
+
+# 二进制文件不做换行转换
+*.jar binary
+*.ico binary
+*.png binary
+*.jks binary
+*.keystore binary

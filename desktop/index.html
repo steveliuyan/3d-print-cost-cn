@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润。支持设备与耗材预设、自定义分类。">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M16 5 7 10v11l9 5 9-5V10l-9-5Z'/%3E%3Cpath d='M7 10l9 5 9-5M16 15v11'/%3E%3C/g%3E%3C/svg%3E">
+<title>3D 打印成本计算器</title>
+<style>
+  /* ================= 设计令牌 ================= */
+  :root{
+    --bg:#f5f6f8; --card:#fff; --card-2:#fafbfc;
+    --line:#e7e9ee; --line2:#dde1e7; --line3:#ccd2db;
+    --text:#14161a; --text2:#5c6472; --text3:#8b93a1; --text4:#aeb4bf;
+    --accent:#4f46e5; --accent-2:#4338ca; --accent-soft:#eff0ff; --accent-line:#d9dafb;
+    --ring:rgba(79,70,229,.18);
+    --good:#0c8a55; --warn:#b8630c; --warn-soft:#fdf2e4; --danger:#bf3a24; --danger-soft:#fdf4f2;
+    --ink:#15171c;
+    --r-xs:7px; --r-sm:9px; --r:12px; --r-lg:16px; --r-xl:20px;
+    --sh-1:0 1px 2px rgba(18,21,27,.05);
+    --sh-2:0 1px 2px rgba(18,21,27,.04), 0 10px 26px -16px rgba(18,21,27,.22);
+    --sh-3:0 18px 44px -16px rgba(18,21,27,.26), 0 2px 6px rgba(18,21,27,.05);
+    --sh-accent:0 10px 26px -12px rgba(79,70,229,.55);
+    --z-pop:30; --z-modal:80; --z-picker:90; --z-toast:100;
+    --ease:cubic-bezier(.22,.68,.35,1);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:system-ui,-apple-system,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+    font-size:14px; line-height:1.55;
+    -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility;
+    font-feature-settings:"tnum" 1;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
+    background:
+      radial-gradient(880px 460px at 10% -10%, rgba(79,70,229,.12), transparent 62%),
+      radial-gradient(760px 420px at 102% -4%, rgba(99,102,241,.08), transparent 58%),
+      radial-gradient(900px 620px at 50% 118%, rgba(18,21,27,.06), transparent 62%);
+  }
+  body::after{
+    content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.035;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='90' height='90' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+  .wrap{position:relative; z-index:1; max-width:1320px; margin:0 auto; padding:0 22px 84px}
+
+  /* ================= 顶栏 ================= */
+  .topbar{position:sticky; top:0; z-index:40; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
+          justify-content:space-between; padding:14px 0; margin:0 0 22px;
+          background:linear-gradient(180deg,rgba(245,246,248,.94),rgba(245,246,248,.72));
+          backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
+          border-bottom:1px solid rgba(231,233,238,.85)}
+  .brand{display:flex; align-items:center; gap:12px; min-width:0}
+  .mark{width:38px; height:38px; border-radius:11px; flex:none; display:grid; place-items:center; color:#fff;
+        background:linear-gradient(160deg,#5f56f0,#4338ca);
+        box-shadow:var(--sh-accent), inset 0 1px 0 rgba(255,255,255,.3)}
+  .mark svg{width:21px; height:21px}
+  .brand h1{margin:0; font-size:16.5px; font-weight:650; letter-spacing:-.015em; line-height:1.2}
+  .brand p{margin:2px 0 0; font-size:12px; color:var(--text3);
+           white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw}
+  .hd-r{display:flex; gap:8px; flex-wrap:wrap}
+
+  /* ================= 按钮 ================= */
+  .btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line2); background:#fff; color:var(--text);
+       padding:8px 13px; border-radius:10px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
+       line-height:1.2; box-shadow:var(--sh-1); text-decoration:none;
+       transition:transform .12s var(--ease), background .16s, border-color .16s, box-shadow .16s, color .16s}
+  .btn svg{width:15px; height:15px; flex:none; opacity:.7}
+  .btn:hover{border-color:var(--line3); background:#fbfbfd; transform:translateY(-1px); box-shadow:var(--sh-2)}
+  .btn:active{transform:translateY(0) scale(.985)}
+  .btn:focus-visible{outline:0; box-shadow:0 0 0 3px var(--ring); border-color:var(--accent)}
+  .btn.primary{background:linear-gradient(160deg,#5f56f0,#4f46e5); border-color:transparent; color:#fff; box-shadow:var(--sh-accent)}
+  .btn.primary:hover{background:linear-gradient(160deg,#554beb,#4338ca); color:#fff}
+  .btn.primary svg{opacity:.92}
+  .btn.ghost{background:transparent; box-shadow:none; border-color:transparent}
+  .btn.ghost:hover{background:#fff; border-color:var(--line2)}
+  .btn.sm{padding:0 12px; height:40px; font-size:12.5px; white-space:nowrap}
+
+  /* ================= 布局 ================= */
+  .grid{display:grid; grid-template-columns:minmax(0,1fr) minmax(360px,420px); gap:20px; align-items:start}
+  @media (max-width:1080px){ .grid{grid-template-columns:1fr} }
+
+  .card{position:relative; background:var(--card); border:1px solid var(--line); border-radius:var(--r-lg);
+        padding:18px 20px 20px; margin-bottom:16px; box-shadow:var(--sh-2);
+        animation:rise .5s var(--ease) backwards; animation-delay:calc(var(--i,0) * 55ms)}
+  @keyframes rise{ from{opacity:0; transform:translateY(10px)} to{opacity:1; transform:none} }
+  .card > h2{display:flex; align-items:center; gap:9px; margin:0 0 15px;
+             font-size:13px; font-weight:600; letter-spacing:.01em}
+  .card > h2 .snum{width:22px; height:22px; border-radius:7px; flex:none; display:grid; place-items:center;
+                   font-size:11px; font-weight:650; color:var(--accent); background:var(--accent-soft);
+                   font-variant-numeric:tabular-nums; letter-spacing:0}
+  .card > h2 .stitle{color:var(--text)}
+  .card > h2 small{margin-left:auto; font-weight:500; color:var(--text3); font-size:11.5px; max-width:58%;
+                   overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+                   background:#f2f3f6; border-radius:20px; padding:3px 10px; transition:.22s var(--ease)}
+  .card > h2 small:empty{display:none}
+  .card > h2 small.dirty{color:var(--warn); background:var(--warn-soft)}
+
+  /* ================= 预设选择 ================= */
+  .preset-row{display:flex; gap:9px; margin-bottom:12px; align-items:center}
+  .preset-row > select{flex:1; min-width:0; border:1px solid var(--line2); background:#fff; border-radius:10px;
+    padding:9px 11px; font-size:13px; font-family:inherit; color:var(--text); cursor:pointer; height:40px}
+  .pickbtn{flex:1; min-width:0; text-align:left; background:#fff; border:1px solid var(--line2); border-radius:10px;
+    padding:0 13px; height:40px; font-size:13px; font-weight:500; font-family:inherit; color:var(--text);
+    cursor:pointer; box-shadow:var(--sh-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    transition:transform .12s var(--ease), border-color .16s, box-shadow .16s, background .16s}
+  .pickbtn:hover{border-color:var(--accent-line); background:#fcfcff; box-shadow:0 0 0 3px var(--ring)}
+  .pickbtn:active{transform:scale(.99)}
+  .pickbtn:focus-visible{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+
+  .savewrap{position:relative; flex:none}
+  .pop{position:absolute; right:0; top:calc(100% + 7px); background:#fff; border:1px solid var(--line2);
+       border-radius:var(--r); box-shadow:var(--sh-3); padding:5px; display:none; z-index:var(--z-pop);
+       min-width:200px; transform-origin:top right}
+  .pop.open{display:block; animation:popIn .16s var(--ease)}
+  @keyframes popIn{ from{opacity:0; transform:translateY(-4px) scale(.97)} to{opacity:1; transform:none} }
+  .pop button{display:block; width:100%; text-align:left; border:0; background:transparent; font-family:inherit;
+              font-size:13px; font-weight:500; color:var(--text); padding:8px 10px; border-radius:8px; cursor:pointer;
+              white-space:nowrap; overflow:hidden; text-overflow:ellipsis; transition:.14s}
+  .pop button:hover{background:var(--accent-soft); color:var(--accent)}
+  .pop button:disabled{color:var(--text4); cursor:not-allowed}
+  .pop button:disabled:hover{background:transparent; color:var(--text4)}
+  .pop hr{border:0; border-top:1px solid var(--line); margin:4px 2px}
+
+  /* ================= 预设参数条 ================= */
+  .pdetail{display:flex; align-items:center; gap:7px; flex-wrap:wrap; background:var(--card-2); border:1px solid var(--line);
+           border-radius:var(--r); padding:8px 11px; margin:0 0 14px; font-size:12px; color:var(--text2); line-height:1.7}
+  .pdetail .k{color:var(--text4); font-size:11.5px}
+  .pdetail .sep{color:var(--line3)}
+  .pdetail .catname{color:var(--text); font-weight:600}
+  .pdetail .pin{display:inline-flex; align-items:center; gap:3px; background:#fff; border:1px solid var(--line2);
+                border-radius:8px; padding:0 8px; height:28px; transition:.16s}
+  .pdetail .pin:hover{border-color:var(--line3)}
+  .pdetail .pin:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+  .pdetail .pin input{border:0; outline:0; background:transparent; width:56px; font-size:12.5px; font-family:inherit;
+                      color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; text-align:right; padding:0}
+  .pdetail .pin em{font-style:normal; font-size:11px; color:var(--text4); white-space:nowrap}
+  .pdetail .tag{font-size:10.5px; font-weight:500; border-radius:20px; padding:2.5px 9px;
+                background:#f1f2f6; color:var(--text2); white-space:nowrap}
+  .pdetail .tag.mine{background:var(--accent-soft); color:var(--accent)}
+  .pdetail .tag.edit{background:var(--warn-soft); color:var(--warn)}
+  .pdetail .tail{margin-left:auto; font-size:11px; color:var(--text4); white-space:nowrap;
+                 display:flex; align-items:center; gap:6px}
+  .pdetail .tail.on{color:var(--warn)}
+  .pdetail .tail.on::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--warn);
+                            animation:pulse 1.6s var(--ease) infinite}
+  @keyframes pulse{ 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ================= 表单 ================= */
+  .fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px 16px}
+  .field{display:block; margin:0}
+  .field .lb{display:block; font-size:11.5px; font-weight:500; color:var(--text2); margin-bottom:6px; letter-spacing:.01em}
+  .field .in{display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line2);
+             border-radius:10px; padding:0 11px; height:40px; transition:border-color .16s, box-shadow .16s}
+  .field .in:hover{border-color:var(--line3)}
+  .field .in:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+  .field input{border:0; outline:0; background:transparent; width:100%; padding:0; font-size:14.5px; font-weight:550;
+               font-family:inherit; color:var(--text); font-variant-numeric:tabular-nums}
+  .field .suf{color:var(--text4); font-style:normal; font-size:11.5px; white-space:nowrap}
+
+  /* ================= 结果侧栏 ================= */
+  .side{position:sticky; top:84px}
+  @media (max-width:1080px){ .side{position:static} }
+
+  .hero{position:relative; overflow:hidden; color:#fff; border-radius:var(--r); padding:18px 18px 16px; margin-bottom:14px;
+        background:linear-gradient(155deg,#6259f2 0%,#4f46e5 46%,#3f36c9 100%); box-shadow:var(--sh-accent)}
+  .hero::before{content:""; position:absolute; inset:0; pointer-events:none;
+    background:radial-gradient(340px 160px at 88% -20%, rgba(255,255,255,.34), transparent 62%),
+               radial-gradient(300px 200px at 0% 122%, rgba(255,255,255,.12), transparent 62%)}
+  .hero::after{content:""; position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='90' height='90' filter='url(%23n)'/%3E%3C/svg%3E")}
+  .hero > *{position:relative}
+  .hero .k{font-size:11px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:rgba(255,255,255,.82)}
+  .hero .v{font-size:40px; font-weight:700; letter-spacing:-.035em; line-height:1.05; margin:5px 0 0;
+           font-variant-numeric:tabular-nums; text-shadow:0 1px 0 rgba(255,255,255,.14)}
+  .hero .sub{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:13px; padding-top:11px;
+             border-top:1px solid rgba(255,255,255,.24); font-size:12px; color:rgba(255,255,255,.85)}
+  .hero .sub b{font-weight:600; color:#fff; font-variant-numeric:tabular-nums}
+
+  .kpis{display:grid; grid-template-columns:1fr 1fr; gap:10px}
+  .kpi{background:var(--card-2); border:1px solid var(--line); border-radius:var(--r); padding:11px 12px;
+       transition:transform .16s var(--ease), border-color .16s, box-shadow .16s}
+  .kpi:hover{transform:translateY(-1px); border-color:var(--line2); box-shadow:var(--sh-1)}
+  .kpi .k{font-size:11px; font-weight:500; color:var(--text3)}
+  .kpi .v{font-size:19px; font-weight:650; margin-top:3px; letter-spacing:-.02em; font-variant-numeric:tabular-nums}
+  .kpi .v.good{color:var(--good)} .kpi .v.bad{color:var(--danger)}
+
+  .donut-box{display:flex; align-items:center; gap:18px}
+  .donut-box svg{width:140px; height:140px; flex:none; animation:spinIn .7s var(--ease) backwards}
+  @keyframes spinIn{ from{opacity:0; transform:scale(.86) rotate(-14deg)} to{opacity:1; transform:none} }
+  .legend{display:flex; flex-direction:column; gap:6px; flex:1; min-width:0}
+  .lg{display:flex; align-items:center; gap:8px; font-size:12px; padding:2px 0}
+  .lg .dot{width:9px; height:9px; border-radius:3px; flex:none}
+  .lg .nm{color:var(--text2); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .lg .amt{font-variant-numeric:tabular-nums; color:var(--text); font-weight:500}
+
+  table{width:100%; border-collapse:collapse; font-size:13px}
+  th,td{padding:8px 6px; text-align:right; font-variant-numeric:tabular-nums}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-weight:500; color:var(--text3); font-size:11px; letter-spacing:.04em; text-transform:uppercase;
+           border-bottom:1px solid var(--line)}
+  tbody tr + tr td{border-top:1px solid #f2f3f6}
+  tbody tr{transition:background .14s}
+  tbody tr:hover{background:#fafbfd}
+  td.pct{color:var(--text2); width:96px; white-space:nowrap}
+  td.pct .bar{display:inline-block; vertical-align:middle; width:38px; height:5px; border-radius:3px;
+              background:#edeff3; margin-right:8px; overflow:hidden; position:relative}
+  td.pct .bar i{position:absolute; top:0; bottom:0; left:0; width:var(--w,0%); border-radius:3px;
+                background:linear-gradient(90deg,#7b73f2,#4f46e5); animation:grow .6s var(--ease) backwards}
+  @keyframes grow{ from{width:0} }
+  tr.sum td{border-top:1.5px solid var(--line2); font-weight:650; padding-top:11px}
+  tr.sum2 td{font-weight:650; color:var(--accent)}
+
+  .tip{margin-top:14px; border:1px solid var(--line); background:var(--card-2); border-radius:var(--r);
+       font-size:11.5px; color:var(--text2); line-height:1.65; overflow:hidden}
+  .tip > summary{cursor:pointer; padding:9px 12px; font-weight:550; color:var(--text2); list-style:none;
+                 display:flex; align-items:center; gap:8px; transition:background .16s}
+  .tip > summary::-webkit-details-marker{display:none}
+  .tip > summary::before{content:"i"; width:15px; height:15px; border-radius:50%; background:var(--accent-soft);
+                         color:var(--accent); font-size:10px; font-weight:700; font-style:italic;
+                         display:grid; place-items:center; flex:none}
+  .tip > summary::after{content:"\203A"; margin-left:auto; color:var(--text4); font-size:15px;
+                        transition:transform .2s var(--ease)}
+  .tip[open] > summary::after{transform:rotate(90deg)}
+  .tip > summary:hover{background:#f4f5f8}
+  .tip p{margin:0; padding:0 12px 12px; animation:fadeIn .25s var(--ease)}
+  .tip b{color:var(--text); font-weight:600}
+
+  .foot{display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-top:26px; padding-top:16px;
+        border-top:1px solid var(--line); font-size:11.5px; color:var(--text4)}
+
+  /* ================= 提示 ================= */
+  .toast{position:fixed; left:50%; bottom:28px; transform:translate(-50%,16px) scale(.98); background:var(--ink); color:#fff;
+         padding:10px 16px; border-radius:11px; font-size:13px; font-weight:500; opacity:0; pointer-events:none;
+         transition:opacity .24s var(--ease), transform .24s var(--ease); box-shadow:var(--sh-3); z-index:var(--z-toast)}
+  .toast.show{opacity:1; transform:translate(-50%,0) scale(1)}
+
+  /* ================= 预设管理 ================= */
+  .modal{position:fixed; inset:0; z-index:var(--z-modal); display:none}
+  .modal.open{display:block}
+  .modal-bg{position:absolute; inset:0; background:rgba(14,16,21,.46); animation:fadeIn .2s var(--ease);
+            backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
+  @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+  .modal-panel{position:relative; margin:5vh auto; width:min(800px,calc(100vw - 28px)); max-height:88vh; background:#fff;
+               border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
+               box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:sheetUp .28s var(--ease)}
+  @keyframes sheetUp{ from{opacity:0; transform:translateY(14px) scale(.985)} to{opacity:1; transform:none} }
+  @keyframes pkIn{ from{opacity:0; transform:translate(-50%,-50%) scale(.96)} to{opacity:1; transform:translate(-50%,-50%)} }
+  .modal-head{display:flex; align-items:center; gap:10px; padding:16px 20px 10px}
+  .modal-head h3{margin:0; font-size:15.5px; font-weight:650; letter-spacing:-.01em}
+  .modal-head .x{margin-left:auto; border:0; background:transparent; font-size:19px; line-height:1; color:var(--text3);
+                 cursor:pointer; width:30px; height:30px; border-radius:9px; transition:.16s}
+  .modal-head .x:hover{color:var(--text); background:#f2f3f6}
+  .tabs{display:flex; gap:3px; padding:3px; margin:0 20px 12px; background:#f3f4f7; border-radius:11px}
+  .tab{flex:1; border:0; background:transparent; font-family:inherit; font-size:13px; font-weight:500; color:var(--text2);
+       padding:8px 10px; border-radius:9px; cursor:pointer; transition:.16s}
+  .tab:hover{color:var(--text)}
+  .tab.active{color:var(--accent); background:#fff; font-weight:600; box-shadow:var(--sh-1)}
+  .modal-body{overflow:auto; padding:4px 20px 8px; flex:1}
+  .pane{display:none} .pane.active{display:block; animation:fadeIn .18s var(--ease)}
+  .plist{display:flex; flex-direction:column; gap:8px; margin-bottom:14px}
+  .pitem{display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:var(--r);
+         padding:10px 12px; background:var(--card-2); transition:.16s}
+  .pitem:hover{border-color:var(--line3); background:#fff; box-shadow:var(--sh-1)}
+  .pitem.mine{border-color:var(--accent-line); background:#fafaff}
+  .pitem .pinfo{flex:1; min-width:0}
+  .pitem .pinfo b{display:block; font-size:13.5px; font-weight:600}
+  .pitem .pinfo span{font-size:11.5px; color:var(--text3)}
+  .badge{font-size:10.5px; font-weight:500; color:var(--text2); background:#f1f2f6; border-radius:20px;
+         padding:3px 9px; flex:none; white-space:nowrap}
+  .badge.mine{color:var(--accent); background:var(--accent-soft)}
+  .badge.edit{color:var(--warn); background:var(--warn-soft)}
+  .pact{display:flex; gap:6px; flex:none}
+  .pact button{border:1px solid var(--line2); background:#fff; border-radius:8px; font-size:12px; font-weight:500;
+               padding:5px 10px; cursor:pointer; font-family:inherit; color:var(--text2); white-space:nowrap; transition:.16s}
+  .pact button:hover{border-color:var(--accent); color:var(--accent); background:#fcfcff}
+  .pact button:active{transform:scale(.97)}
+  .pact button.del:hover{border-color:#e9b6ac; color:var(--danger); background:var(--danger-soft)}
+  .pform{display:none; border:1px solid var(--accent-line); background:#fafaff; border-radius:var(--r);
+         padding:15px; margin-bottom:14px}
+  .pform.open{display:block; animation:fadeIn .2s var(--ease)}
+  .pform .fields{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
+  .pform h4{margin:0 0 6px; font-size:13px; font-weight:650; color:var(--accent)}
+  .pform .hint{margin:0 0 13px; font-size:11.5px; color:var(--text2); line-height:1.6}
+  .pform-act{display:flex; gap:8px; margin-top:15px}
+  .modal-foot{display:flex; gap:8px; align-items:center; padding:13px 20px; border-top:1px solid var(--line); background:var(--card-2)}
+  .modal-foot .sp{flex:1}
+  .srcnote{font-size:11.5px; color:var(--text3); margin:0 0 13px; line-height:1.65}
+  .srcnote b{color:var(--text2); font-weight:600}
+
+  /* ================= 分类管理 ================= */
+  .catblock{margin-bottom:22px}
+  .catblock h4{margin:0 0 10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px}
+  .catblock h4 span{font-weight:500; font-size:11.5px; color:var(--text3); background:#f1f2f6; border-radius:20px; padding:2px 9px}
+  .catlist{display:flex; flex-direction:column; gap:7px; margin-bottom:10px}
+  .catitem{display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:var(--r);
+           padding:9px 12px; background:var(--card-2); transition:.16s}
+  .catitem[data-catrename]:hover{border-color:var(--accent-line); background:#fafaff}
+  .catitem .cn{flex:1; font-size:13px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .catitem .cc{font-size:11.5px; color:var(--text3); white-space:nowrap}
+  .catitem .hint2{font-size:11px; color:var(--text4); white-space:nowrap}
+  .catadd{display:flex; gap:8px}
+  .catadd input{flex:1; min-width:0; border:1px solid var(--line2); border-radius:10px; padding:0 11px; height:40px;
+                font-size:13px; font-family:inherit; outline:0; color:var(--text); background:#fff; transition:.16s}
+  .catadd input:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+  .catrename{display:flex; gap:6px; align-items:center; flex:1}
+  .catrename input{flex:1; min-width:0; border:1px solid var(--accent); border-radius:9px; padding:0 10px; height:32px;
+                   font-size:13px; font-family:inherit; outline:0; color:var(--text); box-shadow:0 0 0 3px var(--ring)}
+
+  /* ================= 两级选择器 ================= */
+  .picker{position:fixed; inset:0; z-index:var(--z-picker); display:none}
+  .picker.open{display:block}
+  .pk-mask{position:absolute; inset:0; background:rgba(14,16,21,.44); animation:fadeIn .18s var(--ease);
+           backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
+  .pk-sheet{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(540px,92vw); max-height:80vh;
+            background:#fff; border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
+            box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:pkIn .26s var(--ease)}
+  .pk-head{display:flex; align-items:center; gap:8px; padding:13px 15px; border-bottom:1px solid var(--line); flex:none}
+  .pk-head b{flex:1; font-size:14px; font-weight:650; text-align:center; letter-spacing:-.01em}
+  .pk-back,.pk-x{border:0; background:transparent; font-size:16px; cursor:pointer; color:var(--text3);
+                 width:32px; height:32px; border-radius:9px; line-height:1; transition:.16s}
+  .pk-back:hover,.pk-x:hover{background:#f2f3f6; color:var(--text)}
+  .pk-body{overflow:auto; padding:8px}
+  .pkbrand{display:flex; align-items:center; gap:10px; padding:12px; border-radius:var(--r); cursor:pointer; transition:.14s}
+  .pkbrand:hover{background:#f5f6fb}
+  .pkbrand .pn{flex:1; font-size:13.5px; font-weight:600}
+  .pkbrand .pc{font-size:11.5px; color:var(--text3); background:#f1f2f6; border-radius:20px; padding:2px 9px}
+  .pkbrand .pa{color:var(--text4); font-size:16px; transition:transform .16s var(--ease)}
+  .pkbrand:hover .pa{transform:translateX(2px); color:var(--accent)}
+  .pkmodel{display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r); cursor:pointer; transition:.14s}
+  .pkmodel:hover{background:#f5f6fb}
+  .pkmodel .mi{flex:1; min-width:0}
+  .pkmodel .mi b{display:block; font-size:13.5px; font-weight:500}
+  .pkmodel .mi span{font-size:11.5px; color:var(--text3)}
+  .pkmodel.sel{background:var(--accent-soft)}
+  .pkmodel.sel .mi b{color:var(--accent); font-weight:600}
+  .pkmodel .mk{color:var(--accent); font-weight:700; flex:none}
+
+  /* ===== 备份与恢复（预设管理内） ===== */
+  .bk{margin-top:16px; padding-top:14px; border-top:1px solid var(--line)}
+  .bk h4{margin:0 0 4px; font-size:12.5px; font-weight:650; color:var(--text); letter-spacing:-.005em}
+  .bk h4:not(:first-child){margin-top:16px}
+  .bk-note{margin:0 0 10px; font-size:12px; color:var(--text3); line-height:1.6}
+  .bk-row{display:flex; gap:8px; flex-wrap:wrap}
+  /* ===== 覆盖层：打印预览 / 导出兜底 ===== */
+  .ov{position:fixed; inset:0; z-index:var(--z-modal); display:none}
+  .ov.open{display:block}
+  .ov-bg{position:absolute; inset:0; background:rgba(14,16,21,.5); animation:fadeIn .18s var(--ease);
+         backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
+  .ov-panel{position:relative; margin:4vh auto; width:min(880px,calc(100vw - 28px)); max-height:92vh; background:#fff;
+            border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
+            box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:sheetUp .28s var(--ease)}
+  .ov-head{display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); flex:none}
+  .ov-head h3{margin:0; font-size:15px; font-weight:650; letter-spacing:-.01em}
+  .ov-head .x{margin-left:auto; border:0; background:transparent; font-size:19px; line-height:1; color:var(--text3);
+              cursor:pointer; width:30px; height:30px; border-radius:9px; transition:.16s}
+  .ov-head .x:hover{color:var(--text); background:#f2f3f6}
+  .ov-body{overflow:auto; flex:1; background:#eef0f5}
+  .ov-foot{display:flex; align-items:center; gap:8px; justify-content:flex-end; padding:12px 18px;
+           border-top:1px solid var(--line); flex:none; background:#fff}
+  .ov-foot .pp-hint{margin-right:auto; font-size:12px; color:var(--text3); line-height:1.45; max-width:52%}
+  .ex-wrap{padding:14px 18px; background:#fff}
+  .ex-note{margin:0 0 10px; font-size:12.5px; color:var(--text2); line-height:1.6}
+  .ex-ta{width:100%; min-height:240px; box-sizing:border-box; font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;
+         color:var(--text); background:#fbfbfd; border:1px solid var(--line2); border-radius:10px; padding:10px 12px; resize:vertical}
+  .ex-ta:focus{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+  /* A4 打印预览页 */
+  .pp-page{width:210mm; min-height:297mm; box-sizing:border-box; margin:16px auto; background:#fff;
+           padding:14mm; color:#14161c; font-size:11.5px; line-height:1.55;
+           box-shadow:0 2px 16px rgba(20,22,28,.14)}
+  .pp-page h2{margin:0 0 3px; font-size:19px; font-weight:700; letter-spacing:-.01em}
+  .pp-page .pp-meta{margin:0 0 14px; color:#6b7280; font-size:11px}
+  .pp-page h3{margin:16px 0 6px; font-size:12.5px; font-weight:650; color:#4f46e5;
+              border-bottom:1px solid #e5e7eb; padding-bottom:4px}
+  .pp-page table{width:100%; border-collapse:collapse}
+  .pp-page th,.pp-page td{padding:5px 8px; border-bottom:1px solid #eceef2; text-align:left; vertical-align:top}
+  .pp-page th{background:#f6f7fb; font-weight:600; color:#374151; font-size:11px}
+  .pp-page td.n,.pp-page th.n{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
+  .pp-page .kv td:first-child{color:#6b7280; width:52%}
+  .pp-page .sum tr.big td{font-weight:700; color:#4f46e5; font-size:12.5px}
+  .pp-page .pp-foot{margin-top:18px; padding-top:8px; border-top:1px solid #e5e7eb; color:#9ca3af; font-size:10.5px}
+  /* 窄屏（手机）：A4 固定 210mm 会横向溢出且留白过大 → 降级为流式宽度（仅影响屏幕，不影响打印） */
+  @media screen and (max-width:900px){
+    .ov-panel{margin:2vh auto; max-height:96vh; width:calc(100vw - 16px)}
+    .ov-head{padding:12px 14px}
+    .ov-foot{flex-wrap:wrap; padding:10px 14px}
+    .ov-foot .pp-hint{max-width:100%; flex:1 1 100%; order:3; margin:0 0 8px; font-size:11.5px}
+    .pp-page{width:100%; min-height:0; margin:0; padding:18px 16px; font-size:12px; border-radius:0;
+             box-shadow:none}
+    .pp-page h2{font-size:17px}
+    .pp-page table{font-size:11.5px}
+    .pp-page th,.pp-page td{padding:4px 6px}
+  }
+  @media print{
+    body{background:#fff}
+    body::before,body::after{display:none}
+    .topbar{border:0; background:none; backdrop-filter:none}
+    .hd-r,.toast,.modal,.pop,.picker,.ov{display:none!important}
+    .grid{grid-template-columns:1fr 400px}
+    .side{position:static}
+    .card,.hero,.kpi{box-shadow:none; animation:none}
+    .card{break-inside:avoid}
+    .wrap{padding:0 0 20px}
+    .pdetail .pin{border-color:#ddd}
+    .tip > summary{display:none}
+    .tip > p{display:block!important; padding:0}
+    .foot{display:none}
+    body.pp .wrap{display:none!important}
+    body.pp .ov{position:static!important; display:block!important}
+    body.pp #exBox{display:none!important}
+    body.pp .ov-bg,body.pp .ov-head,body.pp .ov-foot{display:none!important}
+    body.pp .ov-panel{margin:0; width:auto; max-width:none; max-height:none; border-radius:0; box-shadow:none;
+                      animation:none; overflow:visible; display:block}
+    body.pp .ov-body{overflow:visible; padding:0; background:#fff}
+    body.pp .pp-page{width:auto; min-height:0; margin:0; padding:0; box-shadow:none}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation-duration:.001ms!important; animation-delay:0!important; transition-duration:.001ms!important}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5"/><path d="M12 12v9"/></svg></span>
+      <div>
+        <h1>3D 打印成本计算器</h1>
+        <p>材料 · 折旧 · 电费 · 人工 · 后处理 · 失败率 → 单件成本与建议售价</p>
+      </div>
+    </div>
+    <div class="hd-r">
+      <button class="btn" id="btnPreset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16.5 12 21l9-4.5"/></svg>预设管理</button>
+      <button class="btn" id="btnCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>导出 CSV</button>
+      <button class="btn" id="btnPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V4h10v4"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 16h10v4H7z"/></svg>打印 / PDF</button>
+      <button class="btn ghost" id="btnReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3.2-6.9"/><path d="M3 4v5h5"/></svg>重置</button>
+    </div>
+  </header>
+
+  <main class="grid">
+
+    <div class="col-in">
+
+      <section class="card" style="--i:0">
+        <h2><span class="snum">01</span><span class="stitle">打印与材料</span><small id="matPick"></small></h2>
+        <div class="preset-row">
+          <button type="button" class="pickbtn" id="matBtn">选择材料 ▾</button>
+          <select id="matSel" hidden></select>
+          <div class="savewrap">
+            <button class="btn sm" id="matSave">保存 ▾</button>
+            <div class="pop" id="matPop">
+              <button data-act="update">更新当前预设</button>
+              <button data-act="saveas">另存为新预设…</button>
+            </div>
+          </div>
+        </div>
+        <div class="pdetail" id="matDetail">
+          <span class="k">分类</span><span class="catname" id="matCat">未分类</span>
+          <span class="sep">|</span>
+          <span class="k">单价</span><span class="pin"><input data-field="spoolPrice" type="number" min="0" step="any" value="65"><em>¥/kg</em></span>
+          <span class="tag" id="matTag">内置</span>
+          <span class="tail" id="matTail"></span>
+        </div>
+        <div class="fields">
+          <label class="field"><span class="lb">打印数量</span>
+            <div class="in"><input data-field="qty" type="number" min="1" step="1" value="1"><em class="suf">件</em></div></label>
+          <label class="field"><span class="lb">单件打印时长</span>
+            <div class="in"><input data-field="printHours" type="number" min="0" step="0.1" value="3"><em class="suf">小时</em></div></label>
+          <label class="field"><span class="lb">单件耗材用量</span>
+            <div class="in"><input data-field="grams" type="number" min="0" step="1" value="55"><em class="suf">克</em></div></label>
+          <label class="field"><span class="lb">材料损耗率（打废 / 换料 / 余料）</span>
+            <div class="in"><input data-field="waste" type="number" min="0" max="100" step="1" value="5"><em class="suf">%</em></div></label>
+        </div>
+      </section>
+
+      <section class="card" style="--i:1">
+        <h2><span class="snum">02</span><span class="stitle">设备与能耗</span><small id="devPick"></small></h2>
+        <div class="preset-row">
+          <button type="button" class="pickbtn" id="devBtn">选择设备 ▾</button>
+          <select id="devSel" hidden></select>
+          <div class="savewrap">
+            <button class="btn sm" id="devSave">保存 ▾</button>
+            <div class="pop" id="devPop">
+              <button data-act="update">更新当前预设</button>
+              <button data-act="saveas">另存为新预设…</button>
+            </div>
+          </div>
+        </div>
+        <div class="pdetail" id="devDetail">
+          <span class="k">分类</span><span class="catname" id="devCat">未分类</span>
+          <span class="sep">|</span>
+          <span class="k">价格</span><span class="pin"><input data-field="printerPrice" type="number" min="0" step="any" value="2199"><em>¥</em></span>
+          <span class="k">功率</span><span class="pin"><input data-field="power" type="number" min="0" step="any" value="200"><em>W</em></span>
+          <span class="k">寿命</span><span class="pin"><input data-field="lifeHours" type="number" min="1" step="any" value="5000"><em>h</em></span>
+          <span class="k">维护</span><span class="pin"><input data-field="maintPerHour" type="number" min="0" step="0.01" value="0.28"><em>¥/h</em></span>
+          <span class="tag" id="devTag">内置</span>
+          <span class="tail" id="devTail"></span>
+        </div>
+        <div class="fields">
+          <label class="field"><span class="lb">电价（本地参数，不属于预设）</span>
+            <div class="in"><input data-field="elecPrice" type="number" min="0" step="0.05" value="0.6"><em class="suf">¥/度</em></div></label>
+        </div>
+      </section>
+
+      <section class="card" style="--i:2">
+        <h2><span class="snum">03</span><span class="stitle">人工与后处理</span></h2>
+        <div class="fields">
+          <label class="field"><span class="lb">人工时薪</span>
+            <div class="in"><input data-field="laborRate" type="number" min="0" step="1" value="30"><em class="suf">¥/小时</em></div></label>
+          <label class="field"><span class="lb">单件人工耗时（切片 / 取件 / 修整）</span>
+            <div class="in"><input data-field="laborMin" type="number" min="0" step="1" value="5"><em class="suf">分钟</em></div></label>
+          <label class="field"><span class="lb">单件后处理费（砂纸 / 胶水 / 喷漆等）</span>
+            <div class="in"><input data-field="postCost" type="number" min="0" step="0.5" value="1"><em class="suf">¥</em></div></label>
+        </div>
+      </section>
+
+      <section class="card" style="--i:3">
+        <h2><span class="snum">04</span><span class="stitle">风险与定价</span></h2>
+        <div class="fields">
+          <label class="field"><span class="lb">打印失败率</span>
+            <div class="in"><input data-field="failRate" type="number" min="0" max="95" step="1" value="8"><em class="suf">%</em></div></label>
+          <label class="field"><span class="lb">定价加价倍数</span>
+            <div class="in"><input data-field="markup" type="number" min="0" step="0.1" value="2.5"><em class="suf">×成本</em></div></label>
+          <label class="field"><span class="lb">平台佣金 / 支付手续费</span>
+            <div class="in"><input data-field="commission" type="number" min="0" max="95" step="0.5" value="5"><em class="suf">%</em></div></label>
+          <label class="field"><span class="lb">本单运费 / 包装</span>
+            <div class="in"><input data-field="shipping" type="number" min="0" step="1" value="0"><em class="suf">¥</em></div></label>
+        </div>
+      </section>
+
+    </div>
+
+    <aside class="side">
+
+      <section class="card" style="--i:1">
+        <h2><span class="snum">∑</span><span class="stitle">结果概览</span></h2>
+        <div class="hero">
+          <div class="k">单件综合成本</div>
+          <div class="v" id="unitCost">¥0.00</div>
+          <div class="sub">总成本 <b id="totalCost">¥0.00</b> &nbsp;·&nbsp; 总时长 <b id="totalTime">0 h</b></div>
+        </div>
+        <div class="kpis">
+          <div class="kpi"><div class="k">建议售价（含佣金）</div><div class="v" id="sellPrice">¥0.00</div></div>
+          <div class="kpi"><div class="k">单件利润</div><div class="v good" id="unitProfit">¥0.00</div></div>
+          <div class="kpi"><div class="k">订单总收入</div><div class="v" id="totalRevenue">¥0.00</div></div>
+          <div class="kpi"><div class="k">订单总利润</div><div class="v" id="totalProfit">¥0.00</div></div>
+        </div>
+      </section>
+
+      <section class="card" style="--i:2">
+        <h2><span class="snum">05</span><span class="stitle">成本构成</span></h2>
+        <div class="donut-box">
+          <svg viewBox="0 0 42 42" aria-hidden="true">
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#edeff3" stroke-width="5.5"/>
+            <g id="donutSeg" transform="rotate(-90 21 21)"></g>
+            <text id="donutTxt" x="21" y="20.2" text-anchor="middle" font-size="5.6" font-weight="700" fill="#14161a">0</text>
+            <text x="21" y="25.4" text-anchor="middle" font-size="2.9" fill="#8b93a1">总成本</text>
+          </svg>
+          <div class="legend" id="legend"></div>
+        </div>
+      </section>
+
+      <section class="card" style="--i:3">
+        <h2><span class="snum">06</span><span class="stitle">成本明细</span></h2>
+        <table>
+          <thead><tr><th>项目</th><th>金额</th><th class="pct">占比</th></tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+        <details class="tip">
+          <summary>计算口径说明</summary>
+          <p>失败率采用<b>摊销法</b>：为保证交出 N 件合格品，实际需打印 <b>N ÷ (1 − 失败率)</b> 次，
+          失败成本 = 基础成本 × 失败率 ÷ (1 − 失败率)。售价按佣金反推：<b>挂牌价 = 基础售价 ÷ (1 − 佣金率)</b>。</p>
+        </details>
+      </section>
+
+    </aside>
+  </main>
+
+  <footer class="foot">
+    <span>本地运行 · 参数与预设仅保存在浏览器 localStorage</span>
+    <span>预设价格为 2026-10 电商参考价，请按实际购入价修改</span>
+  </footer>
+</div>
+
+<!-- ===== 预设管理 ===== -->
+<div class="modal" id="modal">
+  <div class="modal-bg" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="预设管理">
+    <div class="modal-head">
+      <h3>预设管理</h3>
+      <button class="x" data-close aria-label="关闭">×</button>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-tab="device">设备预设</button>
+      <button class="tab" data-tab="material">材料预设</button>
+      <button class="tab" data-tab="category">分类管理</button>
+    </div>
+    <div class="modal-body">
+      <p class="srcnote" id="srcNote"></p>
+      <div class="pane active" id="pane-device">
+        <div class="plist" id="list-device"></div>
+        <div class="pform" id="form-device"></div>
+        <button class="btn primary" data-add="device">＋ 新建设备预设</button>
+      </div>
+      <div class="pane" id="pane-material">
+        <div class="plist" id="list-material"></div>
+        <div class="pform" id="form-material"></div>
+        <button class="btn primary" data-add="material">＋ 新建材料预设</button>
+      </div>
+      <div class="pane" id="pane-category">
+        <p class="srcnote">分类就是预设里的分组（品牌 / 系列）。<b>点「重命名」即可改名</b>；删除分类后，该分类下的预设会自动归入「未分类」，预设本身不会被删掉。</p>
+        <div class="catblock">
+          <h4>设备分类 <span id="catCount-device"></span></h4>
+          <div class="catlist" id="catlist-device"></div>
+          <div class="catadd">
+            <input id="catInput-device" placeholder="新增设备分类，例如：我的改装机">
+            <button class="btn primary" data-catadd="device">添加</button>
+          </div>
+        </div>
+        <div class="catblock">
+          <h4>材料分类 <span id="catCount-material"></span></h4>
+          <div class="catlist" id="catlist-material"></div>
+          <div class="catadd">
+            <input id="catInput-material" placeholder="新增材料分类，例如：树脂 / 特种耗材">
+            <button class="btn primary" data-catadd="material">添加</button>
+          </div>
+        </div>
+      </div>
+      <div class="bk">
+        <h4>备份与恢复</h4>
+        <p class="bk-note">备份文件包含<strong>全部参数、自定义预设与分类</strong>，可用于换机迁移或防止误删；恢复时会<strong>覆盖</strong>当前数据。</p>
+        <div class="bk-row">
+          <button class="btn primary" id="btnBackup">备份全部数据</button>
+          <label class="btn" style="margin:0">恢复备份<input type="file" id="fileRestore" accept=".json,application/json" hidden></label>
+        </div>
+        <h4>仅分享预设</h4>
+        <p class="bk-note">只导出你自己新建或改过的预设，方便分享给他人合并导入，不影响对方其他数据。</p>
+        <div class="bk-row">
+          <button class="btn" id="btnExpPreset">导出预设</button>
+          <label class="btn" style="margin:0">导入预设<input type="file" id="fileImp" accept=".json,application/json" hidden></label>
+        </div>
+      </div>
+    </div>
+    <div class="modal-foot">
+      <span class="sp"></span>
+      <button class="btn primary" data-close>完成</button>
+    </div>
+  </div>
+</div>
+
+<div class="picker" id="picker">
+  <div class="pk-mask" data-pkclose></div>
+  <div class="pk-sheet" role="dialog" aria-modal="true" aria-label="选择预设">
+    <div class="pk-head">
+      <button type="button" class="pk-back" id="pkBack" aria-label="返回" hidden>←</button>
+      <b id="pkTitle">选择</b>
+      <button type="button" class="pk-x" data-pkclose aria-label="关闭">×</button>
+    </div>
+    <div class="pk-body" id="pkBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+<div class="ov" id="pprev" role="dialog" aria-modal="true" aria-label="打印预览">
+  <div class="ov-bg" data-ppclose></div>
+  <div class="ov-panel">
+    <div class="ov-head">
+      <h3>打印预览</h3>
+      <button class="x" data-ppclose aria-label="关闭">×</button>
+    </div>
+    <div class="ov-body"><div class="pp-page" id="ppPage"></div></div>
+    <div class="ov-foot">
+      <span class="pp-hint" id="ppHint"></span>
+      <button class="btn" data-ppclose>关闭</button>
+      <button class="btn primary" id="ppPrint">打印 / 保存为 PDF</button>
+    </div>
+  </div>
+</div>
+
+<div class="ov" id="exBox" role="dialog" aria-modal="true" aria-label="导出内容">
+  <div class="ov-bg" data-exclose></div>
+  <div class="ov-panel">
+    <div class="ov-head">
+      <h3 id="exTitle">导出内容</h3>
+      <button class="x" data-exclose aria-label="关闭">×</button>
+    </div>
+    <div class="ov-body" style="background:#fff">
+      <div class="ex-wrap">
+        <p class="ex-note" id="exNote"></p>
+        <textarea class="ex-ta" id="exText" readonly spellcheck="false"></textarea>
+      </div>
+    </div>
+    <div class="ov-foot">
+      <button class="btn" data-exclose>关闭</button>
+      <a class="btn" id="exOpen" target="_blank" rel="noopener">在新标签页打开</a>
+      <button class="btn primary" id="exCopy">复制内容</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+(function(){
+  "use strict";
+
+  function $(s, c){ return (c || document).querySelector(s); }
+  function $$(s, c){ return Array.prototype.slice.call((c || document).querySelectorAll(s)); }
+  function esc(s){
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function(m){
+      return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m];
+    });
+  }
+  function num(id){
+    var el = $('[data-field="' + id + '"]');
+    if(!el) return 0;
+    var v = parseFloat(el.value);
+    return isNaN(v) ? 0 : v;
+  }
+  function setField(id, v){
+    var el = $('[data-field="' + id + '"]');
+    if(el) el.value = v;
+  }
+  function money(n){
+    return "¥" + n.toLocaleString("zh-CN", {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function money0(n){ return "¥" + Math.round(n).toLocaleString("zh-CN"); }
+  function clone(o){ var r = {}; for(var k in o) r[k] = o[k]; return r; }
+  var COLORS = ["#5b52ee","#3f8bd6","#12a48b","#d98a12","#d0543a","#8b6bd9","#9aa3b2"];
+  var UNCAT = "未分类";
+
+  /* ================= 内置预设 =================
+     价格为 2026-10 电商参考价（拓竹官方旗舰店 / 大简京东旗舰店 / 三慈天猫·义乌购）。
+     设备寿命与维护为经验估值。所有内置项均可编辑，编辑后自动存为你的自定义版本。 */
+  var BUILTIN = {
+    device: [
+      {id:"b-a1mini", brand:"拓竹 Bambu Lab", name:"拓竹 A1 mini",           price:1499,  life:5000, maint:0.25, power:140},
+      {id:"b-a1",     brand:"拓竹 Bambu Lab", name:"拓竹 A1",                price:2199,  life:5000, maint:0.28, power:200},
+      {id:"b-p1s",    brand:"拓竹 Bambu Lab", name:"拓竹 P1S",               price:2799,  life:6000, maint:0.35, power:280},
+      {id:"b-p2s",    brand:"拓竹 Bambu Lab", name:"拓竹 P2S",               price:3999,  life:6000, maint:0.35, power:280},
+      {id:"b-x1c",    brand:"拓竹 Bambu Lab", name:"拓竹 X1 Carbon（已停产）", price:6999,  life:6000, maint:0.40, power:350},
+      {id:"b-x2d",    brand:"拓竹 Bambu Lab", name:"拓竹 X2D",               price:4599,  life:6000, maint:0.38, power:350},
+      {id:"b-h2s",    brand:"拓竹 Bambu Lab", name:"拓竹 H2S",               price:9999,  life:8000, maint:0.50, power:450},
+      {id:"b-h2d",    brand:"拓竹 Bambu Lab", name:"拓竹 H2D（双喷嘴）",      price:11999, life:8000, maint:0.50, power:480},
+      {id:"g-fdm",    brand:"通用机型",       name:"通用入门 FDM（Ender-3 级）", price:999,  life:5000, maint:0.30, power:200},
+      {id:"g-pro",    brand:"通用机型",       name:"通用 CoreXY 封闭机",       price:3500, life:6000, maint:0.35, power:300},
+      {id:"g-resin",  brand:"通用机型",       name:"通用 LCD 光固化机",        price:1899, life:3000, maint:0.20, power:70}
+    ],
+    material: [
+      {id:"bm-pla-basic",  brand:"拓竹 Bambu Lab", name:"拓竹 PLA Basic",         price:119},
+      {id:"bm-pla-matte",  brand:"拓竹 Bambu Lab", name:"拓竹 PLA Matte 哑光",     price:139},
+      {id:"bm-pla-silk",   brand:"拓竹 Bambu Lab", name:"拓竹 PLA Silk 丝绸",      price:159},
+      {id:"bm-pla-cf",     brand:"拓竹 Bambu Lab", name:"拓竹 PLA-CF 碳纤",        price:259},
+      {id:"bm-petg-b",     brand:"拓竹 Bambu Lab", name:"拓竹 PETG Basic",        price:139},
+      {id:"bm-petg-hf",    brand:"拓竹 Bambu Lab", name:"拓竹 PETG HF 高速",       price:159},
+      {id:"bm-petg-matte", brand:"拓竹 Bambu Lab", name:"拓竹 PETG Matte 哑光",    price:159},
+      {id:"bm-petg-cf",    brand:"拓竹 Bambu Lab", name:"拓竹 PETG-CF 碳纤",       price:259},
+      {id:"bm-abs",        brand:"拓竹 Bambu Lab", name:"拓竹 ABS",               price:139},
+      {id:"bm-asa",        brand:"拓竹 Bambu Lab", name:"拓竹 ASA",               price:199},
+      {id:"bm-pc",         brand:"拓竹 Bambu Lab", name:"拓竹 PC 聚碳酸酯",        price:259},
+      {id:"bm-tpu",        brand:"拓竹 Bambu Lab", name:"拓竹 TPU 95A 柔性",       price:229},
+      {id:"bm-pa6cf",      brand:"拓竹 Bambu Lab", name:"拓竹 PA6-CF 碳纤尼龙",    price:299},
+      {id:"bm-paht",       brand:"拓竹 Bambu Lab", name:"拓竹 PAHT-CF 耐高温",     price:329},
+      {id:"bm-supp",       brand:"拓竹 Bambu Lab", name:"拓竹 水溶支撑 PVA",        price:349},
+      {id:"bm-resin",      brand:"拓竹 Bambu Lab", name:"拓竹 光敏树脂",            price:179},
+
+      {id:"dj-pla",        brand:"大简 DAJIAN", name:"大简 PLA 基础",          price:45},
+      {id:"dj-pla-matte",  brand:"大简 DAJIAN", name:"大简 Matte PLA 哑光",    price:55},
+      {id:"dj-pla-silk",   brand:"大简 DAJIAN", name:"大简 PLA Silk 丝绸",     price:40},
+      {id:"dj-pla-plus",   brand:"大简 DAJIAN", name:"大简 PLA+ 高韧",         price:49},
+      {id:"dj-petg-hf",    brand:"大简 DAJIAN", name:"大简 PETG HF 高速",      price:69},
+      {id:"dj-petg",       brand:"大简 DAJIAN", name:"大简 PETG",             price:59},
+      {id:"dj-abs",        brand:"大简 DAJIAN", name:"大简 ABS",              price:79},
+      {id:"dj-asa",        brand:"大简 DAJIAN", name:"大简 ASA 耐候",          price:99},
+      {id:"dj-tpu",        brand:"大简 DAJIAN", name:"大简 TPU 柔性",          price:119},
+      {id:"dj-cf",         brand:"大简 DAJIAN", name:"大简 PLA-CF 碳纤",       price:159},
+      {id:"dj-pa",         brand:"大简 DAJIAN", name:"大简 尼龙 PA",           price:149},
+      {id:"dj-resin",      brand:"大简 DAJIAN", name:"大简 工业级光敏树脂",     price:139},
+
+      {id:"sc-pla",        brand:"三慈", name:"三慈 PLA 基础",            price:45},
+      {id:"sc-pla-matte",  brand:"三慈", name:"三慈 PLA 哑光 Matte",      price:55},
+      {id:"sc-pla-silk",   brand:"三慈", name:"三慈 PLA 丝绸渐变 / 彩虹",  price:38},
+      {id:"sc-pla-plus",   brand:"三慈", name:"三慈 PLA 温变（热感变色）",  price:55},
+      {id:"sc-pla-glow",   brand:"三慈", name:"三慈 PLA 夜光",            price:59},
+      {id:"sc-petg",       brand:"三慈", name:"三慈 PETG",               price:56},
+      {id:"sc-abs",        brand:"三慈", name:"三慈 ABS",                price:75},
+      {id:"sc-tpu",        brand:"三慈", name:"三慈 TPU 柔性",            price:109},
+
+      {id:"g-pla",    brand:"其他 / 通用", name:"通用 PLA（入门平替）",   price:45},
+      {id:"g-pla2",   brand:"其他 / 通用", name:"通用 PLA（中档）",      price:65},
+      {id:"g-petg",   brand:"其他 / 通用", name:"通用 PETG",            price:69},
+      {id:"g-abs",    brand:"其他 / 通用", name:"通用 ABS",             price:72},
+      {id:"g-asa",    brand:"其他 / 通用", name:"通用 ASA",             price:95},
+      {id:"g-tpu",    brand:"其他 / 通用", name:"通用 TPU 柔性",         price:99},
+      {id:"g-pa",     brand:"其他 / 通用", name:"通用 尼龙 PA",          price:149},
+      {id:"g-pa-cf",  brand:"其他 / 通用", name:"通用 PA-CF 碳纤尼龙",    price:239},
+      {id:"g-pla-cf", brand:"其他 / 通用", name:"通用 PLA-CF 碳纤",      price:159},
+      {id:"g-resin",  brand:"其他 / 通用", name:"通用 光敏树脂 405nm",    price:130},
+      {id:"es-pla",   brand:"其他 / 通用", name:"eSUN 易生 PLA+",        price:89},
+      {id:"es-petg",  brand:"其他 / 通用", name:"eSUN 易生 PETG",        price:99},
+      {id:"sl-pla",   brand:"其他 / 通用", name:"Sunlu 三绿 PLA",        price:79},
+      {id:"pm-pla",   brand:"其他 / 通用", name:"Polymaker PolyLite PLA", price:129}
+    ]
+  };
+
+  var FIELD_MAP = {
+    device:   {price:"printerPrice", life:"lifeHours", maint:"maintPerHour", power:"power"},
+    material: {price:"spoolPrice"}
+  };
+
+  var SCHEMA = {
+    device: {
+      title: "设备",
+      note: "预设价格为电商参考价（2026-10），请按实际购入价修改。内置预设可直接编辑，保存后会成为你的自定义版本，可用「恢复默认」还原。",
+      fields: [
+        {k:"name",  l:"预设名称",     t:"text",   ph:"例如：拓竹 P1S 改装版"},
+        {k:"brand", l:"分类（可下拉选或直接输入新分类）", t:"text", ph:"例如：我的设备"},
+        {k:"price", l:"设备价格 (¥)", t:"number", ph:"2799"},
+        {k:"life",  l:"预计寿命 (h)", t:"number", ph:"6000"},
+        {k:"maint", l:"维护 (¥/h)",   t:"number", ph:"0.35"},
+        {k:"power", l:"平均功率 (W)", t:"number", ph:"280"}
+      ],
+      summary: function(p){
+        return money0(p.price) + " · " + p.power + "W · " + p.life + "h · 维护 ¥" + p.maint + "/h";
+      }
+    },
+    material: {
+      title: "材料",
+      note: "预设价格为电商参考价（拓竹官方旗舰店 / 大简京东旗舰店 / 三慈天猫），请按实际购入价修改。内置预设可直接编辑，保存后会成为你的自定义版本，可用「恢复默认」还原。",
+      fields: [
+        {k:"name",  l:"预设名称",    t:"text",   ph:"例如：三慈 PLA 哑光 黑"},
+        {k:"brand", l:"分类（可下拉选或直接输入新分类）", t:"text", ph:"例如：三慈"},
+        {k:"price", l:"单价 (¥/kg)", t:"number", ph:"55"}
+      ],
+      summary: function(p){ return "¥" + p.price + " / kg"; }
+    }
+  };
+
+  /* ================= 分类（品牌 / 分组） ================= */
+  var CKEY = "dpc_cats_v1";
+  var DEFAULT_CATS = {
+    device:   ["拓竹 Bambu Lab", "通用机型", "我的设备"],
+    material: ["拓竹 Bambu Lab", "大简 DAJIAN", "三慈", "其他 / 通用", "我的材料"]
+  };
+  var cats = {device:[], material:[]};
+  var renamingCat = null;
+  try{
+    var rawC = localStorage.getItem(CKEY);
+    var pc = rawC ? JSON.parse(rawC) : null;
+    if(pc && pc.init && Array.isArray(pc.device) && Array.isArray(pc.material)){
+      cats = {device: pc.device.slice(), material: pc.material.slice()};
+    }else{
+      cats = {device: DEFAULT_CATS.device.slice(), material: DEFAULT_CATS.material.slice()};
+    }
+  }catch(e){
+    cats = {device: DEFAULT_CATS.device.slice(), material: DEFAULT_CATS.material.slice()};
+  }
+  function saveCats(){
+    try{ localStorage.setItem(CKEY, JSON.stringify({init:true, device:cats.device, material:cats.material})); }catch(e){}
+  }
+  saveCats();
+  function ensureCat(type, name){
+    if(name && cats[type].indexOf(name) < 0){ cats[type].push(name); saveCats(); }
+  }
+  function countInCat(type, cat){
+    return allOf(type).filter(function(p){ return (p.brand || UNCAT) === cat; }).length;
+  }
+
+  /* ================= 自定义预设存储 =================
+     custom[type] 里既存"新增的自定义项"，也存"对内置项的修改覆盖"（同 id）。 */
+  var PKEY = "dpc_presets_v3";
+  var custom = {device:[], material:[]};
+  try{
+    var rawP = localStorage.getItem(PKEY);
+    if(rawP){
+      var parsed = JSON.parse(rawP);
+      if(parsed && Array.isArray(parsed.device)){
+        custom = {device: parsed.device, material: Array.isArray(parsed.material) ? parsed.material : []};
+      }
+    }
+  }catch(e){}
+  function saveCustom(){
+    try{ localStorage.setItem(PKEY, JSON.stringify(custom)); }catch(e){}
+  }
+  function isBuiltinId(type, id){
+    for(var i = 0; i < BUILTIN[type].length; i++) if(BUILTIN[type][i].id === id) return true;
+    return false;
+  }
+  function customIndexOf(type, id){
+    for(var i = 0; i < custom[type].length; i++) if(custom[type][i].id === id) return i;
+    return -1;
+  }
+
+  /* 合并：内置 + 自定义（同 id 以自定义覆盖） */
+  function allOf(type){
+    var map = {}, order = [];
+    BUILTIN[type].forEach(function(b){
+      map[b.id] = clone(b); map[b.id].builtin = true; map[b.id].custom = false; order.push(b.id);
+    });
+    custom[type].forEach(function(c){
+      if(map[c.id]){
+        var base = map[c.id];
+        for(var k in c) if(k !== "id") base[k] = c[k];
+        base.builtin = true; base.custom = true; base.overridden = true;
+      }else{
+        var o = clone(c);
+        o.builtin = false; o.custom = true; o.overridden = false;
+        map[c.id] = o; order.push(c.id);
+      }
+    });
+    return order.map(function(id){ return map[id]; });
+  }
+  function findPreset(type, id){
+    if(!id) return null;
+    var list = allOf(type);
+    for(var i = 0; i < list.length; i++) if(list[i].id === id) return list[i];
+    return null;
+  }
+  function newId(type){
+    return "u-" + type + "-" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+  }
+
+  /* ================= 应用 / 状态标记 ================= */
+  var cur = {device:"", material:""};
+
+  function applyPreset(type, id){
+    var p = findPreset(type, id);
+    if(!p) return false;
+    var map = FIELD_MAP[type];
+    for(var k in map) setField(map[k], p[k]);
+    updatePick(type);
+    return true;
+  }
+
+  function isDirty(type){
+    var p = findPreset(type, cur[type]);
+    if(!p) return false;
+    var map = FIELD_MAP[type];
+    for(var k in map){
+      var a = parseFloat($('[data-field="' + map[k] + '"]').value);
+      if(isNaN(a)) a = 0;
+      if(Math.abs(a - parseFloat(p[k])) > 0.001) return true;
+    }
+    return false;
+  }
+
+  function updatePick(type){
+    var el = $(type === "device" ? "#devPick" : "#matPick");
+    var btn = $(type === "device" ? "#devBtn" : "#matBtn");
+    var p = findPreset(type, cur[type]);
+    if(btn) btn.textContent = (p ? p.name : (type === "device" ? "选择设备" : "选择材料")) + " ▾";
+    if(!p){ el.textContent = "自定义参数"; el.classList.remove("dirty"); return; }
+    var d = isDirty(type);
+    el.textContent = p.name + (d ? " · 已修改" : "") + (p.overridden ? " · 自定义版" : "");
+    el.classList.toggle("dirty", d);
+  }
+
+  /* 详情区：只更新文本与标签，不重建 DOM（保住输入焦点） */
+  function renderDetail(type){
+    var p = findPreset(type, cur[type]);
+    var catEl = $(type === "device" ? "#devCat" : "#matCat");
+    var tagEl = $(type === "device" ? "#devTag" : "#matTag");
+    var tailEl = $(type === "device" ? "#devTail" : "#matTail");
+    var d = isDirty(type);
+
+    catEl.textContent = p ? (p.brand || UNCAT) : "自定义参数";
+    tagEl.className = "tag" + (p && p.overridden ? " edit" : p && p.custom ? " mine" : "");
+    tagEl.textContent = p ? (p.overridden ? "内置 · 已改" : p.custom ? "我的" : "内置") : "未关联预设";
+    tagEl.style.display = p ? "" : "none";
+    tailEl.textContent = d ? "参数已改动，点「保存 ▾」写回预设" : "";
+    tailEl.className = "tail" + (d ? " on" : "");
+  }
+
+  /* ================= 下拉 ================= */
+  function buildOptions(type, selected){
+    var list = allOf(type), groups = {}, order = [];
+    cats[type].forEach(function(c){ groups[c] = []; order.push(c); });
+    list.forEach(function(p){
+      var b = p.brand || UNCAT;
+      if(!groups[b]){ groups[b] = []; order.push(b); }
+      groups[b].push(p);
+    });
+    var html = "";
+    order.forEach(function(b){
+      if(!groups[b] || !groups[b].length) return;
+      html += '<optgroup label="' + esc(b) + '">';
+      groups[b].forEach(function(p){
+        var tag = p.custom ? (p.overridden ? " ＊改" : " ★") : "";
+        html += '<option value="' + esc(p.id) + '"' + (p.id === selected ? " selected" : "") + ">" +
+                esc(p.name) + tag + "</option>";
+      });
+      html += "</optgroup>";
+    });
+    html += '<optgroup label="管理"><option value="__manage">管理 / 新增预设…</option></optgroup>';
+    return html;
+  }
+  function renderSelects(){
+    $("#devSel").innerHTML = buildOptions("device", cur.device);
+    $("#matSel").innerHTML = buildOptions("material", cur.material);
+  }
+
+  /* ================= 计算 ================= */
+  function compute(){
+    var qty          = Math.max(1, Math.round(num("qty")));
+    var printHours   = Math.max(0, num("printHours"));
+    var grams        = Math.max(0, num("grams"));
+    var spoolPrice   = Math.max(0, num("spoolPrice"));
+    var waste        = Math.max(0, num("waste")) / 100;
+    var printerPrice = Math.max(0, num("printerPrice"));
+    var lifeHours    = Math.max(1, num("lifeHours"));
+    var maintPerHour = Math.max(0, num("maintPerHour"));
+    var power        = Math.max(0, num("power"));
+    var elecPrice    = Math.max(0, num("elecPrice"));
+    var laborRate    = Math.max(0, num("laborRate"));
+    var laborMin     = Math.max(0, num("laborMin"));
+    var postCost     = Math.max(0, num("postCost"));
+    var failRate     = Math.min(95, Math.max(0, num("failRate"))) / 100;
+    var markup       = Math.max(0, num("markup"));
+    var commission   = Math.min(95, Math.max(0, num("commission"))) / 100;
+    var shipping     = Math.max(0, num("shipping"));
+
+    var material   = grams / 1000 * spoolPrice * qty * (1 + waste);
+    var depPerHour = printerPrice / lifeHours + maintPerHour;
+    var machine    = depPerHour * printHours * qty;
+    var electric   = power / 1000 * printHours * elecPrice * qty;
+    var labor      = laborRate / 60 * laborMin * qty;
+    var post       = postCost * qty;
+
+    var base = material + machine + electric + labor + post;
+    var fail = failRate > 0 ? base * failRate / (1 - failRate) : 0;
+
+    var totalCost = base + fail + shipping;
+    var unitCost  = totalCost / qty;
+
+    var sellUnit = unitCost * markup;
+    var sellNet  = commission > 0 ? sellUnit / (1 - commission) : sellUnit;
+    var revenue  = sellNet * qty;
+    var profit   = revenue - totalCost;
+
+    return {
+      qty: qty, totalTime: printHours * qty,
+      items: [
+        {name:"材料（含损耗）",  value: material, color: COLORS[0]},
+        {name:"设备折旧 + 维护", value: machine,  color: COLORS[1]},
+        {name:"电费",           value: electric, color: COLORS[2]},
+        {name:"人工",           value: labor,    color: COLORS[3]},
+        {name:"后处理",         value: post,     color: COLORS[4]},
+        {name:"失败率摊销",      value: fail,     color: COLORS[5]},
+        {name:"运费 / 包装",     value: shipping, color: COLORS[6]}
+      ],
+      totalCost: totalCost, unitCost: unitCost, sellNet: sellNet, revenue: revenue,
+      profit: profit, unitProfit: profit / qty,
+      margin: revenue > 0 ? profit / revenue * 100 : 0,
+      depPerHour: depPerHour
+    };
+  }
+
+  function renderDonut(items, total){
+    var acc = 0, html = "";
+    items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      var pct = it.value / total * 100;
+      html += '<circle cx="21" cy="21" r="15.9155" fill="none" stroke="' + it.color +
+              '" stroke-width="5.5" stroke-dasharray="' + pct.toFixed(3) + " " + (100 - pct).toFixed(3) +
+              '" stroke-dashoffset="' + (-acc).toFixed(3) + '"/>';
+      acc += pct;
+    });
+    $("#donutSeg").innerHTML = html;
+    animateNum($("#donutTxt"), total, money0);
+  }
+
+  function renderLegend(items, total){
+    var html = "";
+    items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      var pct = total > 0 ? it.value / total * 100 : 0;
+      html += '<div class="lg"><span class="dot" style="background:' + it.color + '"></span>' +
+              '<span class="nm">' + it.name + '</span>' +
+              '<span class="amt">' + money(it.value) + " · " + pct.toFixed(1) + "%</span></div>";
+    });
+    $("#legend").innerHTML = html || '<div class="lg"><span class="nm">暂无数据</span></div>';
+  }
+
+  function renderTable(items, total, r){
+    var html = "";
+    items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      var pct = total > 0 ? it.value / total * 100 : 0;
+      html += "<tr><td>" + it.name + "</td><td>" + money(it.value) +
+              '</td><td class="pct"><span class="bar"><i style="--w:' + pct.toFixed(1) + '%"></i></span>' +
+              pct.toFixed(1) + "%</td></tr>";
+    });
+    html += '<tr class="sum"><td>订单总成本（' + r.qty + " 件）</td><td>" + money(r.totalCost) + '</td><td class="pct">100%</td></tr>';
+    html += '<tr class="sum2"><td>单件成本</td><td>' + money(r.unitCost) + '</td><td class="pct">—</td></tr>';
+    html += "<tr><td>订单收入（含佣金售价）</td><td>" + money(r.revenue) + '</td><td class="pct">—</td></tr>';
+    html += '<tr class="sum2"><td>订单利润 · 毛利率 ' + r.margin.toFixed(1) + "%</td><td>" + money(r.profit) + '</td><td class="pct">—</td></tr>';
+    $("#tbody").innerHTML = html;
+  }
+
+  var last = null, shown = {};
+  var REDUCE = !!(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+  /* 数字滚动：从上一个显示值平滑过渡到新值 */
+  function animateNum(el, to, fmt){
+    if(!el) return;
+    var from = shown[el.id];
+    shown[el.id] = to;
+    if(from === undefined || REDUCE || Math.abs(to - from) < 0.005){ el.textContent = fmt(to); return; }
+    var t0 = performance.now(), dur = 420;
+    cancelAnimationFrame(el._af);
+    el._af = requestAnimationFrame(function step(t){
+      var k = Math.min(1, (t - t0) / dur), e = 1 - Math.pow(1 - k, 3);
+      el.textContent = fmt(from + (to - from) * e);
+      if(k < 1) el._af = requestAnimationFrame(step);
+    });
+  }
+  function update(){
+    var r = compute();
+    last = r;
+    animateNum($("#unitCost"), r.unitCost, money);
+    animateNum($("#totalCost"), r.totalCost, money);
+    animateNum($("#totalTime"), r.totalTime, function(v){ return v.toFixed(1) + " h"; });
+    animateNum($("#sellPrice"), r.sellNet, money);
+    animateNum($("#unitProfit"), r.unitProfit, money);
+    animateNum($("#totalRevenue"), r.revenue, money);
+    var tp = $("#totalProfit");
+    animateNum(tp, r.profit, money);
+    tp.className = "v " + (r.profit >= 0 ? "good" : "bad");
+
+    renderDonut(r.items, r.totalCost);
+    renderLegend(r.items, r.totalCost);
+    renderTable(r.items, r.totalCost, r);
+    updatePick("device");
+    updatePick("material");
+    renderDetail("device");
+    renderDetail("material");
+    saveState();
+  }
+
+  /* ================= 状态持久化 ================= */
+  var SKEY = "dpc_v1";
+  function saveState(){
+    try{
+      var data = {f:{}, p:{device:cur.device, material:cur.material}};
+      $$("[data-field]").forEach(function(el){ data.f[el.dataset.field] = el.value; });
+      localStorage.setItem(SKEY, JSON.stringify(data));
+    }catch(e){}
+  }
+  function loadState(){
+    try{
+      var raw = localStorage.getItem(SKEY);
+      if(!raw) return false;
+      var data = JSON.parse(raw);
+      if(data.f) $$("[data-field]").forEach(function(el){
+        if(data.f[el.dataset.field] !== undefined) el.value = data.f[el.dataset.field];
+      });
+      if(data.p){ cur.device = data.p.device || ""; cur.material = data.p.material || ""; }
+      return true;
+    }catch(e){ return false; }
+  }
+
+  /* ================= 保存菜单 ================= */
+  function closePops(){ $$(".pop").forEach(function(p){ p.classList.remove("open"); }); }
+  function popId(type){ return type === "device" ? "#devPop" : "#matPop"; }
+  function openPop(type){
+    var pid = popId(type);
+    var wasOpen = $(pid).classList.contains("open");
+    closePops();
+    if(wasOpen) return;
+    var pop = $(pid);
+    var p = findPreset(type, cur[type]);
+    var btn = pop.querySelector('[data-act="update"]');
+    btn.textContent = p ? ("更新「" + p.name + "」") : "更新当前预设";
+    btn.disabled = !p;
+    pop.classList.add("open");
+  }
+
+  function updateCurrentPreset(type){
+    var p = findPreset(type, cur[type]);
+    if(!p){ toast("请先选择一个预设"); return false; }
+    var obj = {id:p.id, name:p.name, brand:p.brand};
+    var map = FIELD_MAP[type];
+    for(var k in map) obj[k] = num(map[k]);
+    var idx = customIndexOf(type, p.id);
+    if(idx >= 0) custom[type][idx] = obj; else custom[type].push(obj);
+    saveCustom();
+    renderSelects(); renderLists();
+    applyPreset(type, p.id);
+    update();
+    toast(isBuiltinId(type, p.id) ? "已保存到「" + p.name + "」（自定义版）" : "已更新「" + p.name + "」");
+    return true;
+  }
+
+  /* ================= 预设管理 ================= */
+  var editing = {device:null, material:null};
+
+  function openModal(tab){
+    $("#modal").classList.add("open");
+    switchTab(tab || "device");
+  }
+  function closeModal(){ $("#modal").classList.remove("open"); renamingCat = null; }
+  function switchTab(tab){
+    $$(".tab").forEach(function(t){ t.classList.toggle("active", t.dataset.tab === tab); });
+    $$(".pane").forEach(function(p){ p.classList.toggle("active", p.id === "pane-" + tab); });
+    if(tab === "category"){
+      $("#srcNote").textContent = "";
+      renderCats();
+    }else{
+      renderLists();
+    }
+  }
+
+  function renderLists(){
+    ["device","material"].forEach(function(type){
+      var html = "";
+      allOf(type).forEach(function(p){
+        var badge, acts;
+        if(p.builtin && p.custom){
+          badge = '<span class="badge edit">内置 · 已改</span>';
+          acts = '<button data-edit="' + type + "|" + esc(p.id) + '">编辑</button>' +
+                 '<button data-revert="' + type + "|" + esc(p.id) + '">恢复默认</button>';
+        }else if(p.builtin){
+          badge = '<span class="badge">内置</span>';
+          acts = '<button data-edit="' + type + "|" + esc(p.id) + '">编辑</button>' +
+                 '<button data-copy="' + type + "|" + esc(p.id) + '">复制为我的</button>';
+        }else{
+          badge = '<span class="badge mine">我的</span>';
+          acts = '<button data-edit="' + type + "|" + esc(p.id) + '">编辑</button>' +
+                 '<button class="del" data-del="' + type + "|" + esc(p.id) + '">删除</button>';
+        }
+        html += '<div class="pitem' + (p.custom ? " mine" : "") + '">' +
+                  '<div class="pinfo"><b>' + esc(p.name) + "</b><span>" +
+                    esc(p.brand || UNCAT) + " · " + SCHEMA[type].summary(p) + "</span></div>" +
+                  badge + '<div class="pact">' + acts + "</div>" +
+                "</div>";
+      });
+      $("#list-" + type).innerHTML = html;
+    });
+    var activeTab = $(".tab.active");
+    var tk = activeTab ? activeTab.dataset.tab : "device";
+    $("#srcNote").textContent = SCHEMA[tk] ? SCHEMA[tk].note : "";
+  }
+
+  /* ---- 分类管理 ---- */
+  function renderCats(){
+    ["device","material"].forEach(function(type){
+      $("#catCount-" + type).textContent = cats[type].length + " 个分类";
+      var html = "";
+      cats[type].forEach(function(c){
+        var isRenaming = renamingCat && renamingCat.type === type && renamingCat.name === c;
+        if(isRenaming){
+          html += '<div class="catitem">' +
+                    '<div class="catrename"><input id="catRenameInput" value="' + esc(c) + '"></div>' +
+                    '<div class="pact">' +
+                      '<button data-catrenameok="' + type + '">确定</button>' +
+                      '<button data-catrenamecancel="' + type + '">取消</button>' +
+                    '</div></div>';
+        }else{
+          html += '<div class="catitem" data-catrename="' + type + "|" + esc(c) + '" title="点击可改名">' +
+                    '<span class="cn">' + esc(c) + '</span>' +
+                    '<span class="cc">' + countInCat(type, c) + ' 个预设</span>' +
+                    '<div class="pact">' +
+                      '<button data-catrename="' + type + "|" + esc(c) + '">重命名</button>' +
+                      '<button class="del" data-catdel="' + type + "|" + esc(c) + '">删除</button>' +
+                    '</div></div>';
+        }
+      });
+      $("#catlist-" + type).innerHTML = html ||
+        '<div class="catitem"><span class="cn" style="color:#9aa1a9">暂无分类，请在下方添加</span></div>';
+    });
+    if(renamingCat){
+      var ri = $("#catRenameInput");
+      if(ri){ ri.focus(); if(ri.select) ri.select(); }
+    }
+  }
+
+  function reassignCat(type, from, to){
+    allOf(type).forEach(function(p){
+      if((p.brand || UNCAT) !== from) return;
+      if(p.builtin){
+        var copy = {id:p.id, name:p.name, brand:to};
+        if(type === "device"){ copy.price = p.price; copy.life = p.life; copy.maint = p.maint; copy.power = p.power; }
+        else copy.price = p.price;
+        var i = customIndexOf(type, p.id);
+        if(i >= 0) custom[type][i] = copy; else custom[type].push(copy);
+      }else{
+        var j = customIndexOf(type, p.id);
+        if(j >= 0) custom[type][j].brand = to;
+      }
+    });
+    saveCustom();
+  }
+
+  function addCat(type, name){
+    name = (name || "").trim();
+    if(!name){ toast("请输入分类名称"); return; }
+    if(cats[type].indexOf(name) >= 0){ toast("该分类已存在"); return; }
+    cats[type].push(name);
+    saveCats();
+    $("#catInput-" + type).value = "";
+    renderCats(); renderSelects();
+    toast("已添加分类：" + name);
+  }
+
+  function startRenameCat(type, name){ renamingCat = {type:type, name:name}; renderCats(); }
+
+  function confirmRenameCat(type, newName){
+    if(!renamingCat) return;
+    var oldName = renamingCat.name;
+    newName = (newName || "").trim();
+    if(!newName){ toast("请输入分类名称"); return; }
+    if(newName === oldName){ renamingCat = null; renderCats(); return; }
+    if(cats[type].indexOf(newName) >= 0){ toast("该分类已存在"); return; }
+    var i = cats[type].indexOf(oldName);
+    if(i >= 0) cats[type][i] = newName;
+    renamingCat = null;
+    saveCats();
+    reassignCat(type, oldName, newName);
+    renderCats(); renderSelects(); renderLists(); update();
+    toast("已重命名为「" + newName + "」");
+  }
+
+  function delCat(type, name){
+    var cnt = countInCat(type, name);
+    var msg = cnt > 0
+      ? "删除分类「" + name + "」？\n该分类下的 " + cnt + " 个预设会归入「" + UNCAT + "」，预设本身不会被删除。"
+      : "删除空分类「" + name + "」？";
+    if(!window.confirm(msg)) return;
+    cats[type] = cats[type].filter(function(c){ return c !== name; });
+    if(cnt > 0){
+      ensureCat(type, UNCAT);
+      reassignCat(type, name, UNCAT);
+    }
+    saveCats();
+    renderCats(); renderSelects(); renderLists(); update();
+    toast("已删除分类「" + name + "」");
+  }
+
+  /* ---- 预设表单 ---- */
+  function blankForm(type, data){
+    var schema = SCHEMA[type];
+    var dl = '<datalist id="dl-' + type + '">' +
+             cats[type].map(function(c){ return '<option value="' + esc(c) + '">'; }).join("") +
+             "</datalist>";
+    var fields = schema.fields.map(function(f){
+      var v = data && data[f.k] !== undefined ? data[f.k] : "";
+      var extra = f.k === "brand" ? ' list="dl-' + type + '"' : "";
+      return '<label class="field"><span class="lb">' + f.l + '</span><div class="in">' +
+             '<input data-pf="' + f.k + '" type="' + f.t + '" value="' + esc(v) + '"' + extra +
+             ' placeholder="' + esc(f.ph || "") + '"></div></label>';
+    }).join("");
+    var isEdit = !!(data && data.id);
+    var builtinEdit = isEdit && isBuiltinId(type, data.id);
+    var title = isEdit ? "编辑预设" : "新建" + schema.title + "预设";
+    var hint = builtinEdit
+      ? "这是内置预设。保存后会成为你的自定义版本（可用「恢复默认」还原），不会影响原始数据。"
+      : (isEdit ? "修改后点击保存即可生效。" : "填写后点保存，会出现在下拉列表里，随时可再编辑。分类可下拉选，也可直接输入新的分类名。");
+    return "<h4>" + title + '</h4><p class="hint">' + hint + "</p>" + dl +
+           '<div class="fields">' + fields + "</div>" +
+           '<div class="pform-act">' +
+             '<button class="btn primary" data-save="' + type + '">保存</button>' +
+             '<button class="btn ghost" data-cancel="' + type + '">取消</button>' +
+           "</div>";
+  }
+
+  function showForm(type, data){
+    var form = $("#form-" + type);
+    form.innerHTML = blankForm(type, data);
+    form.classList.add("open");
+    editing[type] = data && data.id ? data.id : null;
+    var first = form.querySelector("input");
+    if(first){ first.focus(); if(first.select) first.select(); }
+  }
+  function hideForm(type){
+    var form = $("#form-" + type);
+    form.classList.remove("open");
+    form.innerHTML = "";
+    editing[type] = null;
+  }
+
+  function readForm(type){
+    var form = $("#form-" + type);
+    var schema = SCHEMA[type];
+    var obj = {}, ok = true;
+    schema.fields.forEach(function(f){
+      var el = form.querySelector('[data-pf="' + f.k + '"]');
+      var v = el ? el.value.trim() : "";
+      if(f.t === "number"){
+        var n = parseFloat(v);
+        obj[f.k] = isNaN(n) ? 0 : n;
+      }else{
+        obj[f.k] = v;
+      }
+      if(f.k === "name" && !v) ok = false;
+    });
+    if(!ok){ toast("请填写预设名称"); return null; }
+    if(!obj.brand) obj.brand = (type === "device" ? "我的设备" : "我的材料");
+    return obj;
+  }
+
+  function saveForm(type){
+    var obj = readForm(type);
+    if(!obj) return;
+    ensureCat(type, obj.brand);
+    var wasBuiltin = false, wasNew = !editing[type];
+    if(editing[type]){
+      var id = editing[type];
+      wasBuiltin = isBuiltinId(type, id);
+      obj.id = id;
+      var idx = customIndexOf(type, id);
+      if(idx >= 0) custom[type][idx] = obj; else custom[type].push(obj);
+    }else{
+      obj.id = newId(type);
+      custom[type].push(obj);
+    }
+    saveCustom();
+    hideForm(type);
+    cur[type] = obj.id;
+    renderLists(); renderSelects();
+    applyPreset(type, obj.id);
+    update();
+    toast(wasBuiltin ? "已保存为你的自定义版本" : (wasNew ? "预设已保存" : "预设已更新"));
+  }
+
+  function revertPreset(type, id){
+    var p = findPreset(type, id);
+    if(!p) return;
+    if(!window.confirm("把「" + p.name + "」恢复为内置默认值？")) return;
+    custom[type] = custom[type].filter(function(x){ return x.id !== id; });
+    saveCustom();
+    renderLists(); renderSelects();
+    if(cur[type] === id) applyPreset(type, id);
+    update();
+    toast("已恢复默认");
+  }
+
+  function deletePreset(type, id){
+    var p = findPreset(type, id);
+    if(!p) return;
+    if(!window.confirm("删除预设「" + p.name + "」？此操作不可撤销。")) return;
+    custom[type] = custom[type].filter(function(x){ return x.id !== id; });
+    saveCustom();
+    if(cur[type] === id) cur[type] = "";
+    renderLists(); renderSelects();
+    update();
+    toast("已删除");
+  }
+
+  function copyToMine(type, id){
+    var p = findPreset(type, id);
+    if(!p) return;
+    var o = {};
+    for(var k in p) if(k !== "custom" && k !== "builtin" && k !== "overridden" && k !== "id") o[k] = p[k];
+    o.id = newId(type);
+    o.name = p.name + "（副本）";
+    custom[type].push(o);
+    ensureCat(type, o.brand);
+    saveCustom();
+    cur[type] = o.id;
+    renderLists(); renderSelects();
+    applyPreset(type, o.id);
+    update();
+    toast("已复制为我的预设");
+  }
+
+  function saveCurrentAs(type){
+    if(type === "device"){
+      showForm(type, {
+        name:"", brand:"我的设备",
+        price:num("printerPrice"), life:num("lifeHours"),
+        maint:num("maintPerHour"), power:num("power")
+      });
+    }else{
+      showForm(type, {name:"", brand:"我的材料", price:num("spoolPrice")});
+    }
+    openModal(type);
+  }
+
+  /* ================= 导出 ================= */
+  function fieldLabel(el){
+    var box = el.closest(".field");
+    if(box){
+      var lb = box.querySelector(".lb");
+      if(lb) return lb.textContent.trim();
+    }
+    var pin = el.closest(".pin");
+    if(pin && pin.previousElementSibling) return pin.previousElementSibling.textContent.trim();
+    return el.dataset.field;
+  }
+
+  function exportCsv(){
+    var r = last || compute();
+    var devP = findPreset("device", cur.device);
+    var matP = findPreset("material", cur.material);
+    var rows = [["3D 打印成本计算表"], []];
+    rows.push(["设备预设", devP ? devP.name + "（" + (devP.brand || UNCAT) + "）" : "自定义"]);
+    rows.push(["材料预设", matP ? matP.name + "（" + (matP.brand || UNCAT) + "）" : "自定义"]);
+    rows.push([]);
+    rows.push(["参数", "值"]);
+    $$("[data-field]").forEach(function(el){
+      var v = el.value;
+      if(v === "" || v == null) return;
+      rows.push([fieldLabel(el), v]);
+    });
+    rows.push([]);
+    rows.push(["成本项目", "金额(¥)", "占比(%)"]);
+    r.items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      rows.push([it.name, it.value.toFixed(2), (it.value / r.totalCost * 100).toFixed(2)]);
+    });
+    rows.push(["订单总成本", r.totalCost.toFixed(2), "100.00"]);
+    rows.push(["单件成本", r.unitCost.toFixed(2), ""]);
+    rows.push(["建议售价(含佣金)", r.sellNet.toFixed(2), ""]);
+    rows.push(["单件利润", r.unitProfit.toFixed(2), ""]);
+    rows.push(["订单总收入", r.revenue.toFixed(2), ""]);
+    rows.push(["订单总利润", r.profit.toFixed(2), ""]);
+    rows.push(["毛利率(%)", r.margin.toFixed(2), ""]);
+
+    var csv = rows.map(function(row){
+      return row.map(function(c){
+        var s = String(c == null ? "" : c);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(",");
+    }).join("\r\n");
+
+    download(new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8;"}), "3D打印成本_" + stamp() + ".csv", "\ufeff" + csv);
+    toast("已导出 CSV");
+  }
+
+  function exportPresets(){
+    if(!custom.device.length && !custom.material.length){ toast("还没有自定义预设"); return; }
+    var data = {
+      type:"dpc-presets", version:4,
+      device:custom.device, material:custom.material,
+      cats:{init:true, device:cats.device, material:cats.material}
+    };
+    var json = JSON.stringify(data, null, 2);
+    download(new Blob([json], {type:"application/json"}),
+             "3D打印预设_" + stamp() + ".json", json);
+    toast("已导出 " + (custom.device.length + custom.material.length) + " 条自定义预设");
+  }
+
+  function importPresets(file){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var d;
+      try{ d = JSON.parse(reader.result); }
+      catch(e){ toast("导入失败：文件格式不正确"); return; }
+      importPresetsData(d);
+    };
+    reader.readAsText(file);
+  }
+
+  /* 合并导入「仅预设」数据（不覆盖其它数据） */
+  function importPresetsData(d){
+    try{
+      var n = 0;
+      ["device","material"].forEach(function(type){
+        if(!Array.isArray(d[type])) return;
+        d[type].forEach(function(p){
+          if(!p || !p.name) return;
+          var o = {};
+          for(var k in p) if(k !== "custom" && k !== "builtin" && k !== "overridden") o[k] = p[k];
+          if(!o.id || !isBuiltinId(type, o.id)) o.id = newId(type);
+          var idx = customIndexOf(type, o.id);
+          if(idx >= 0) custom[type][idx] = o; else custom[type].push(o);
+          ensureCat(type, o.brand);
+          n++;
+        });
+      });
+      saveCustom(); saveCats(); renderLists(); renderSelects(); update();
+      toast(n ? "已导入 " + n + " 条预设" : "文件中没有可导入的预设");
+    }catch(e){ toast("导入失败：文件格式不正确"); }
+  }
+
+  /* ================= 备份 / 恢复 ================= */
+  var BK_TYPE = "dpc-backup", BK_VERSION = 1;
+
+  function lsGet(key){
+    try{ var raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; }catch(e){ return null; }
+  }
+
+  function buildBackup(){
+    var params = lsGet(SKEY), presets = lsGet(PKEY), catData = lsGet(CKEY);
+    var cnt = function(o, k){ return o && Array.isArray(o[k]) ? o[k].length : 0; };
+    return {
+      type: BK_TYPE, version: BK_VERSION,
+      app: "3D 打印成本计算器",
+      exportedAt: new Date().toISOString(),
+      counts: {
+        presets: cnt(presets, "device") + cnt(presets, "material"),
+        cats: cnt(catData, "device") + cnt(catData, "material")
+      },
+      data: { params: params, presets: presets, cats: catData }
+    };
+  }
+
+  function backupAll(){
+    saveState();                       /* 确保当前参数先落盘 */
+    var b = buildBackup();
+    var json = JSON.stringify(b, null, 2);
+    download(new Blob([json], {type:"application/json"}),
+             "3D打印成本_备份_" + stamp() + ".json", json);
+    toast("已生成备份：参数 / 预设 / 分类");
+  }
+
+  function restoreBackup(file){
+    var reader = new FileReader();
+    reader.onload = function(){
+      var d;
+      try{ d = JSON.parse(reader.result); }
+      catch(e){ toast("恢复失败：不是有效的 JSON 文件"); return; }
+
+      /* 兼容「仅预设」分享文件 → 走合并导入 */
+      if(d && d.type !== BK_TYPE && (Array.isArray(d.device) || Array.isArray(d.material))){
+        if(!window.confirm("这是「仅预设」文件，将合并导入自定义预设，不会覆盖参数与分类。\n\n确定继续？")) return;
+        importPresetsData(d);
+        return;
+      }
+      if(!d || d.type !== BK_TYPE || !d.data){
+        toast("恢复失败：不是本应用的备份文件"); return;
+      }
+
+      var t = d.exportedAt ? new Date(d.exportedAt) : null;
+      var when = (t && !isNaN(t.getTime())) ? t.toLocaleString() : "未知时间";
+      var msg = "恢复备份会【覆盖】当前的参数、自定义预设与分类，且无法撤销。\n\n" +
+                "备份时间：" + when + "\n" +
+                "包含：" + (d.counts ? (d.counts.presets + " 条自定义预设 / " + d.counts.cats + " 个分类") : "—") +
+                "\n\n确定继续？";
+      if(!window.confirm(msg)) return;
+
+      var pairs = [[SKEY, d.data.params], [PKEY, d.data.presets], [CKEY, d.data.cats]];
+      var wrote = 0;
+      for(var i = 0; i < pairs.length; i++){
+        var key = pairs[i][0], val = pairs[i][1];
+        if(val === undefined || val === null) continue;
+        try{ localStorage.setItem(key, JSON.stringify(val)); wrote++; }
+        catch(e){ toast("写入失败：浏览器存储空间可能不足"); return; }
+      }
+      toast("已恢复 " + wrote + " 项数据，正在重新载入…");
+      setTimeout(function(){ location.reload(); }, 600);
+    };
+    reader.readAsText(file);
+  }
+
+  /* 是否运行在嵌入式预览（沙箱 iframe）中——此类环境通常会静默拦截下载与系统打印 */
+  function isEmbedded(){ try { return window.self !== window.top; } catch(e){ return true; } }
+
+  /* 是否运行在 Android WebView 中（UA 带 wv 标记）——WebView 默认不处理 <a download> */
+  function isAndroidWebView(){
+    try{ return /Android/i.test(navigator.userAgent) && /\bwv\b/i.test(navigator.userAgent); }
+    catch(e){ return false; }
+  }
+
+  /* 原生能力桥（Android 壳注入 window.AndroidBridge）：
+     saveText 写文件 / printPage 拉起系统打印（可另存 PDF） */
+  function androidBridge(){
+    try{
+      var b = window.AndroidBridge;
+      if(b && (typeof b.saveText === "function" || typeof b.printPage === "function")) return b;
+    }catch(e){}
+    return null;
+  }
+
+  /* 触发下载。
+     优先级：Android 原生桥（写入系统「下载」目录）→ <a download>。
+     若两者都不可靠（嵌入式预览 / WebView 无桥），再弹兜底面板保证内容一定拿得到。 */
+  function download(blob, filename, text){
+    var bridge = androidBridge();
+    if(bridge && text != null){
+      try{
+        bridge.saveText(filename, (blob && blob.type) || "application/octet-stream", text);
+        return;                       /* 原生侧已弹 Toast 提示保存路径 */
+      }catch(e){ /* 桥异常 → 落回通用路径 */ }
+    }
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url; a.download = filename; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function(){ URL.revokeObjectURL(url); }, 4000);
+    if(isEmbedded() || (isAndroidWebView() && !bridge)) showExport(filename, text != null ? text : "", url);
+  }
+  function stamp(){
+    var d = new Date();
+    return d.getFullYear() + String(d.getMonth()+1).padStart(2,"0") + String(d.getDate()).padStart(2,"0") +
+           "_" + String(d.getHours()).padStart(2,"0") + String(d.getMinutes()).padStart(2,"0");
+  }
+
+  function toast(msg){
+    var t = $("#toast");
+    t.textContent = msg;
+    t.classList.add("show");
+    clearTimeout(t._t);
+    t._t = setTimeout(function(){ t.classList.remove("show"); }, 1900);
+  }
+
+  /* ================= 两级选择器（品牌 -> 型号） ================= */
+  var pk = {type:null, brand:null};
+  function pickerBrands(type){
+    var groups = {}, order = [];
+    cats[type].forEach(function(c){ if(groups[c] === undefined){ groups[c] = 0; order.push(c); } });
+    allOf(type).forEach(function(p){
+      var b = p.brand || UNCAT;
+      if(groups[b] === undefined){ groups[b] = 0; order.push(b); }
+      groups[b]++;
+    });
+    return order.filter(function(b){ return groups[b] > 0; })
+                .map(function(b){ return {brand:b, count:groups[b]}; });
+  }
+  function renderPicker(){
+    var type = pk.type, body = $("#pkBody"), title = $("#pkTitle"), back = $("#pkBack");
+    if(pk.brand === null){
+      back.hidden = true;
+      title.textContent = type === "device" ? "选择设备" : "选择材料";
+      var bs = pickerBrands(type), h = "";
+      bs.forEach(function(o){
+        h += '<div class="pkbrand" data-pkbrand="' + esc(o.brand) + '">' +
+               '<span class="pn">' + esc(o.brand) + '</span>' +
+               '<span class="pc">' + o.count + ' 个型号</span>' +
+               '<span class="pa">›</span></div>';
+      });
+      h += '<div class="pkbrand" data-pkmanage="1"><span class="pn">管理 / 新增预设…</span><span class="pa">›</span></div>';
+      body.innerHTML = h;
+    }else{
+      back.hidden = false;
+      title.textContent = pk.brand;
+      var list = allOf(type).filter(function(p){ return (p.brand || UNCAT) === pk.brand; });
+      var h2 = "";
+      list.forEach(function(p){
+        var tag = p.overridden ? '<span class="badge edit">内置 · 已改</span>'
+                : p.custom ? '<span class="badge mine">我的</span>'
+                : '<span class="badge">内置</span>';
+        var sel = cur[type] === p.id;
+        h2 += '<div class="pkmodel' + (sel ? " sel" : "") + '" data-pkmodel="' + esc(p.id) + '">' +
+                '<div class="mi"><b>' + esc(p.name) + '</b><span>' + SCHEMA[type].summary(p) + '</span></div>' +
+                tag + (sel ? '<span class="mk">✓</span>' : "") +
+              '</div>';
+      });
+      if(!list.length) h2 += '<p class="srcnote">该分类下暂无预设。</p>';
+      body.innerHTML = h2;
+    }
+  }
+  function openPicker(type){ pk.type = type; pk.brand = null; renderPicker(); $("#picker").classList.add("open"); }
+  function closePicker(){ $("#picker").classList.remove("open"); pk.type = null; pk.brand = null; }
+  function choosePreset(type, id){
+    var sel = $(type === "device" ? "#devSel" : "#matSel");
+    sel.value = id;
+    sel.dispatchEvent(new Event("change", { bubbles:true }));
+    closePicker();
+  }
+  $("#picker").addEventListener("click", function(e){
+    var t = e.target, g = function(n){ return t.closest ? t.closest("[" + n + "]") : null; };
+    if(g("data-pkclose")){ closePicker(); return; }
+    var br = g("data-pkbrand");
+    if(br){ pk.brand = br.getAttribute("data-pkbrand"); renderPicker(); return; }
+    if(g("data-pkmanage")){ var ty = pk.type; closePicker(); openModal(ty); return; }
+    var md = g("data-pkmodel");
+    if(md){ choosePreset(pk.type, md.getAttribute("data-pkmodel")); return; }
+  });
+  $("#pkBack").addEventListener("click", function(){ pk.brand = null; renderPicker(); });
+  $("#matBtn").addEventListener("click", function(e){ e.stopPropagation(); openPicker("material"); });
+  $("#devBtn").addEventListener("click", function(e){ e.stopPropagation(); openPicker("device"); });
+
+  /* ================= 事件 ================= */
+  $$("[data-field]").forEach(function(el){ el.addEventListener("input", update); });
+
+  $("#devSel").addEventListener("change", function(){
+    if(this.value === "__manage"){ this.value = cur.device; openModal("device"); return; }
+    cur.device = this.value;
+    if(applyPreset("device", cur.device)){ update(); toast("已载入设备：" + findPreset("device", cur.device).name); }
+  });
+  $("#matSel").addEventListener("change", function(){
+    if(this.value === "__manage"){ this.value = cur.material; openModal("material"); return; }
+    cur.material = this.value;
+    if(applyPreset("material", cur.material)){ update(); toast("已载入材料：" + findPreset("material", cur.material).name); }
+  });
+
+  $("#devSave").addEventListener("click", function(e){ e.stopPropagation(); openPop("device"); });
+  $("#matSave").addEventListener("click", function(e){ e.stopPropagation(); openPop("material"); });
+
+  $$(".pop button").forEach(function(b){
+    b.addEventListener("click", function(e){
+      e.stopPropagation();
+      var type = this.closest(".pop").id === "devPop" ? "device" : "material";
+      var act = this.dataset.act;
+      closePops();
+      if(act === "update") updateCurrentPreset(type);
+      else if(act === "saveas") saveCurrentAs(type);
+    });
+  });
+
+  document.addEventListener("click", function(){ closePops(); });
+
+  $("#btnPreset").addEventListener("click", function(){ openModal("device"); });
+  $$("[data-close]").forEach(function(el){ el.addEventListener("click", closeModal); });
+  $$(".tab").forEach(function(t){ t.addEventListener("click", function(){ switchTab(this.dataset.tab); }); });
+  $$("[data-add]").forEach(function(b){
+    b.addEventListener("click", function(){ showForm(this.dataset.add, null); });
+  });
+
+  $("#modal").addEventListener("click", function(e){
+    var t = e.target, g = function(n){ return t.getAttribute ? t.getAttribute(n) : null; };
+    var edit = g("data-edit"), del = g("data-del"), cp = g("data-copy"),
+        rv = g("data-revert"), sv = g("data-save"), cn = g("data-cancel"),
+        ca = g("data-catadd"), cr = g("data-catrename"), cd = g("data-catdel"),
+        crk = g("data-catrenameok"), crc = g("data-catrenamecancel");
+    if(edit){ var a = edit.split("|"); showForm(a[0], findPreset(a[0], a[1])); return; }
+    if(del){ var b = del.split("|"); deletePreset(b[0], b[1]); return; }
+    if(cp){ var c = cp.split("|"); copyToMine(c[0], c[1]); return; }
+    if(rv){ var r2 = rv.split("|"); revertPreset(r2[0], r2[1]); return; }
+    if(sv){ saveForm(sv); return; }
+    if(cn){ hideForm(cn); return; }
+    if(ca){ addCat(ca, $("#catInput-" + ca).value); return; }
+    if(cr){ var c2 = cr.split("|"); startRenameCat(c2[0], c2.slice(1).join("|")); return; }
+    if(crk){ confirmRenameCat(crk, $("#catRenameInput") ? $("#catRenameInput").value : ""); return; }
+    if(crc){ renamingCat = null; renderCats(); return; }
+    if(cd){ var c3 = cd.split("|"); delCat(c3[0], c3.slice(1).join("|")); return; }
+    /* 兜底：点击分类行任意位置 -> 改名 */
+    var row = t.closest ? t.closest(".catitem[data-catrename]") : null;
+    if(row){
+      var v = row.getAttribute("data-catrename").split("|");
+      startRenameCat(v[0], v.slice(1).join("|"));
+    }
+  });
+
+  $("#modal").addEventListener("keydown", function(e){
+    if(e.key !== "Enter") return;
+    var t = e.target;
+    if(!t || !t.id) return;
+    if(t.id.indexOf("catInput-") === 0){
+      e.preventDefault();
+      addCat(t.id.replace("catInput-", ""), t.value);
+    }else if(t.id === "catRenameInput" && renamingCat){
+      e.preventDefault();
+      confirmRenameCat(renamingCat.type, t.value);
+    }
+  });
+
+  document.addEventListener("keydown", function(e){
+    if(e.key === "Escape"){
+      if($("#pprev").classList.contains("open")){ closePrint(); return; }
+      if($("#exBox").classList.contains("open")){ closeOv("exBox"); return; }
+      if($("#picker").classList.contains("open")){ closePicker(); return; }
+      if($("#modal").classList.contains("open")) closeModal();
+      closePops();
+    }
+  });
+
+  $("#btnBackup").addEventListener("click", backupAll);
+  $("#fileRestore").addEventListener("change", function(){
+    if(this.files && this.files[0]) restoreBackup(this.files[0]);
+    this.value = "";
+  });
+  $("#btnExpPreset").addEventListener("click", exportPresets);
+  $("#fileImp").addEventListener("change", function(){
+    if(this.files && this.files[0]) importPresets(this.files[0]);
+    this.value = "";
+  });
+
+  $("#btnCsv").addEventListener("click", exportCsv);
+  $("#btnPrint").addEventListener("click", openPrint);
+  $("#btnReset").addEventListener("click", function(){
+    if(!window.confirm("恢复所有参数为默认值？（自定义预设与分类会保留）")) return;
+    try{ localStorage.removeItem(SKEY); }catch(e){}
+    location.reload();
+  });
+
+  /* ================= 打印预览 / 导出兜底 ================= */
+  var exText = "";
+
+  function pad2(n){ return String(n).padStart(2, "0"); }
+  function closeOv(id){ var el = $("#" + id); if(el) el.classList.remove("open"); }
+
+  function showExport(filename, text, url){
+    exText = text;
+    $("#exTitle").textContent = "导出：" + filename;
+    $("#exText").value = text;
+    var op = $("#exOpen");
+    op.href = url; op.setAttribute("download", filename);
+    $("#exNote").innerHTML = "已尝试触发下载。当前环境（嵌入式预览 / 内置浏览器）可能静默拦截自动下载——" +
+      "若没有出现保存对话框，可在此<b>复制内容</b>后自行粘贴保存，或点<b>在新标签页打开</b>。" +
+      "把本 HTML 文件用外部浏览器直接打开时，下载会正常进行。";
+    $("#exBox").classList.add("open");
+  }
+
+  /* 用当前参数与结果生成 A4 预览页（与打印输出一致） */
+  function renderPrintPage(){
+    var r = last || compute();
+    var devP = findPreset("device", cur.device);
+    var matP = findPreset("material", cur.material);
+    var now = new Date();
+    var y = function(v){ return "¥" + Number(v).toFixed(2); };
+    var h = "";
+    h += '<h2>3D 打印成本报价单</h2>';
+    h += '<p class="pp-meta">生成时间 ' + now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()) +
+         ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) +
+         '　·　设备：' + esc(devP ? devP.name : "自定义") +
+         '　·　材料：' + esc(matP ? matP.name : "自定义") + '</p>';
+
+    h += '<h3>输入参数</h3><table class="kv">';
+    $$("[data-field]").forEach(function(el){
+      var v = el.value;
+      if(v === "" || v == null) return;
+      h += '<tr><td>' + esc(fieldLabel(el)) + '</td><td class="n">' + esc(v) + '</td></tr>';
+    });
+    h += '</table>';
+
+    h += '<h3>成本构成</h3><table><thead><tr><th>项目</th><th class="n">金额</th><th class="n">占比</th></tr></thead><tbody>';
+    r.items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      h += '<tr><td>' + esc(it.name) + '</td><td class="n">' + y(it.value) + '</td><td class="n">' +
+           (it.value / r.totalCost * 100).toFixed(2) + '%</td></tr>';
+    });
+    h += '<tr><td><b>订单总成本</b></td><td class="n"><b>' + y(r.totalCost) + '</b></td><td class="n">100.00%</td></tr>';
+    h += '</tbody></table>';
+
+    h += '<h3>结果汇总</h3><table class="sum"><tbody>';
+    h += '<tr class="big"><td>单件综合成本</td><td class="n">' + y(r.unitCost) + '</td></tr>';
+    h += '<tr class="big"><td>建议售价（含佣金）</td><td class="n">' + y(r.sellNet) + '</td></tr>';
+    h += '<tr><td>单件利润</td><td class="n">' + y(r.unitProfit) + '</td></tr>';
+    h += '<tr><td>订单总收入</td><td class="n">' + y(r.revenue) + '</td></tr>';
+    h += '<tr><td>订单总利润</td><td class="n">' + y(r.profit) + '</td></tr>';
+    h += '<tr><td>毛利率</td><td class="n">' + Number(r.margin).toFixed(2) + '%</td></tr>';
+    h += '</tbody></table>';
+
+    h += '<p class="pp-foot">本报价由「3D 打印成本计算器」本地生成，参数与预设仅保存在本机浏览器；' +
+         '预设参考价为经验值 / 电商参考价，请按实际购入价调整。</p>';
+    $("#ppPage").innerHTML = h;
+  }
+
+  function openPrint(){
+    renderPrintPage();
+    var b = androidBridge();
+    if(b && typeof b.printPage === "function"){
+      $("#ppHint").textContent = "点「打印 / 保存为 PDF」会打开系统打印对话框，打印机一栏选「保存为 PDF」即可存到本机。";
+    }else if(isEmbedded()){
+      $("#ppHint").textContent = "嵌入式预览可能拦截系统打印窗口；需要真实打印 / PDF 时，请在浏览器中直接打开本 HTML 文件。";
+    }else{
+      $("#ppHint").textContent = "";
+    }
+    $("#pprev").classList.add("open");
+    document.body.classList.add("pp");
+  }
+  function closePrint(){
+    $("#pprev").classList.remove("open");
+    document.body.classList.remove("pp");
+  }
+
+  /* 打印 / 另存为 PDF。
+     Android WebView 不支持 window.print()（调用后毫无反应），必须先走原生打印桥；
+     桌面浏览器 / 嵌入式预览仍用 window.print()。 */
+  function doPrint(){
+    if(!document.body.classList.contains("pp")) document.body.classList.add("pp");
+    var b = androidBridge();
+    if(b && typeof b.printPage === "function"){
+      try{ if(b.printPage()) return; }catch(e){ /* 桥异常 → 退回 window.print */ }
+    }
+    try { window.print(); } catch(e){}
+    if(isEmbedded()) setTimeout(function(){ toast("若未弹出打印窗口，请在浏览器中打开本文件后打印"); }, 400);
+  }
+
+  $("#ppPrint").addEventListener("click", doPrint);
+  $("#pprev").addEventListener("click", function(e){
+    if(e.target.closest && e.target.closest("[data-ppclose]")) closePrint();
+  });
+  $("#exBox").addEventListener("click", function(e){
+    if(e.target.closest && e.target.closest("[data-exclose]")) closeOv("exBox");
+  });
+  $("#exCopy").addEventListener("click", function(){
+    var done = function(){ toast("已复制到剪贴板"); };
+    var legacy = function(){
+      var ta = $("#exText");
+      ta.removeAttribute("readonly"); ta.focus(); ta.select();
+      try { ta.setSelectionRange(0, exText.length); } catch(e){}
+      var okCopy = false;
+      try { okCopy = document.execCommand("copy"); } catch(e){}
+      ta.setAttribute("readonly", "readonly");
+      toast(okCopy ? "已复制到剪贴板" : "请手动全选复制（Ctrl/Cmd + C）");
+    };
+    if(navigator.clipboard && navigator.clipboard.writeText){
+      navigator.clipboard.writeText(exText).then(done, legacy);
+    }else{
+      legacy();
+    }
+  });
+
+  /* ================= 初始化 ================= */
+  var restored = loadState();
+  if(!restored){
+    cur.device = "b-a1";
+    cur.material = "g-pla2";
+  }else{
+    if(!findPreset("device", cur.device)) cur.device = "";
+    if(!findPreset("material", cur.material)) cur.material = "";
+  }
+  renderSelects();
+  if(!restored){
+    applyPreset("device", cur.device);
+    applyPreset("material", cur.material);
+  }
+  update();
+})();
+</script>
+</body>
+</html>

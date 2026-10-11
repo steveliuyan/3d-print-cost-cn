@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<full-backup-content>
+  <!-- 只备份 WebView 的 localStorage（参数 / 预设 / 分类），不备份缓存 -->
+  <include domain="database" path="." />
+  <include domain="file" path="app_webview/" />
+</full-backup-content>

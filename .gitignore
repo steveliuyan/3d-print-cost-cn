@@ -1,0 +1,25 @@
+# ===== 依赖与构建产物（不入库）=====
+dist/
+desktop/node_modules/
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+*.iml
+
+# 图标源脚本生成的中间文件（icon.ico 需要保留，打包要用）
+desktop/build/icon.png
+
+# ===== 签名密钥：绝对不要入库 =====
+# 密钥库一旦公开，任何人都能签出与你同签名的 APK 来覆盖安装。
+# 需要自行生成：见 README「Android 签名」一节。
+*.jks
+*.keystore
+android/app/dpc-release.jks
+android/keystore.properties
+
+# 操作系统 / 编辑器
+.DS_Store
+Thumbs.db
+.vscode/

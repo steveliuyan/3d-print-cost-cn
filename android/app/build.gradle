@@ -1,0 +1,66 @@
+plugins {
+  id 'com.android.application'
+}
+
+// 签名信息从 android/keystore.properties 读取（该文件不入库）。
+// 未配置时 release 仅产出未签名 APK —— 克隆后无需任何密钥即可完成构建。
+def keystoreProps = new Properties()
+def keystorePropsFile = rootProject.file('keystore.properties')
+if (keystorePropsFile.exists()) {
+  keystorePropsFile.withInputStream { keystoreProps.load(it) }
+}
+def hasSigning = keystoreProps.getProperty('storeFile') != null
+
+android {
+  namespace 'com.dpc.printcost'
+  compileSdk 35
+
+  defaultConfig {
+    applicationId 'com.dpc.printcost'
+    minSdk 24
+    targetSdk 35
+    versionCode 1
+    versionName '1.0.0'
+  }
+
+  signingConfigs {
+    release {
+      if (hasSigning) {
+        storeFile rootProject.file(keystoreProps.getProperty('storeFile'))
+        storePassword keystoreProps.getProperty('storePassword')
+        keyAlias keystoreProps.getProperty('keyAlias')
+        keyPassword keystoreProps.getProperty('keyPassword')
+      }
+      enableV1Signing false
+      enableV2Signing true
+      enableV3Signing true
+    }
+  }
+
+  buildTypes {
+    release {
+      minifyEnabled false
+      shrinkResources false
+      if (hasSigning) signingConfig signingConfigs.release
+    }
+    debug {
+      applicationIdSuffix '.debug'
+    }
+  }
+
+  compileOptions {
+    sourceCompatibility JavaVersion.VERSION_17
+    targetCompatibility JavaVersion.VERSION_17
+  }
+
+  // 页面是纯静态单文件，无需压缩资源
+  androidResources {
+    noCompress 'html'
+  }
+}
+
+dependencies {
+  // WebViewAssetLoader：把 assets 以 https://appassets.androidplatform.net 形式提供，
+  // 从而获得正常的 Web 源，localStorage 才能可靠持久化（file:// 源在部分机型上不可靠）
+  implementation 'androidx.webkit:webkit:1.12.1'
+}
