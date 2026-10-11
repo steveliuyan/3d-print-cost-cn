@@ -1,11 +1,65 @@
 // 3D 打印成本计算器 —— Electron 主进程
 // 本地离线运行，不加载任何远程内容；数据保存在 WebView 的 localStorage 中。
-const { app, BrowserWindow, Menu, shell, dialog } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, net } = require('electron');
 const path = require('path');
 
 const isMac = process.platform === 'darwin';
+const REPO = 'steveliuyan/3d-print-cost-cn';
 
 let mainWin = null;
+
+/* ===== 检查更新（GitHub Releases） ===== */
+function vParts(s) {
+  const a = String(s || '').replace(/^v/i, '').trim().split('.');
+  return [(+a[0] || 0), (+a[1] || 0), (+a[2] || 0)];
+}
+function isNewerVersion(remote, local) {
+  const r = vParts(remote), l = vParts(local);
+  for (let i = 0; i < 3; i++) { if (r[i] !== l[i]) return r[i] > l[i]; }
+  return false;
+}
+
+function checkUpdate(interactive) {
+  const req = net.request('https://api.github.com/repos/' + REPO + '/releases/latest');
+  req.setHeader('User-Agent', 'print-cost-calculator');
+  req.setHeader('Accept', 'application/vnd.github+json');
+  let data = '';
+  req.on('response', (res) => {
+    res.on('data', (c) => { data += c; });
+    res.on('end', () => {
+      try {
+        const rel = JSON.parse(data);
+        const tag = String(rel.tag_name || '').replace(/^v/i, '');
+        if (isNewerVersion(tag, app.getVersion())) {
+          let apk = '';
+          (rel.assets || []).forEach((a) => { if (/\.apk$/i.test(a.name) && !apk) apk = a.browser_download_url; });
+          dialog.showMessageBox(mainWin, {
+            type: 'info',
+            title: '软件更新',
+            message: '发现新版本 v' + tag + '（当前 v' + app.getVersion() + '）',
+            detail: (rel.body || '').slice(0, 800) || '点击「立即升级」前往下载新版本。',
+            buttons: ['立即升级', '稍后再说'],
+            defaultId: 0,
+            cancelId: 1
+          }).then(({ response }) => {
+            if (response === 0) shell.openExternal(apk || rel.html_url);
+          });
+        } else if (interactive) {
+          dialog.showMessageBox(mainWin, {
+            type: 'info', title: '软件更新',
+            message: '当前已是最新版本 v' + app.getVersion()
+          });
+        }
+      } catch (e) {
+        if (interactive) dialog.showErrorBox('软件更新', '检查更新失败，请稍后重试。');
+      }
+    });
+  });
+  req.on('error', () => {
+    if (interactive) dialog.showErrorBox('软件更新', '检查更新失败，请检查网络连接。');
+  });
+  req.end();
+}
 
 function createWindow() {
   mainWin = new BrowserWindow({
@@ -88,6 +142,11 @@ function buildMenu() {
       label: '帮助',
       submenu: [
         {
+          label: '检查更新…',
+          click: () => checkUpdate(true)
+        },
+        { type: 'separator' },
+        {
           label: '关于本软件',
           click: () => {
             dialog.showMessageBox(mainWin, {
@@ -121,6 +180,8 @@ if (!gotLock) {
   app.whenReady().then(() => {
     buildMenu();
     createWindow();
+    // 启动后 3 秒静默检查更新（仅在有网时弹窗，检查失败不打扰用户）
+    setTimeout(() => checkUpdate(false), 3000);
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });

@@ -346,8 +346,15 @@
   .bk h4:not(:first-child){margin-top:16px}
   .bk-note{margin:0 0 10px; font-size:12px; color:var(--text3); line-height:1.6}
   .bk-row{display:flex; gap:8px; flex-wrap:wrap}
-  /* ===== 覆盖层：打印预览 / 导出兜底 ===== */
-  .ov{position:fixed; inset:0; z-index:var(--z-modal); display:none}
+  /* ===== 更新弹窗 ===== */
+  .upd-wrap p{margin:0 0 10px; font-size:13px; color:var(--text); line-height:1.7}
+  .upd-notes{margin:0; max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word;
+             font-family:inherit; font-size:12px; line-height:1.7; color:var(--text2);
+             background:var(--bg2, #f6f7f9); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+  .foot .lnk{background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer;
+             text-decoration:underline; text-underline-offset:3px}
+  .foot .lnk:disabled{color:var(--text4); cursor:not-allowed; text-decoration:none}
+  /* ===== 覆盖层：打印预览 / 导出兜底 ===== */  .ov{position:fixed; inset:0; z-index:var(--z-modal); display:none}
   .ov.open{display:block}
   .ov-bg{position:absolute; inset:0; background:rgba(14,16,21,.5); animation:fadeIn .18s var(--ease);
          backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
@@ -585,6 +592,7 @@
   <footer class="foot">
     <span>本地运行 · 参数与预设仅保存在浏览器 localStorage</span>
     <span>预设价格为 2026-10 电商参考价，请按实际购入价修改</span>
+    <span>v<span id="footVer">…</span> · <button type="button" class="lnk" id="btnCheckUpd">检查更新</button></span>
   </footer>
 </div>
 
@@ -700,6 +708,25 @@
       <button class="btn" data-exclose>关闭</button>
       <a class="btn" id="exOpen" target="_blank" rel="noopener">在新标签页打开</a>
       <button class="btn primary" id="exCopy">复制内容</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 软件更新 ===== -->
+<div class="ov" id="updBox" role="dialog" aria-modal="true" aria-label="软件更新">
+  <div class="ov-bg" data-upclose></div>
+  <div class="ov-panel" style="width:min(460px,calc(100vw - 28px)); margin-top:16vh">
+    <div class="ov-head">
+      <h3>软件更新</h3>
+      <button class="x" data-upclose aria-label="关闭">×</button>
+    </div>
+    <div class="ov-body">
+      <div class="upd-wrap" id="updBody"></div>
+    </div>
+    <div class="ov-foot">
+      <span class="pp-hint" id="updHint"></span>
+      <button class="btn" data-upclose>稍后再说</button>
+      <button class="btn primary" id="updGo" hidden>立即升级</button>
     </div>
   </div>
 </div>
@@ -1666,9 +1693,87 @@
     return null;
   }
 
+  /* ===== 检查更新 ===== */
+  var APP_VERSION = "1.1.0";
+  var UPD_REPO = "steveliuyan/3d-print-cost-cn";
+  var updInfo = null;
+
+  function vParts(s){
+    var a = String(s || "").replace(/^v/i, "").trim().split(".");
+    return [(+a[0] || 0), (+a[1] || 0), (+a[2] || 0)];
+  }
+  function isNewerVersion(remote, local){
+    var r = vParts(remote), l = vParts(local);
+    for(var i = 0; i < 3; i++){ if(r[i] !== l[i]) return r[i] > l[i]; }
+    return false;
+  }
+
+  function updShow(html){
+    $("#updBody").innerHTML = html;
+    $("#updBox").classList.add("open");
+  }
+  function updHide(){ $("#updBox").classList.remove("open"); }
+
+  function checkUpdate(manual){
+    var btn = $("#btnCheckUpd");
+    if(btn){ btn.disabled = true; btn.textContent = "检查中…"; }
+    fetch("https://api.github.com/repos/" + UPD_REPO + "/releases/latest", { cache: "no-store" })
+      .then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+      .then(function(rel){
+        var tag = String(rel.tag_name || "").replace(/^v/i, "");
+        if(isNewerVersion(tag, APP_VERSION)){
+          var apk = "";
+          (rel.assets || []).forEach(function(a){
+            if(/\.apk$/i.test(a.name) && !apk) apk = a.browser_download_url;
+          });
+          updInfo = { tag: tag, apk: apk, url: rel.html_url };
+          updShow(
+            "<p>发现新版本 <b>v" + esc(tag) + "</b>（当前 v" + esc(APP_VERSION) + "）。</p>" +
+            (rel.body ? '<pre class="upd-notes">' + esc(rel.body) + "</pre>" : "") +
+            "<p style=\"margin-top:10px;color:var(--text3);font-size:12px\">" +
+            (apk ? "点击「立即升级」将下载新版安装包。" : "点击「立即升级」前往发布页下载。") + "</p>");
+          $("#updGo").hidden = false;
+          $("#updHint").textContent = "";
+        } else {
+          if(manual){
+            updShow("<p>当前已是最新版本 v" + esc(APP_VERSION) + "。</p>");
+            $("#updGo").hidden = true;
+          } else {
+            toast("已是最新版本 v" + APP_VERSION);
+          }
+        }
+      })
+      .catch(function(){
+        if(manual){
+          updShow("<p>检查更新失败，请确认网络连接后重试。</p>");
+          $("#updGo").hidden = true;
+        }
+      })
+      .then(function(){
+        if(btn){ btn.disabled = false; btn.textContent = "检查更新"; }
+      });
+  }
+
+  function doUpgrade(){
+    if(!updInfo) return;
+    var b = androidBridge();
+    /* Android 壳：交给原生 DownloadManager 下载 APK 并拉起安装 */
+    if(b && typeof b.updateApp === "function" && updInfo.apk){
+      try{
+        updHide();
+        b.updateApp(updInfo.apk);
+        return;
+      }catch(e){ /* 桥异常 → 落回浏览器下载 */ }
+    }
+    /* Electron / 浏览器：跳转下载链接（Electron 主进程会把外链交给系统浏览器） */
+    var target = updInfo.apk || updInfo.url;
+    updHide();
+    try{ window.open(target, "_blank", "noopener"); }
+    catch(e){ location.href = target; }
+  }
+
   /* 触发下载。
-     优先级：Android 原生桥（写入系统「下载」目录）→ <a download>。
-     若两者都不可靠（嵌入式预览 / WebView 无桥），再弹兜底面板保证内容一定拿得到。 */
+     优先级：Android 原生桥（写入系统「下载」目录）→ <a download>。     若两者都不可靠（嵌入式预览 / WebView 无桥），再弹兜底面板保证内容一定拿得到。 */
   function download(blob, filename, text){
     var bridge = androidBridge();
     if(bridge && text != null){
@@ -1844,6 +1949,7 @@
     if(e.key === "Escape"){
       if($("#pprev").classList.contains("open")){ closePrint(); return; }
       if($("#exBox").classList.contains("open")){ closeOv("exBox"); return; }
+      if($("#updBox").classList.contains("open")){ updHide(); return; }
       if($("#picker").classList.contains("open")){ closePicker(); return; }
       if($("#modal").classList.contains("open")) closeModal();
       closePops();
@@ -1988,6 +2094,13 @@
     }
   });
 
+  /* ===== 更新弹窗事件 ===== */
+  $("#btnCheckUpd").addEventListener("click", function(){ checkUpdate(true); });
+  $("#updGo").addEventListener("click", doUpgrade);
+  $("#updBox").addEventListener("click", function(e){
+    if(e.target.closest && e.target.closest("[data-upclose]")) updHide();
+  });
+
   /* ================= 初始化 ================= */
   var restored = loadState();
   if(!restored){
@@ -2003,6 +2116,14 @@
     applyPreset("material", cur.material);
   }
   update();
+
+  /* 版本号显示 + 启动静默检查更新（仅 Android 壳 / Electron 桌面端自动检查，
+     纯网页访问不自动联网检查，手动点「检查更新」仍然可用） */
+  $("#footVer").textContent = APP_VERSION;
+  var isElectron = /Electron/i.test(navigator.userAgent);
+  if(androidBridge() || isElectron){
+    setTimeout(function(){ checkUpdate(false); }, 3000);
+  }
 })();
 </script>
 </body>

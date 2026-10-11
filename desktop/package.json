@@ -36,7 +36,7 @@
       "icon": "build/icon.ico"
     },
     "portable": {
-      "artifactName": "3D打印成本计算器-1.0.0-便携版.exe"
+      "artifactName": "3D打印成本计算器-1.1.0-便携版.exe"
     }
   }
 }

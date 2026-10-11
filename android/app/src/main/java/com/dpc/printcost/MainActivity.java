@@ -2,15 +2,19 @@ package com.dpc.printcost;
 
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.DownloadManager;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.Handler;
+import android.os.Looper;
 import android.print.PrintAttributes;
 import android.print.PrintDocumentAdapter;
 import android.print.PrintManager;
@@ -230,9 +234,66 @@ public class MainActivity extends Activity {
     return s;
   }
 
-  /** 拉起系统打印对话框（打印机列表里可选「保存为 PDF」）。 */
-  private void startPrint() {
+  /* ===== 在线升级：DownloadManager 下载 Release APK → 拉起系统安装器 ===== */
+
+  private void startUpdate(String url) {
     try {
+      DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
+      if (dm == null) { toast("无法下载更新"); return; }
+      DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url));
+      req.setMimeType("application/vnd.android.package-archive");
+      req.setTitle(getString(R.string.app_name) + " 更新包");
+      req.setDescription("正在下载新版本安装包…");
+      req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
+      req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "print-cost-update.apk");
+      long id = dm.enqueue(req);
+      toast("开始下载新版本…");
+      pollDownload(dm, id, 0);
+    } catch (Exception e) {
+      Log.w(TAG, "update failed: " + e);
+      toast("下载失败：" + e.getMessage());
+    }
+  }
+
+  /** 轮询下载状态（避免广播接收器在 targetSdk 34+ 上的注册限制），每秒一次，最长 10 分钟。 */
+  private void pollDownload(DownloadManager dm, long id, int tries) {
+    final int MAX_TRIES = 600;
+    new Handler(Looper.getMainLooper()).postDelayed(() -> {
+      try (Cursor c = dm.query(new DownloadManager.Query().setFilterById(id))) {
+        if (c != null && c.moveToFirst()) {
+          int status = c.getInt(c.getColumnIndexOrThrow(DownloadManager.COLUMN_STATUS));
+          if (status == DownloadManager.STATUS_SUCCESSFUL) {
+            Uri uri = dm.getUriForDownloadedFile(id);
+            toast("下载完成，准备安装…");
+            installApk(uri);
+            return;
+          }
+          if (status == DownloadManager.STATUS_FAILED) {
+            toast("下载失败，请到 GitHub 发布页手动下载");
+            return;
+          }
+        }
+      } catch (Exception e) {
+        Log.w(TAG, "poll download failed: " + e);
+      }
+      if (tries < MAX_TRIES) pollDownload(dm, id, tries + 1);
+    }, 1000);
+  }
+
+  private void installApk(Uri uri) {
+    try {
+      Intent i = new Intent(Intent.ACTION_VIEW);
+      i.setDataAndType(uri, "application/vnd.android.package-archive");
+      i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_ACTIVITY_NEW_TASK);
+      startActivity(i);
+    } catch (ActivityNotFoundException | SecurityException e) {
+      Log.w(TAG, "install failed: " + e);
+      toast("无法启动安装：" + e.getMessage() + "（可能未允许「安装未知应用」）");
+    }
+  }
+
+  /** 拉起系统打印对话框（打印机列表里可选「保存为 PDF」）。 */
+  private void startPrint() {    try {
       PrintManager pm = (PrintManager) getSystemService(Context.PRINT_SERVICE);
       if (pm == null || web == null) {
         toast("当前设备不支持打印");
@@ -270,6 +331,14 @@ public class MainActivity extends Activity {
     /** 供前端探测桥是否可用 */
     @JavascriptInterface
     public boolean available() {
+      return true;
+    }
+
+    /** 检查更新后由前端调用：url 为 GitHub Release 的 APK 下载地址。 */
+    @JavascriptInterface
+    public boolean updateApp(String url) {
+      if (url == null || !url.startsWith("https://")) return false;
+      runOnUiThread(() -> startUpdate(url));
       return true;
     }
   }
