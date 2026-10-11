@@ -45,7 +45,7 @@ adb install -r -t 3d-print-cost-cn-1.4.2.apk
 ```
 3d-print-cost-calculator/
 ├─ index.html              ← 唯一来源（改只改这个）
-├─ test-presets.js         ← jsdom 回归测试（133 项断言）
+├─ test-presets.js         ← jsdom 回归测试（174 项断言）
 ├─ _sync_clean.py          ← 剥离预览注入并同步三份副本
 ├─ desktop/                ← Electron 桌面工程
 │  ├─ main.js              ← 主进程（窗口 / 菜单 / Ctrl+P 打印 / 外链走系统浏览器）
@@ -187,7 +187,7 @@ npm run dist                                       # 便携版单文件 exe
 打包前建议先跑一遍回归：
 
 ```bash
-node test-presets.js     # 期望 133/133 通过
+node test-presets.js     # 期望 174/174 通过
 ```
 
 > **为什么要有 `_sync_clean.py`**：`index.html` 是唯一来源，但 Android 需要一份在
