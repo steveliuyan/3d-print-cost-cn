@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN" data-page-node-id="DDTfag6AXRZXBp7W5DmVBN">
-<head data-page-node-id="PvTQOrlpuDW5Ud8P1DDHzn">
-<meta charset="UTF-8" data-page-node-id="C0LTIPXRslgGbeY4aX1n7r">
-<meta name="viewport" content="width=device-width, initial-scale=1.0" data-page-node-id="hUfCbckXNxnN5QhQf8hBcq">
-<meta name="description" content="3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润。支持设备与耗材预设、自定义分类。" data-page-node-id="YrbuUHL2XqpBtUFTDI14Da">
-<meta name="theme-color" content="#4f46e5" data-page-node-id="PSNkpTbS78GvQ1fuA7FWI3">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M16 5 7 10v11l9 5 9-5V10l-9-5Z'/%3E%3Cpath d='M7 10l9 5 9-5M16 15v11'/%3E%3C/g%3E%3C/svg%3E" data-page-node-id="6vB6N4nDMbI0AxZOD3GCdZ">
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润。支持设备与耗材预设、自定义分类。">
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M16 5 7 10v11l9 5 9-5V10l-9-5Z'/%3E%3Cpath d='M7 10l9 5 9-5M16 15v11'/%3E%3C/g%3E%3C/svg%3E">
 <title>3D 打印成本计算器</title>
 <style>
   /* ================= 设计令牌 ================= */
@@ -424,282 +424,282 @@
   }
 </style>
 </head>
-<body data-page-node-id="yioUBOHDUHdByOJMxOmqvH">
-<div class="wrap" data-page-node-id="yUzYoWRicqQksKUezKJUuV">
+<body>
+<div class="wrap">
 
-  <header class="topbar" data-page-node-id="vvbgikyYpFRlYvFRBW2qAI">
-    <div class="brand" data-page-node-id="WRQheV7pjzQnI9cFgKCv2w">
-      <span class="mark" data-page-node-id="c9NpPCe4SWgGExVpP5wu0U"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-page-node-id="MjThLOzt1AQIRMmqvWARGJ"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z" data-page-node-id="x9b5Jlr2rOsWvqN9Rlt03g"/><path d="M4 7.5 12 12l8-4.5" data-page-node-id="LfzZqN3phwAs71mkhLXCYl"/><path d="M12 12v9" data-page-node-id="OyVGAypG4BlI3auggmV6w7"/></svg></span>
-      <div data-page-node-id="TlDEHpfGdN8cV3garBSmQi">
-        <h1 data-page-node-id="0akEWaDhrHmq6zSuC8oAvi">3D 打印成本计算器</h1>
-        <p data-page-node-id="TWIkLWt6SzjGL7tNMooEEP">材料 · 折旧 · 电费 · 人工 · 后处理 · 失败率 → 单件成本与建议售价</p>
+  <header class="topbar">
+    <div class="brand">
+      <span class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 7.5v9L12 21l8-4.5v-9L12 3Z"/><path d="M4 7.5 12 12l8-4.5"/><path d="M12 12v9"/></svg></span>
+      <div>
+        <h1>3D 打印成本计算器</h1>
+        <p>材料 · 折旧 · 电费 · 人工 · 后处理 · 失败率 → 单件成本与建议售价</p>
       </div>
     </div>
-    <div class="hd-r" data-page-node-id="osQEHIQdjfqMOxjlemPeWN">
-      <button class="btn" id="btnPreset" data-page-node-id="Lhpdk1rMxh3Ye2vO5u5WOG"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-page-node-id="PJAMciqxpLHGeoII0jbGLo"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z" data-page-node-id="C4grXwH0NZ4LE1FZ4Yf6LY"/><path d="M3 12l9 4.5L21 12" data-page-node-id="8XO4HVa39BDWmTS8TNHnJo"/><path d="M3 16.5 12 21l9-4.5" data-page-node-id="sAOiTqxl0imyg7NPRkvGFl"/></svg>预设管理</button>
-      <button class="btn" id="btnCsv" data-page-node-id="Xr1cKv7aK1jD1H7qpZEs3G"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-page-node-id="bAtIGp7Xx0en2jp6fzt6Kj"><path d="M12 3v12" data-page-node-id="QHwcD93VRlKV4VsvKnE6KP"/><path d="m7 11 5 5 5-5" data-page-node-id="juE8AFNNY07vdIJfGHluEB"/><path d="M4 20h16" data-page-node-id="cPVhWwCSodcjuzv1yUFVYv"/></svg>导出 CSV</button>
-      <button class="btn" id="btnPrint" data-page-node-id="q4NYEbTtmBeppviM5PUq51"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-page-node-id="ATz0vwKQZDjbyJqaQbtLhC"><path d="M7 8V4h10v4" data-page-node-id="GBGOVnfLavmqVAmyAfaf6q"/><rect x="4" y="8" width="16" height="8" rx="2" data-page-node-id="ULT9KeWJTgigR2dVPvYtui"/><path d="M7 16h10v4H7z" data-page-node-id="wUbTxXKzt0CEn3FOH0bvr3"/></svg>打印 / PDF</button>
-      <button class="btn ghost" id="btnReset" data-page-node-id="0l8B3Qwdpd8y0ILrZzzIUW"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" data-page-node-id="MEaEUrOq2tYimTAmeoE8Wr"><path d="M3 12a9 9 0 1 0 3.2-6.9" data-page-node-id="sh0CahDBRc9c4OSjgfDeEn"/><path d="M3 4v5h5" data-page-node-id="uOan0KfVqOQCWrbt9oBmpz"/></svg>重置</button>
+    <div class="hd-r">
+      <button class="btn" id="btnPreset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16.5 12 21l9-4.5"/></svg>预设管理</button>
+      <button class="btn" id="btnCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>导出 CSV</button>
+      <button class="btn" id="btnPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V4h10v4"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 16h10v4H7z"/></svg>打印 / PDF</button>
+      <button class="btn ghost" id="btnReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3.2-6.9"/><path d="M3 4v5h5"/></svg>重置</button>
     </div>
   </header>
 
-  <main class="grid" data-page-node-id="l7DmlwLv5tAxuEm2uIXFQC">
+  <main class="grid">
 
-    <div class="col-in" data-page-node-id="Jy5HhK4J1TJ7cEQ929izGg">
+    <div class="col-in">
 
-      <section class="card" style="--i:0" data-page-node-id="2R8AFZv8ezEKwzRT5hFqnz">
-        <h2 data-page-node-id="tBcsJaR208ETq2vfrO8W92"><span class="snum" data-page-node-id="zxWfUpvQutROQWH2fH0oDz">01</span><span class="stitle" data-page-node-id="C1EQz2FHaPjB6ayiwsX86f">打印与材料</span><small id="matPick" data-page-node-id="mIRpEOEsVKadDPFCjcuigB"></small></h2>
-        <div class="preset-row" data-page-node-id="PNPC8Kol9VDNZJlLosuIOF">
-          <button type="button" class="pickbtn" id="matBtn" data-page-node-id="8abpIp4BDdv1qeYaSj9SPb">选择材料 ▾</button>
-          <select id="matSel" hidden data-page-node-id="CejIRLHrW1w6yVEhvvNkIi"></select>
-          <div class="savewrap" data-page-node-id="iSUPuE4Lezu5xrzkFM4AU6">
-            <button class="btn sm" id="matSave" data-page-node-id="c7xFmsE0Qyb4ZDA985aY29">保存 ▾</button>
-            <div class="pop" id="matPop" data-page-node-id="ToUgIOaajDRAwAiL7EVAIC">
-              <button data-act="update" data-page-node-id="xiwI8xh7PjRefkRBkOADhg">更新当前预设</button>
-              <button data-act="saveas" data-page-node-id="p1t4nMjQcj6P48m6FjDXv4">另存为新预设…</button>
+      <section class="card" style="--i:0">
+        <h2><span class="snum">01</span><span class="stitle">打印与材料</span><small id="matPick"></small></h2>
+        <div class="preset-row">
+          <button type="button" class="pickbtn" id="matBtn">选择材料 ▾</button>
+          <select id="matSel" hidden></select>
+          <div class="savewrap">
+            <button class="btn sm" id="matSave">保存 ▾</button>
+            <div class="pop" id="matPop">
+              <button data-act="update">更新当前预设</button>
+              <button data-act="saveas">另存为新预设…</button>
             </div>
           </div>
         </div>
-        <div class="pdetail" id="matDetail" data-page-node-id="TnXJ8nVjEbsH0z2iriVO82">
-          <span class="k" data-page-node-id="i0jmnpKHN798H8hvVYIRH5">分类</span><span class="catname" id="matCat" data-page-node-id="hX1p6SDfHjOFLzSQNAz0t2">未分类</span>
-          <span class="sep" data-page-node-id="Qpk6EAmXE62yqk65jkEuSL">|</span>
-          <span class="k" data-page-node-id="HW5veM1dMjF6Xw8IdugeR2">单价</span><span class="pin" data-page-node-id="7OZHqT43TNSzHrVKDD4EjS"><input data-field="spoolPrice" type="number" min="0" step="any" value="65" data-page-node-id="mtPMYW13Ly5cQxebddcyFh"><em data-page-node-id="rolc058RGYBTzQlSOsWLhT">¥/kg</em></span>
-          <span class="tag" id="matTag" data-page-node-id="tKrFvpx2zhAOyY0Ve6NKnN">内置</span>
-          <span class="tail" id="matTail" data-page-node-id="9pP2ZMpQCXBXYWi7ixWm9E"></span>
+        <div class="pdetail" id="matDetail">
+          <span class="k">分类</span><span class="catname" id="matCat">未分类</span>
+          <span class="sep">|</span>
+          <span class="k">单价</span><span class="pin"><input data-field="spoolPrice" type="number" min="0" step="any" value="65"><em>¥/kg</em></span>
+          <span class="tag" id="matTag">内置</span>
+          <span class="tail" id="matTail"></span>
         </div>
-        <div class="fields" data-page-node-id="CSVmOcjtDUmTbsI9B4nWuc">
-          <label class="field" data-page-node-id="1gjcJGo6USxkv5G4Ct8qlj"><span class="lb" data-page-node-id="NbBvXYGSXaNXnv7i3TiGcb">打印数量</span>
-            <div class="in" data-page-node-id="dXnDbrnXRypAzJkKFtN6b9"><input data-field="qty" type="number" min="1" step="1" value="1" data-page-node-id="RMLVBMHMVmsL0Xu39rpISP"><em class="suf" data-page-node-id="K7RFeHryaGYPK4M6KaYAXD">件</em></div></label>
-          <label class="field" data-page-node-id="BZztGibBgW5YSHW4ooD2Ko"><span class="lb" data-page-node-id="Mtqe0wNDBHj3pSvxs1oPpz">单件打印时长</span>
-            <div class="in" data-page-node-id="QDbuXeRCMVojcsfdwH6l3a"><input data-field="printHours" type="number" min="0" step="0.1" value="3" data-page-node-id="OizuQhFDzgbzrLmYOGbM03"><em class="suf" data-page-node-id="AseCkRZTOsJADpBK4FTglv">小时</em></div></label>
-          <label class="field" data-page-node-id="pqOAxngBvVBp2bBezjMOBS"><span class="lb" data-page-node-id="htu1I3yCDmYY3CVx0dTioH">单件耗材用量</span>
-            <div class="in" data-page-node-id="AP62OPwo2kCA3UrBEWL3y4"><input data-field="grams" type="number" min="0" step="1" value="55" data-page-node-id="IqyAmWe2nLq52DyhRo5PXP"><em class="suf" data-page-node-id="dQpyZdqRtxJSqi0oxjHVEv">克</em></div></label>
-          <label class="field" data-page-node-id="9tjrlnKhgZPCsdzuAwdYfW"><span class="lb" data-page-node-id="0S8uAoPc5fhWmaDbaFNRga">材料损耗率（打废 / 换料 / 余料）</span>
-            <div class="in" data-page-node-id="X0FfbEUKKLogzBkYUlDbTI"><input data-field="waste" type="number" min="0" max="100" step="1" value="5" data-page-node-id="XxERPTCD4CMLPZidDBup2R"><em class="suf" data-page-node-id="5eqp7RKZocejrph60b4mo6">%</em></div></label>
+        <div class="fields">
+          <label class="field"><span class="lb">打印数量</span>
+            <div class="in"><input data-field="qty" type="number" min="1" step="1" value="1"><em class="suf">件</em></div></label>
+          <label class="field"><span class="lb">单件打印时长</span>
+            <div class="in"><input data-field="printHours" type="number" min="0" step="0.1" value="3"><em class="suf">小时</em></div></label>
+          <label class="field"><span class="lb">单件耗材用量</span>
+            <div class="in"><input data-field="grams" type="number" min="0" step="1" value="55"><em class="suf">克</em></div></label>
+          <label class="field"><span class="lb">材料损耗率（打废 / 换料 / 余料）</span>
+            <div class="in"><input data-field="waste" type="number" min="0" max="100" step="1" value="5"><em class="suf">%</em></div></label>
         </div>
       </section>
 
-      <section class="card" style="--i:1" data-page-node-id="ymKPtR8ZvPUunPQnLQAXPp">
-        <h2 data-page-node-id="88RoVBnvGp6ZAkIoEKopAi"><span class="snum" data-page-node-id="m4Ps0cgpF6PhSVv5wXPT18">02</span><span class="stitle" data-page-node-id="9CTlzRdykE6bxtkzm1e3Kq">设备与能耗</span><small id="devPick" data-page-node-id="D0BwQcyEzEDN2NfZ36hIOk"></small></h2>
-        <div class="preset-row" data-page-node-id="EE6OLJJujr33EKd7ITKSC5">
-          <button type="button" class="pickbtn" id="devBtn" data-page-node-id="tGbuudnxupmWdPFiFeK91C">选择设备 ▾</button>
-          <select id="devSel" hidden data-page-node-id="HD2KckfLPF1kzHaRA1ip1L"></select>
-          <div class="savewrap" data-page-node-id="YGoCcaHMoDuy3GVUPQ6O7g">
-            <button class="btn sm" id="devSave" data-page-node-id="qzgWQebPiSVmqYwOZiBdgp">保存 ▾</button>
-            <div class="pop" id="devPop" data-page-node-id="cyAgBPkAVJR90UAZukJIMb">
-              <button data-act="update" data-page-node-id="TkXNG84gYIbuMc4FxP9MUW">更新当前预设</button>
-              <button data-act="saveas" data-page-node-id="IETffC2ISGSRPQ2dCdPgq2">另存为新预设…</button>
+      <section class="card" style="--i:1">
+        <h2><span class="snum">02</span><span class="stitle">设备与能耗</span><small id="devPick"></small></h2>
+        <div class="preset-row">
+          <button type="button" class="pickbtn" id="devBtn">选择设备 ▾</button>
+          <select id="devSel" hidden></select>
+          <div class="savewrap">
+            <button class="btn sm" id="devSave">保存 ▾</button>
+            <div class="pop" id="devPop">
+              <button data-act="update">更新当前预设</button>
+              <button data-act="saveas">另存为新预设…</button>
             </div>
           </div>
         </div>
-        <div class="pdetail" id="devDetail" data-page-node-id="I5AAQrrxYflphGjy7ZTskt">
-          <span class="k" data-page-node-id="nGD7D4CIHW2OeUjZsPx1H0">分类</span><span class="catname" id="devCat" data-page-node-id="VhHJrQtRZkRtRgihMD3lDB">未分类</span>
-          <span class="sep" data-page-node-id="syAKWKyAD5gS46cZEWaFqT">|</span>
-          <span class="k" data-page-node-id="cP4iwbB7WyNy7PziJrsEOQ">价格</span><span class="pin" data-page-node-id="rGSqKEeZS5OyvbQYhrEzOG"><input data-field="printerPrice" type="number" min="0" step="any" value="2199" data-page-node-id="9AfbJrKRgSstVxXvYbWuIB"><em data-page-node-id="j0a3Ou04bVpSBJXWxuHrvH">¥</em></span>
-          <span class="k" data-page-node-id="xXxI1GHhneOWJ2H92NuYLs">功率</span><span class="pin" data-page-node-id="IFYHEthvSNGy6maLahmmbU"><input data-field="power" type="number" min="0" step="any" value="200" data-page-node-id="pzcUBw3SkSMSa4pnDhBOGC"><em data-page-node-id="jveZfhj3ZnLT900Y7MiyXk">W</em></span>
-          <span class="k" data-page-node-id="05MnfzA2SnHuEwXzc6djBf">寿命</span><span class="pin" data-page-node-id="WcEthMTq3WugM9XqFEBd0r"><input data-field="lifeHours" type="number" min="1" step="any" value="5000" data-page-node-id="GpFadzvQZJkk4IRlfrDsWb"><em data-page-node-id="qJGvC2mEcxCxYl2QgusZ8D">h</em></span>
-          <span class="k" data-page-node-id="j4qhGVQ8R2CDgOgjsU5xpd">维护</span><span class="pin" data-page-node-id="kgg9tx3YPTlQnggGx0Uwkw"><input data-field="maintPerHour" type="number" min="0" step="0.01" value="0.28" data-page-node-id="xyGQXBQT4d6CgVw8l03G3P"><em data-page-node-id="7dOze5QXG8nQOei1ND524l">¥/h</em></span>
-          <span class="tag" id="devTag" data-page-node-id="LmoJgKnfJRhdtq12g3LIrZ">内置</span>
-          <span class="tail" id="devTail" data-page-node-id="3GOfnIB4w1jcg7a7RSwGUp"></span>
+        <div class="pdetail" id="devDetail">
+          <span class="k">分类</span><span class="catname" id="devCat">未分类</span>
+          <span class="sep">|</span>
+          <span class="k">价格</span><span class="pin"><input data-field="printerPrice" type="number" min="0" step="any" value="2199"><em>¥</em></span>
+          <span class="k">功率</span><span class="pin"><input data-field="power" type="number" min="0" step="any" value="200"><em>W</em></span>
+          <span class="k">寿命</span><span class="pin"><input data-field="lifeHours" type="number" min="1" step="any" value="5000"><em>h</em></span>
+          <span class="k">维护</span><span class="pin"><input data-field="maintPerHour" type="number" min="0" step="0.01" value="0.28"><em>¥/h</em></span>
+          <span class="tag" id="devTag">内置</span>
+          <span class="tail" id="devTail"></span>
         </div>
-        <div class="fields" data-page-node-id="aDRbh8NBJyLG7JxZar6p4b">
-          <label class="field" data-page-node-id="jMnGi8FWQ2oZvtYkPK9tei"><span class="lb" data-page-node-id="pHsdsmGeOOTx2DIzJgLFL9">电价（本地参数，不属于预设）</span>
-            <div class="in" data-page-node-id="g0872ooX378A7MfL2ncK7e"><input data-field="elecPrice" type="number" min="0" step="0.05" value="0.6" data-page-node-id="TkZ7HUrvSqYp06Je6yWHNp"><em class="suf" data-page-node-id="w0xjKnMrikQRprGAgKo56v">¥/度</em></div></label>
-        </div>
-      </section>
-
-      <section class="card" style="--i:2" data-page-node-id="YbAHrXW6aSnzRyHTNqpL5k">
-        <h2 data-page-node-id="Ptdm8fhzmapCDvfa6zJ4NV"><span class="snum" data-page-node-id="dtBLHrZzrMRtKO6FTrmcmi">03</span><span class="stitle" data-page-node-id="7l1yZcML8YOY0nIeZndMRH">人工与后处理</span></h2>
-        <div class="fields" data-page-node-id="T6PdgID2BzvkiCXn9ht5xz">
-          <label class="field" data-page-node-id="xeqOfAdjJp9GDOlqFG1INk"><span class="lb" data-page-node-id="3kyc8MteaWGlOmrPDNrOS3">人工时薪</span>
-            <div class="in" data-page-node-id="P8GTelMVaksqzUHdsyWurc"><input data-field="laborRate" type="number" min="0" step="1" value="30" data-page-node-id="niXjKOFkl1QWXmqLpsJgCs"><em class="suf" data-page-node-id="7hkqQl4lJHsqVJzcHXVVV1">¥/小时</em></div></label>
-          <label class="field" data-page-node-id="o1jNdDMuZkwNQGN4UOFle1"><span class="lb" data-page-node-id="ILTrgbTRyl5wbFE7tueoUy">单件人工耗时（切片 / 取件 / 修整）</span>
-            <div class="in" data-page-node-id="SzHhPwRjr0HBMtB8qzJ5g2"><input data-field="laborMin" type="number" min="0" step="1" value="5" data-page-node-id="n6lPWKI5YsjSmxU4UREXEC"><em class="suf" data-page-node-id="C7TRJbdSkRqhS9UERh4uNE">分钟</em></div></label>
-          <label class="field" data-page-node-id="x0bqnjdKRgfXp1yG0bmoGM"><span class="lb" data-page-node-id="9YDh3lAUwtIbuxhNgpHXCZ">单件后处理费（砂纸 / 胶水 / 喷漆等）</span>
-            <div class="in" data-page-node-id="4kA9jmkT9Exc0Ej7VU6D9g"><input data-field="postCost" type="number" min="0" step="0.5" value="1" data-page-node-id="cvVtG99uxFJUuaNEah7m0a"><em class="suf" data-page-node-id="siI3VbkWA8pMxYT8mhygcf">¥</em></div></label>
+        <div class="fields">
+          <label class="field"><span class="lb">电价（本地参数，不属于预设）</span>
+            <div class="in"><input data-field="elecPrice" type="number" min="0" step="0.05" value="0.6"><em class="suf">¥/度</em></div></label>
         </div>
       </section>
 
-      <section class="card" style="--i:3" data-page-node-id="4p2GOl2FdjT2s8ETBfulLX">
-        <h2 data-page-node-id="nyVh47kAwbFUbE2wFXwl4N"><span class="snum" data-page-node-id="1t8SGy913WrwWqMggbKSqv">04</span><span class="stitle" data-page-node-id="9spMRh2Xb77P1rOKk3zYNZ">风险与定价</span></h2>
-        <div class="fields" data-page-node-id="Q8k42UsJfMWe8AjqFgNqWp">
-          <label class="field" data-page-node-id="ylYIgXkDUlq2MMEbVHLDxA"><span class="lb" data-page-node-id="Nl8ah2UPYgG4lVaVfuEQpn">打印失败率</span>
-            <div class="in" data-page-node-id="7oOyKr5TOsJ8BsOl1hmbky"><input data-field="failRate" type="number" min="0" max="95" step="1" value="8" data-page-node-id="w6sZXyP4XGVmJlBWiY8r3C"><em class="suf" data-page-node-id="1DimTe7vylH0WNc5mRcR99">%</em></div></label>
-          <label class="field" data-page-node-id="nqLKU9x5xjEO4UYBcdS6XH"><span class="lb" data-page-node-id="mHMZCAztQw1Mqc3wIoxY6A">定价加价倍数</span>
-            <div class="in" data-page-node-id="PrrqNLSL8IshqeuBsYwFo0"><input data-field="markup" type="number" min="0" step="0.1" value="2.5" data-page-node-id="eHTUiblp0BeJaTxsdUjnJx"><em class="suf" data-page-node-id="jf3spcw0UgXFE1rHGuACzS">×成本</em></div></label>
-          <label class="field" data-page-node-id="67yawNRWid3SMVvWCMEdx6"><span class="lb" data-page-node-id="XMgrFYMKb01tQdK0mrpCKK">平台佣金 / 支付手续费</span>
-            <div class="in" data-page-node-id="6N171c3ESJeqZ9khPAR80c"><input data-field="commission" type="number" min="0" max="95" step="0.5" value="5" data-page-node-id="9cDDVt7xLYBgRKcDrruqZx"><em class="suf" data-page-node-id="VhnMqyGD3itiGv5tAme60N">%</em></div></label>
-          <label class="field" data-page-node-id="0tubOgokP09qsFnWLzTbyD"><span class="lb" data-page-node-id="Yr4fYPixofTEbbYT6zi6XQ">本单运费 / 包装</span>
-            <div class="in" data-page-node-id="EY8egqBaztEHnAW7PjpyxL"><input data-field="shipping" type="number" min="0" step="1" value="0" data-page-node-id="PSNqjF3NZyrbGdKwSKMSeQ"><em class="suf" data-page-node-id="x6Ri4VVVYfu4A1Rg85yeGi">¥</em></div></label>
+      <section class="card" style="--i:2">
+        <h2><span class="snum">03</span><span class="stitle">人工与后处理</span></h2>
+        <div class="fields">
+          <label class="field"><span class="lb">人工时薪</span>
+            <div class="in"><input data-field="laborRate" type="number" min="0" step="1" value="30"><em class="suf">¥/小时</em></div></label>
+          <label class="field"><span class="lb">单件人工耗时（切片 / 取件 / 修整）</span>
+            <div class="in"><input data-field="laborMin" type="number" min="0" step="1" value="5"><em class="suf">分钟</em></div></label>
+          <label class="field"><span class="lb">单件后处理费（砂纸 / 胶水 / 喷漆等）</span>
+            <div class="in"><input data-field="postCost" type="number" min="0" step="0.5" value="1"><em class="suf">¥</em></div></label>
+        </div>
+      </section>
+
+      <section class="card" style="--i:3">
+        <h2><span class="snum">04</span><span class="stitle">风险与定价</span></h2>
+        <div class="fields">
+          <label class="field"><span class="lb">打印失败率</span>
+            <div class="in"><input data-field="failRate" type="number" min="0" max="95" step="1" value="8"><em class="suf">%</em></div></label>
+          <label class="field"><span class="lb">定价加价倍数</span>
+            <div class="in"><input data-field="markup" type="number" min="0" step="0.1" value="2.5"><em class="suf">×成本</em></div></label>
+          <label class="field"><span class="lb">平台佣金 / 支付手续费</span>
+            <div class="in"><input data-field="commission" type="number" min="0" max="95" step="0.5" value="5"><em class="suf">%</em></div></label>
+          <label class="field"><span class="lb">本单运费 / 包装</span>
+            <div class="in"><input data-field="shipping" type="number" min="0" step="1" value="0"><em class="suf">¥</em></div></label>
         </div>
       </section>
 
     </div>
 
-    <aside class="side" data-page-node-id="Trz65EiiiUD8p7SAJfKeRC">
+    <aside class="side">
 
-      <section class="card" style="--i:1" data-page-node-id="qxd1u113Q29vouFMD9vvYy">
-        <h2 data-page-node-id="vl6cacuAwV01lvQoExrMtZ"><span class="snum" data-page-node-id="SXAHdOnX38rHst5mtAGkNQ">∑</span><span class="stitle" data-page-node-id="GZI3eK1wXjhfkAnEGBbrXQ">结果概览</span></h2>
-        <div class="hero" data-page-node-id="iuWmpKBeLpGMULqWg32ACF">
-          <div class="k" data-page-node-id="VOVnk2CIsMGMSloin9mr1Q">单件综合成本</div>
-          <div class="v" id="unitCost" data-page-node-id="DPWBtUvqcc1FvLGpmZ7KFn">¥0.00</div>
-          <div class="sub" data-page-node-id="MAFIh10m3GuQlCgiDxjT9a">总成本 <b id="totalCost" data-page-node-id="DgZrKbos1HC1iwr3fkPhtY">¥0.00</b> &nbsp;·&nbsp; 总时长 <b id="totalTime" data-page-node-id="3w8k0prE9rgEuQIQeWdlnP">0 h</b></div>
+      <section class="card" style="--i:1">
+        <h2><span class="snum">∑</span><span class="stitle">结果概览</span></h2>
+        <div class="hero">
+          <div class="k">单件综合成本</div>
+          <div class="v" id="unitCost">¥0.00</div>
+          <div class="sub">总成本 <b id="totalCost">¥0.00</b> &nbsp;·&nbsp; 总时长 <b id="totalTime">0 h</b></div>
         </div>
-        <div class="kpis" data-page-node-id="TyB3gNuKRWOGdqO1uuTfAG">
-          <div class="kpi" data-page-node-id="zwlfOEPiwDMQ9NOMkE2cGo"><div class="k" data-page-node-id="eyAcWbg6YpEB74B7qmQBnr">建议售价（含佣金）</div><div class="v" id="sellPrice" data-page-node-id="xk2nk7YFXqSVP5hNK6Bhok">¥0.00</div></div>
-          <div class="kpi" data-page-node-id="un1tWNN1szRdLDrf9PmiGQ"><div class="k" data-page-node-id="BPICYvaaOroWZWvLFmetAT">单件利润</div><div class="v good" id="unitProfit" data-page-node-id="Y4fqgQvl3lAdmPt10Lv7T4">¥0.00</div></div>
-          <div class="kpi" data-page-node-id="T4VXANhf5I9zoIcfwLurv7"><div class="k" data-page-node-id="9vEC8r8PBjqNGNdGmDdawR">订单总收入</div><div class="v" id="totalRevenue" data-page-node-id="nj90llWtmSDsZvCuBPhGkz">¥0.00</div></div>
-          <div class="kpi" data-page-node-id="mMKOdHC6ldvz8O0NOsns1R"><div class="k" data-page-node-id="zWOAoMmp4YzQyLYiyczxkY">订单总利润</div><div class="v" id="totalProfit" data-page-node-id="QGzB8UMc8odm5LdbA5koc2">¥0.00</div></div>
+        <div class="kpis">
+          <div class="kpi"><div class="k">建议售价（含佣金）</div><div class="v" id="sellPrice">¥0.00</div></div>
+          <div class="kpi"><div class="k">单件利润</div><div class="v good" id="unitProfit">¥0.00</div></div>
+          <div class="kpi"><div class="k">订单总收入</div><div class="v" id="totalRevenue">¥0.00</div></div>
+          <div class="kpi"><div class="k">订单总利润</div><div class="v" id="totalProfit">¥0.00</div></div>
         </div>
       </section>
 
-      <section class="card" style="--i:2" data-page-node-id="dAWAm12MGvXoarndJxUmOJ">
-        <h2 data-page-node-id="Fg6qTsEEgE3WhNGzKH0Q3l"><span class="snum" data-page-node-id="bcykzb51zVgfwceRH35PwP">05</span><span class="stitle" data-page-node-id="ED2mKQIMNEmsjfzldMxQ9Q">成本构成</span></h2>
-        <div class="donut-box" data-page-node-id="WogC8JtEPi2hVwGHZHeeq8">
-          <svg viewBox="0 0 42 42" aria-hidden="true" data-page-node-id="TZBoZ6hv4RtIp5XmVs3I1E">
-            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#edeff3" stroke-width="5.5" data-page-node-id="8jl5jeGVTBBaxFU0sriYbP"/>
-            <g id="donutSeg" transform="rotate(-90 21 21)" data-page-node-id="PDpM7w2dsZf0bFUpsznM7y"></g>
-            <text id="donutTxt" x="21" y="20.2" text-anchor="middle" font-size="5.6" font-weight="700" fill="#14161a" data-page-node-id="VbWqKUgyced1nEyVKlBiRC">0</text>
-            <text x="21" y="25.4" text-anchor="middle" font-size="2.9" fill="#8b93a1" data-page-node-id="n09fZ4I9oDUmHAFWez4mpk">总成本</text>
+      <section class="card" style="--i:2">
+        <h2><span class="snum">05</span><span class="stitle">成本构成</span></h2>
+        <div class="donut-box">
+          <svg viewBox="0 0 42 42" aria-hidden="true">
+            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#edeff3" stroke-width="5.5"/>
+            <g id="donutSeg" transform="rotate(-90 21 21)"></g>
+            <text id="donutTxt" x="21" y="20.2" text-anchor="middle" font-size="5.6" font-weight="700" fill="#14161a">0</text>
+            <text x="21" y="25.4" text-anchor="middle" font-size="2.9" fill="#8b93a1">总成本</text>
           </svg>
-          <div class="legend" id="legend" data-page-node-id="DqpewHviRCQacWLF6ElvSe"></div>
+          <div class="legend" id="legend"></div>
         </div>
       </section>
 
-      <section class="card" style="--i:3" data-page-node-id="QgOosmEtwrmhvv4GN1f8Mr">
-        <h2 data-page-node-id="P1IUARiRnajPAdKjuoMKs0"><span class="snum" data-page-node-id="n9sWQhsHj31JmcWoHIE65h">06</span><span class="stitle" data-page-node-id="3RCKtOIBYdjWdNowKvriLJ">成本明细</span></h2>
-        <table data-page-node-id="cYCaLbsgs93Gs1S0tzrXDm">
-          <thead data-page-node-id="IWHCeCYT7Lql86wV6rHL1x"><tr data-page-node-id="q2iMFtoAZWA65vxQ8hglCl"><th data-page-node-id="KVXhd8ZTmC1GVEWjon2rDh">项目</th><th data-page-node-id="SZNO6HANOrRmGY1FfS9MOu">金额</th><th class="pct" data-page-node-id="mFDmt1vFCBBYl0LzIaQK8F">占比</th></tr></thead>
-          <tbody id="tbody" data-page-node-id="5B4UAxGIAFIJgubw8ln85S"></tbody>
+      <section class="card" style="--i:3">
+        <h2><span class="snum">06</span><span class="stitle">成本明细</span></h2>
+        <table>
+          <thead><tr><th>项目</th><th>金额</th><th class="pct">占比</th></tr></thead>
+          <tbody id="tbody"></tbody>
         </table>
-        <details class="tip" data-page-node-id="dVKfRYgKLAnF15tP46P8hF">
-          <summary data-page-node-id="Oc3WrYZEokjDZYrvubWiTv">计算口径说明</summary>
-          <p data-page-node-id="tPaqazmTRETC8ytb6RSe8d">失败率采用<b data-page-node-id="1XczpINaxxDheqaX3e1EUp">摊销法</b>：为保证交出 N 件合格品，实际需打印 <b data-page-node-id="aUWuTMj285RddIpcN7weog">N ÷ (1 − 失败率)</b> 次，
-          失败成本 = 基础成本 × 失败率 ÷ (1 − 失败率)。售价按佣金反推：<b data-page-node-id="5skyNEXdAwigF7XBELZDfK">挂牌价 = 基础售价 ÷ (1 − 佣金率)</b>。</p>
+        <details class="tip">
+          <summary>计算口径说明</summary>
+          <p>失败率采用<b>摊销法</b>：为保证交出 N 件合格品，实际需打印 <b>N ÷ (1 − 失败率)</b> 次，
+          失败成本 = 基础成本 × 失败率 ÷ (1 − 失败率)。售价按佣金反推：<b>挂牌价 = 基础售价 ÷ (1 − 佣金率)</b>。</p>
         </details>
       </section>
 
     </aside>
   </main>
 
-  <footer class="foot" data-page-node-id="fhT1HmNzPHrMvo60kKl6Qc">
-    <span data-page-node-id="RR8B5WJmGSMLlQIgH6aHJV">本地运行 · 参数与预设仅保存在浏览器 localStorage</span>
-    <span data-page-node-id="PbznlULH9TjjnYt9CHd78B">预设价格为 2026-10 电商参考价，请按实际购入价修改</span>
+  <footer class="foot">
+    <span>本地运行 · 参数与预设仅保存在浏览器 localStorage</span>
+    <span>预设价格为 2026-10 电商参考价，请按实际购入价修改</span>
   </footer>
 </div>
 
 <!-- ===== 预设管理 ===== -->
-<div class="modal" id="modal" data-page-node-id="KHPk7s5mS3ruLME9aDJgWO">
-  <div class="modal-bg" data-close data-page-node-id="b1evD11sAHFfzFJ2hEEBP2"></div>
-  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="预设管理" data-page-node-id="ESD3oCW9JA6K7gANfysKkT">
-    <div class="modal-head" data-page-node-id="JM5XbS0IXGVDMAdbtBcuGe">
-      <h3 data-page-node-id="VYEaSUHEtF7ytwBYoyMUWO">预设管理</h3>
-      <button class="x" data-close aria-label="关闭" data-page-node-id="q4WQrOcj5tBhaN4ZjfPalz">×</button>
+<div class="modal" id="modal">
+  <div class="modal-bg" data-close></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="预设管理">
+    <div class="modal-head">
+      <h3>预设管理</h3>
+      <button class="x" data-close aria-label="关闭">×</button>
     </div>
-    <div class="tabs" data-page-node-id="gXpyqVVJFLI1doJ6wzeW1I">
-      <button class="tab active" data-tab="device" data-page-node-id="vOQQ9sCqzWlju9sVZGCedv">设备预设</button>
-      <button class="tab" data-tab="material" data-page-node-id="T0VM5SluPF1TC4YhTRFoa4">材料预设</button>
-      <button class="tab" data-tab="category" data-page-node-id="PEffl3WwlTRiT9CWuB5G0N">分类管理</button>
+    <div class="tabs">
+      <button class="tab active" data-tab="device">设备预设</button>
+      <button class="tab" data-tab="material">材料预设</button>
+      <button class="tab" data-tab="category">分类管理</button>
     </div>
-    <div class="modal-body" data-page-node-id="aEd9vNCB4wMjloRQHfGF9c">
-      <p class="srcnote" id="srcNote" data-page-node-id="BN3uruUPEtN24KldbQa6yr"></p>
-      <div class="pane active" id="pane-device" data-page-node-id="sIZsvG6nQP3DuNg3Gg2Nbv">
-        <div class="plist" id="list-device" data-page-node-id="rEXz7gEdHGc6dc9c5kO1If"></div>
-        <div class="pform" id="form-device" data-page-node-id="WCGneNpaVeUduG1ClgjFBr"></div>
-        <button class="btn primary" data-add="device" data-page-node-id="LVUYFNfDkb9J9B1zCrGEkF">＋ 新建设备预设</button>
+    <div class="modal-body">
+      <p class="srcnote" id="srcNote"></p>
+      <div class="pane active" id="pane-device">
+        <div class="plist" id="list-device"></div>
+        <div class="pform" id="form-device"></div>
+        <button class="btn primary" data-add="device">＋ 新建设备预设</button>
       </div>
-      <div class="pane" id="pane-material" data-page-node-id="FLUTd3ESXvzZuEZ51hkpTa">
-        <div class="plist" id="list-material" data-page-node-id="s8mwKHuysu6zHowPgOhreF"></div>
-        <div class="pform" id="form-material" data-page-node-id="ofFytz8CZZfx6dc1clFvxE"></div>
-        <button class="btn primary" data-add="material" data-page-node-id="igMrtyrz1kbDqulMC9OEGt">＋ 新建材料预设</button>
+      <div class="pane" id="pane-material">
+        <div class="plist" id="list-material"></div>
+        <div class="pform" id="form-material"></div>
+        <button class="btn primary" data-add="material">＋ 新建材料预设</button>
       </div>
-      <div class="pane" id="pane-category" data-page-node-id="mms6o25EcZCbIBuChbVs32">
-        <p class="srcnote" data-page-node-id="zGoVmhuneERnriYEYnpBe0">分类就是预设里的分组（品牌 / 系列）。<b data-page-node-id="vFrwSK1DiE9QphBXeTMMoZ">点「重命名」即可改名</b>；删除分类后，该分类下的预设会自动归入「未分类」，预设本身不会被删掉。</p>
-        <div class="catblock" data-page-node-id="EPXO6uAYtT8ZQyCG3DlUeC">
-          <h4 data-page-node-id="bs01xFT6HaYXz1yVulSqLW">设备分类 <span id="catCount-device" data-page-node-id="N7G9CsDlr6DogrQRWbPb3i"></span></h4>
-          <div class="catlist" id="catlist-device" data-page-node-id="caiW0TWr2au2EfI0vqS9YI"></div>
-          <div class="catadd" data-page-node-id="6el40FsQwAD5jd9STWYFnM">
-            <input id="catInput-device" placeholder="新增设备分类，例如：我的改装机" data-page-node-id="UvBTdBqEPJpFjq8RvXE3ss">
-            <button class="btn primary" data-catadd="device" data-page-node-id="IfU2QgA4IWtKXNRZgNz3bf">添加</button>
+      <div class="pane" id="pane-category">
+        <p class="srcnote">分类就是预设里的分组（品牌 / 系列）。<b>点「重命名」即可改名</b>；删除分类后，该分类下的预设会自动归入「未分类」，预设本身不会被删掉。</p>
+        <div class="catblock">
+          <h4>设备分类 <span id="catCount-device"></span></h4>
+          <div class="catlist" id="catlist-device"></div>
+          <div class="catadd">
+            <input id="catInput-device" placeholder="新增设备分类，例如：我的改装机">
+            <button class="btn primary" data-catadd="device">添加</button>
           </div>
         </div>
-        <div class="catblock" data-page-node-id="4kP0XHnNkwCVf0Qk8k2mqp">
-          <h4 data-page-node-id="Su0AfDdpQ5GL2nTl4rJZ9w">材料分类 <span id="catCount-material" data-page-node-id="qoWkPMen9ROnrE7BgAhb7H"></span></h4>
-          <div class="catlist" id="catlist-material" data-page-node-id="dS36OoHZb7duYdbXi83emX"></div>
-          <div class="catadd" data-page-node-id="L8hG5XU5TIuQbCwgZP6ngu">
-            <input id="catInput-material" placeholder="新增材料分类，例如：树脂 / 特种耗材" data-page-node-id="L1pj4VI6rQ9xPRG9G4sS0J">
-            <button class="btn primary" data-catadd="material" data-page-node-id="SDTbybkm2g6x2CQNwHlXHN">添加</button>
+        <div class="catblock">
+          <h4>材料分类 <span id="catCount-material"></span></h4>
+          <div class="catlist" id="catlist-material"></div>
+          <div class="catadd">
+            <input id="catInput-material" placeholder="新增材料分类，例如：树脂 / 特种耗材">
+            <button class="btn primary" data-catadd="material">添加</button>
           </div>
         </div>
       </div>
-      <div class="bk" data-page-node-id="TABb2VnrQD7cxFiA2i17bc">
-        <h4 data-page-node-id="6J1uRydRT6EEsrAUUryh7A">备份与恢复</h4>
-        <p class="bk-note" data-page-node-id="PxA2T8FKf2m6iapiJLPr0y">备份文件包含<strong data-page-node-id="OYc8xpqJvGQDZXSYLOm5BT">全部参数、自定义预设与分类</strong>，可用于换机迁移或防止误删；恢复时会<strong data-page-node-id="VKeObrlz2QqTy63PkAotDM">覆盖</strong>当前数据。</p>
-        <div class="bk-row" data-page-node-id="teddrt4AlFOthfDEcVxeh4">
-          <button class="btn primary" id="btnBackup" data-page-node-id="KTiOsbaKkHkMeLf4P5i8XA">备份全部数据</button>
-          <label class="btn" style="margin:0" data-page-node-id="bziR9FtNnimyQhm2tdjR1H">恢复备份<input type="file" id="fileRestore" accept=".json,application/json" hidden data-page-node-id="CJTk3ALmRlM54oXGHDBzfH"></label>
+      <div class="bk">
+        <h4>备份与恢复</h4>
+        <p class="bk-note">备份文件包含<strong>全部参数、自定义预设与分类</strong>，可用于换机迁移或防止误删；恢复时会<strong>覆盖</strong>当前数据。</p>
+        <div class="bk-row">
+          <button class="btn primary" id="btnBackup">备份全部数据</button>
+          <label class="btn" style="margin:0">恢复备份<input type="file" id="fileRestore" accept=".json,application/json" hidden></label>
         </div>
-        <h4 data-page-node-id="ONaQol3WilXKrFRn2ebJaV">仅分享预设</h4>
-        <p class="bk-note" data-page-node-id="5ZO24KIiywVuMLNeO02vdY">只导出你自己新建或改过的预设，方便分享给他人合并导入，不影响对方其他数据。</p>
-        <div class="bk-row" data-page-node-id="5zWEgQPtbhnGtGNQ8zWYjb">
-          <button class="btn" id="btnExpPreset" data-page-node-id="jcX3FjExh8OG6Dg0BA5ORo">导出预设</button>
-          <label class="btn" style="margin:0" data-page-node-id="ThcQKyj8wZ7Qt5WNEugDVv">导入预设<input type="file" id="fileImp" accept=".json,application/json" hidden data-page-node-id="pI5RKalzM5AGtr7Ej3EG5E"></label>
+        <h4>仅分享预设</h4>
+        <p class="bk-note">只导出你自己新建或改过的预设，方便分享给他人合并导入，不影响对方其他数据。</p>
+        <div class="bk-row">
+          <button class="btn" id="btnExpPreset">导出预设</button>
+          <label class="btn" style="margin:0">导入预设<input type="file" id="fileImp" accept=".json,application/json" hidden></label>
         </div>
       </div>
     </div>
-    <div class="modal-foot" data-page-node-id="dqoRQHr6sWNIcjYJcxmQTy">
-      <span class="sp" data-page-node-id="rhPLpRXAzrreGxO2UcpUG7"></span>
-      <button class="btn primary" data-close data-page-node-id="U3m7LC4Dw1Jcqks4HwVbN6">完成</button>
+    <div class="modal-foot">
+      <span class="sp"></span>
+      <button class="btn primary" data-close>完成</button>
     </div>
   </div>
 </div>
 
-<div class="picker" id="picker" data-page-node-id="6PVQz9E5GQagjBKZwfajqT">
-  <div class="pk-mask" data-pkclose data-page-node-id="qzWZG74wTN7e1JsXFLpkiT"></div>
-  <div class="pk-sheet" role="dialog" aria-modal="true" aria-label="选择预设" data-page-node-id="L7AQa7dQbB2qndH93X00Bc">
-    <div class="pk-head" data-page-node-id="Xebtf2xE9VBuRbGJ5jBTfJ">
-      <button type="button" class="pk-back" id="pkBack" aria-label="返回" hidden data-page-node-id="ntaiezK0GEF9FTDCLVAeUT">←</button>
-      <b id="pkTitle" data-page-node-id="y2BCEmpHwEF2UUUdAoiNpb">选择</b>
-      <button type="button" class="pk-x" data-pkclose aria-label="关闭" data-page-node-id="tv1Ay4HDhL5zI9yeWyc2Zy">×</button>
+<div class="picker" id="picker">
+  <div class="pk-mask" data-pkclose></div>
+  <div class="pk-sheet" role="dialog" aria-modal="true" aria-label="选择预设">
+    <div class="pk-head">
+      <button type="button" class="pk-back" id="pkBack" aria-label="返回" hidden>←</button>
+      <b id="pkTitle">选择</b>
+      <button type="button" class="pk-x" data-pkclose aria-label="关闭">×</button>
     </div>
-    <div class="pk-body" id="pkBody" data-page-node-id="TbDbGSToTrDDXipBj8ikDz"></div>
+    <div class="pk-body" id="pkBody"></div>
   </div>
 </div>
-<div class="toast" id="toast" role="status" aria-live="polite" data-page-node-id="ui0VWKFcEJDGAwahye4PPc"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<div class="ov" id="pprev" role="dialog" aria-modal="true" aria-label="打印预览" data-page-node-id="Ac6CFSIEbn3qfPmh5Sr8j3">
-  <div class="ov-bg" data-ppclose data-page-node-id="3774BKHMpiQPYBHcYGqiIg"></div>
-  <div class="ov-panel" data-page-node-id="4k4ueJRoVZjZjT2Di1eMnc">
-    <div class="ov-head" data-page-node-id="KxmEFB1VNv64xoHzBqz1at">
-      <h3 data-page-node-id="6V4vFgVB6DHtf8IMasEpxg">打印预览</h3>
-      <button class="x" data-ppclose aria-label="关闭" data-page-node-id="NmBoT6C9auYWmQjqGWMmn8">×</button>
+<div class="ov" id="pprev" role="dialog" aria-modal="true" aria-label="打印预览">
+  <div class="ov-bg" data-ppclose></div>
+  <div class="ov-panel">
+    <div class="ov-head">
+      <h3>打印预览</h3>
+      <button class="x" data-ppclose aria-label="关闭">×</button>
     </div>
-    <div class="ov-body" data-page-node-id="wTJ1sw9OzDOyxaGMkSRyEf"><div class="pp-page" id="ppPage" data-page-node-id="thcZlJQGZ6xS2H5umK8DD1"></div></div>
-    <div class="ov-foot" data-page-node-id="QOpz9OZB6C8nHNGwt7LzJ8">
-      <span class="pp-hint" id="ppHint" data-page-node-id="2dsYNuVwUashCLFgbg7CVg"></span>
-      <button class="btn" data-ppclose data-page-node-id="VQA7H2eVaDaAcf1srxs8rd">关闭</button>
-      <button class="btn primary" id="ppPrint" data-page-node-id="YSgQmW219rXq9jU5j5I6Ix">打印 / 保存为 PDF</button>
+    <div class="ov-body"><div class="pp-page" id="ppPage"></div></div>
+    <div class="ov-foot">
+      <span class="pp-hint" id="ppHint"></span>
+      <button class="btn" data-ppclose>关闭</button>
+      <button class="btn primary" id="ppPrint">打印 / 保存为 PDF</button>
     </div>
   </div>
 </div>
 
-<div class="ov" id="exBox" role="dialog" aria-modal="true" aria-label="导出内容" data-page-node-id="OzIwiGnQWyJluje2KKmVEv">
-  <div class="ov-bg" data-exclose data-page-node-id="WYZYYwwh5m9LGaaNP4ZiVD"></div>
-  <div class="ov-panel" data-page-node-id="l7A94EjzyKng0j4nbUWuh1">
-    <div class="ov-head" data-page-node-id="cn8Gchk3ign0803aHAnjli">
-      <h3 id="exTitle" data-page-node-id="Eb0fZO9MQd8H1wCtBr24qz">导出内容</h3>
-      <button class="x" data-exclose aria-label="关闭" data-page-node-id="m7RJFWfOtvVBmVDTslgCf0">×</button>
+<div class="ov" id="exBox" role="dialog" aria-modal="true" aria-label="导出内容">
+  <div class="ov-bg" data-exclose></div>
+  <div class="ov-panel">
+    <div class="ov-head">
+      <h3 id="exTitle">导出内容</h3>
+      <button class="x" data-exclose aria-label="关闭">×</button>
     </div>
-    <div class="ov-body" style="background:#fff" data-page-node-id="EMik7XMwARSNBAiXDe3FdD">
-      <div class="ex-wrap" data-page-node-id="FJblJ8XkPBTME8vVGVmhsF">
-        <p class="ex-note" id="exNote" data-page-node-id="n0xaCdMUEuhtBPDeUDxeic"></p>
+    <div class="ov-body" style="background:#fff">
+      <div class="ex-wrap">
+        <p class="ex-note" id="exNote"></p>
         <textarea class="ex-ta" id="exText" readonly spellcheck="false"></textarea>
       </div>
     </div>
-    <div class="ov-foot" data-page-node-id="p99nJAxdoVTev6FPOCTCyK">
-      <button class="btn" data-exclose data-page-node-id="2EMIkm6RLPkByRq24WkET2">关闭</button>
-      <a class="btn" id="exOpen" target="_blank" rel="noopener" data-page-node-id="33sBvuBXFw8MaKbGJ0AX8w">在新标签页打开</a>
-      <button class="btn primary" id="exCopy" data-page-node-id="UkFGVgxso0eUtlenUq3nwM">复制内容</button>
+    <div class="ov-foot">
+      <button class="btn" data-exclose>关闭</button>
+      <a class="btn" id="exOpen" target="_blank" rel="noopener">在新标签页打开</a>
+      <button class="btn primary" id="exCopy">复制内容</button>
     </div>
   </div>
 </div>
