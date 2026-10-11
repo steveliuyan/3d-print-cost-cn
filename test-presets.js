@@ -481,7 +481,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.3.0', dU.getElementById('footVer').textContent === '1.3.0',
+    ok('更新：footer 显示当前版本号 1.4.0', dU.getElementById('footVer').textContent === '1.4.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -585,7 +585,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.3.0');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.4.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -763,7 +763,52 @@ setTimeout(function () {
       setTimeout(function () {
         var info2 = dS.getElementById('stlInfo').textContent;
         ok('v1.3：ASCII STL 解析出 0.17 cm³', /0\.17/.test(info2), info2);
-        done();
+
+        /* ===== v1.4.0：3MF 导入（Stored ZIP + XML mesh） ===== */
+        function zipStore(name, bytes) {
+          var n = bytes.length, nameLen = name.length;
+          var lfh = 30 + nameLen + n, cdh = 46 + nameLen, total = lfh + cdh + 22;
+          var buf = new ArrayBuffer(total), dv = new DataView(buf), u8 = new Uint8Array(buf);
+          var o = 0;
+          dv.setUint32(o, 0x04034b50, true); dv.setUint16(o + 4, 20, true); dv.setUint16(o + 8, 0, true);
+          dv.setUint16(o + 10, 0, true); dv.setUint32(o + 14, 0, true);
+          dv.setUint32(o + 18, n, true); dv.setUint32(o + 22, n, true);
+          dv.setUint16(o + 26, nameLen, true); dv.setUint16(o + 28, 0, true);
+          for (var i = 0; i < nameLen; i++) u8[o + 30 + i] = name.charCodeAt(i);
+          u8.set(bytes, o + 30 + nameLen);
+          var cdOff = o = lfh;
+          dv.setUint32(o, 0x02014b50, true); dv.setUint16(o + 4, 20, true); dv.setUint16(o + 6, 20, true);
+          dv.setUint16(o + 8, 0, true); dv.setUint16(o + 10, 0, true);
+          dv.setUint32(o + 16, n, true); dv.setUint32(o + 20, n, true);
+          dv.setUint32(o + 24, n, true); dv.setUint16(o + 28, nameLen, true);
+          dv.setUint32(o + 42, 0, true);
+          for (var j = 0; j < nameLen; j++) u8[o + 46 + j] = name.charCodeAt(j);
+          o += cdh;
+          dv.setUint32(o, 0x06054b50, true); dv.setUint16(o + 8, 1, true); dv.setUint16(o + 10, 1, true);
+          dv.setUint32(o + 12, cdh, true); dv.setUint32(o + 16, cdOff, true);
+          return buf;
+        }
+        function cube3mfBytes(s) {
+          var V = [[0,0,0],[s,0,0],[s,s,0],[0,s,0],[0,0,s],[s,0,s],[s,s,s],[0,s,s]];
+          var T = [[4,7,6],[4,6,5],[0,1,2],[0,2,3],[3,2,6],[3,6,7],[1,0,4],[1,4,5],[0,3,7],[0,7,4],[2,1,5],[2,5,6]];
+          var x = '<?xml version="1.0" encoding="UTF-8"?>\n<model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources><object id="1" type="model"><mesh><vertices>';
+          V.forEach(function (v) { x += '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>'; });
+          x += '</vertices><triangles>';
+          T.forEach(function (t) { x += '<triangle v1="' + t[0] + '" v2="' + t[1] + '" v3="' + t[2] + '"/>'; });
+          x += '</triangles></mesh></object></resources><build><item objectid="1"/></build></model>';
+          var b = new Uint8Array(x.length);
+          for (var i = 0; i < x.length; i++) b[i] = x.charCodeAt(i);
+          return zipStore('3D/3dmodel.model', b);
+        }
+        var f3 = new wS.File([cube3mfBytes(20)], 'cube.3mf', { type: '' });
+        try { Object.defineProperty(inp, 'files', { value: [f3], configurable: true }); } catch (e) {}
+        inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+        setTimeout(function () {
+          var info3 = dS.getElementById('stlInfo').textContent;
+          ok('v1.4：3MF 解析出 8.00 cm³', /8\.00/.test(info3), info3);
+          ok('v1.4：3MF 估算 3.97 克（PLA 20% 填充）', /3\.97/.test(info3), info3);
+          done();
+        }, 400);
       }, 120);
     }, 120);
   }

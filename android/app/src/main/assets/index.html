@@ -518,7 +518,7 @@
         </div>
         <div class="stlbox">
           <button type="button" class="btn sm" id="stlBtn">导入 STL 估算</button>
-          <input type="file" id="stlFile" accept=".stl" hidden>
+          <input type="file" id="stlFile" accept=".stl,.3mf" hidden>
           <select id="matDensity" title="材料密度">
             <option value="1.24">PLA 1.24</option>
             <option value="1.27">PETG 1.27</option>
@@ -1787,7 +1787,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.3.0";
+  var APP_VERSION = "1.4.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -1953,10 +1953,93 @@
       " mm · 估算用量 " + est.toFixed(2) + " 克（" + dName + " · 填充 " + num("infill") + "%）";
     fill.hidden = false;
   }
+  /* ---- 3MF：ZIP 容器 + XML mesh（Stored / Deflate 均支持，纯前端解析） ---- */
+  function zipList(buf){
+    var dv = new DataView(buf);
+    var i = buf.byteLength - 22;
+    while(i >= 0 && dv.getUint32(i, true) !== 0x06054b50) i--; /* EOCD */
+    if(i < 0) return null;
+    var n = dv.getUint16(i + 10, true), p = dv.getUint32(i + 16, true), files = {};
+    for(var k = 0; k < n; k++){
+      if(dv.getUint32(p, true) !== 0x02014b50) break;
+      var method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+      var nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
+      var name = ""; for(var j = 0; j < nl; j++) name += String.fromCharCode(dv.getUint8(p + 46 + j));
+      files[name.toLowerCase()] = { method: method, csize: csize, lho: dv.getUint32(p + 42, true) };
+      p += 46 + nl + el + cl;
+    }
+    return files;
+  }
+  function zipRead(buf, e, cb){
+    var dv = new DataView(buf);
+    var nl = dv.getUint16(e.lho + 26, true), el = dv.getUint16(e.lho + 28, true);
+    var raw = new Uint8Array(buf, e.lho + 30 + nl + el, e.csize);
+    if(e.method === 0){ cb(raw); return true; }
+    if(e.method === 8 && typeof DecompressionStream === "function"){
+      try{
+        new Response(new Blob([raw]).stream().pipeThrough(new DecompressionStream("deflate-raw")))
+          .arrayBuffer().then(function(ab){ cb(new Uint8Array(ab)); }, function(){ toast("3MF 解压失败"); });
+        return true;
+      }catch(err){ return false; }
+    }
+    return false;
+  }
+  function u8ToText(u8){
+    var s = "";
+    for(var i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + 8192, u8.length)));
+    return s;
+  }
+  function parse3mfXml(text){
+    var doc = new DOMParser().parseFromString(text, "text/xml");
+    if(doc.getElementsByTagName("parsererror").length) return null;
+    var meshes = doc.getElementsByTagName("mesh");
+    if(!meshes.length) return null;
+    var tris = [];
+    for(var m = 0; m < meshes.length; m++){
+      var vs = meshes[m].getElementsByTagName("vertex");
+      var vv = [];
+      for(var i = 0; i < vs.length; i++)
+        vv.push([parseFloat(vs[i].getAttribute("x")), parseFloat(vs[i].getAttribute("y")), parseFloat(vs[i].getAttribute("z"))]);
+      var ts = meshes[m].getElementsByTagName("triangle");
+      for(var t = 0; t < ts.length; t++){
+        var a = +ts[t].getAttribute("v1"), b = +ts[t].getAttribute("v2"), c = +ts[t].getAttribute("v3");
+        if(!(vv[a] && vv[b] && vv[c])) return null;
+        tris.push(vv[a].concat(vv[b], vv[c]));
+      }
+    }
+    return tris.length ? tris : null;
+  }
+  function load3mf(file){
+    var fr = new FileReader();
+    fr.onload = function(){
+      var buf = fr.result, files = zipList(buf);
+      if(!files){ toast("无法解析该 3MF 文件"); return; }
+      var key = null;
+      for(var k in files) if(/\.model$/.test(k)){ key = k; break; }
+      if(!key){ toast("3MF 内未找到模型数据"); return; }
+      if(!zipRead(buf, files[key], function(raw){
+        try{
+          var tris = parse3mfXml(u8ToText(raw));
+          if(!tris){ toast("无法解析 3MF 模型数据"); return; }
+          var st = stlMeshStats(tris);
+          stlVol = st.vol / 1000; stlBBox = st.bbox;
+          stlRender();
+          toast("已解析 3MF 模型：体积 " + stlVol.toFixed(2) + " cm³");
+        }catch(e){ toast("3MF 解析失败"); }
+      })) toast("该 3MF 压缩方式暂不支持");
+    };
+    fr.readAsArrayBuffer(file);
+  }
   function stlLoad(file){
     if(!file) return;
     var fr = new FileReader();
     fr.onload = function(){
+      var head = "";
+      try{
+        var b0 = new Uint8Array(fr.result, 0, Math.min(4, fr.result.byteLength));
+        for(var i = 0; i < b0.length; i++) head += String.fromCharCode(b0[i]);
+      }catch(e){}
+      if(head === "PK\x03\x04" || /\.3mf$/i.test(file.name || "")){ load3mf(file); return; }
       try{
         var buf = fr.result, tris = stlParseBinary(buf);
         if(!tris){
