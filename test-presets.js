@@ -481,7 +481,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.2.1', dU.getElementById('footVer').textContent === '1.2.1',
+    ok('更新：footer 显示当前版本号 1.3.0', dU.getElementById('footVer').textContent === '1.3.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -585,7 +585,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.2.1');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.3.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -698,6 +698,76 @@ setTimeout(function () {
     }, 60);
   }
 
+  /* ===== 19. STL 导入估算（v1.3.0） ===== */
+  function cubeBinaryStl(s) {
+    var tris = [
+      [[0,0,s],[0,s,s],[s,s,s]], [[0,0,s],[s,s,s],[s,0,s]],
+      [[0,0,0],[s,0,0],[s,s,0]], [[0,0,0],[s,s,0],[0,s,0]],
+      [[0,s,0],[s,s,0],[s,s,s]], [[0,s,0],[s,s,s],[0,s,s]],
+      [[s,0,0],[0,0,0],[0,0,s]], [[s,0,0],[0,0,s],[s,0,s]],
+      [[0,0,0],[0,s,0],[0,s,s]], [[0,0,0],[0,s,s],[0,0,s]],
+      [[s,s,0],[s,0,0],[s,0,s]], [[s,s,0],[s,0,s],[s,s,s]]
+    ];
+    var buf = new ArrayBuffer(84 + tris.length * 50);
+    var dv = new DataView(buf);
+    dv.setUint32(80, tris.length, true);
+    tris.forEach(function (t, i) {
+      var o = 84 + i * 50 + 12; /* 跳过法线 */
+      t.forEach(function (v) { dv.setFloat32(o, v[0], true); dv.setFloat32(o + 4, v[1], true); dv.setFloat32(o + 8, v[2], true); o += 12; });
+    });
+    return buf;
+  }
+  function tetraAsciiStl() {
+    var f = [
+      [[0,0,0],[0,0,10],[0,10,0]], [[0,0,0],[10,0,0],[0,0,10]],
+      [[0,0,0],[0,10,0],[10,0,0]], [[10,0,0],[0,10,0],[0,0,10]]
+    ];
+    var s = 'solid t\n';
+    f.forEach(function (t) {
+      s += ' facet normal 0 0 0\n  outer loop\n';
+      t.forEach(function (v) { s += '   vertex ' + v[0] + ' ' + v[1] + ' ' + v[2] + '\n'; });
+      s += '  endloop\n endfacet\n';
+    });
+    return s + 'endsolid t\n';
+  }
+  function runStlTests(done) {
+    var domS = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) { win.confirm = function () { return true; }; }
+    });
+    var wS = domS.window, dS = wS.document;
+    var bin = new wS.File([cubeBinaryStl(20)], 'cube.stl', { type: '' });
+    var inp = dS.getElementById('stlFile');
+    try { Object.defineProperty(inp, 'files', { value: [bin], configurable: true }); } catch (e) {}
+    inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+    setTimeout(function () {
+      var info = dS.getElementById('stlInfo').textContent;
+      ok('v1.3：二进制 STL 解析出体积 8.00 cm³', /8\.00/.test(info), info);
+      ok('v1.3：显示包围盒 20 × 20 × 20', /20\s*×\s*20\s*×\s*20/.test(info), info);
+      ok('v1.3：PLA + 20% 填充估算 3.97 克', /3\.97/.test(info), info);
+      dS.getElementById('stlFill').dispatchEvent(new wS.MouseEvent('click', { bubbles: true }));
+      ok('v1.3：「填入用量」把 3.97 写进 grams', dS.querySelector('[data-field="grams"]').value === '3.97',
+         dS.querySelector('[data-field="grams"]').value);
+      /* 换 ABS 密度重算 */
+      var sel = dS.getElementById('matDensity');
+      sel.value = '1.04';
+      sel.dispatchEvent(new wS.Event('change', { bubbles: true }));
+      ok('v1.3：切 ABS 后估算变 3.33 克', /3\.33/.test(dS.getElementById('stlInfo').textContent),
+         dS.getElementById('stlInfo').textContent);
+      /* ASCII STL：四面体 166.67 mm³ → 0.17 cm³（切回 PLA 密度） */
+      sel.value = '1.24';
+      sel.dispatchEvent(new wS.Event('change', { bubbles: true }));
+      var asc = new wS.File([tetraAsciiStl()], 'tetra.stl', { type: '' });
+      try { Object.defineProperty(inp, 'files', { value: [asc], configurable: true }); } catch (e) {}
+      inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+      setTimeout(function () {
+        var info2 = dS.getElementById('stlInfo').textContent;
+        ok('v1.3：ASCII STL 解析出 0.17 cm³', /0\.17/.test(info2), info2);
+        done();
+      }, 120);
+    }, 120);
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -736,7 +806,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runV120Tests(finish); });
+      runUpdateTests(function () { runV120Tests(function () { runStlTests(finish); }); });
     }, 900);
   });
 }, 300);

@@ -354,6 +354,19 @@
   .foot .lnk{background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer;
              text-decoration:underline; text-underline-offset:3px}
   .foot .lnk:disabled{color:var(--text4); cursor:not-allowed; text-decoration:none}
+  /* ===== STL 导入估算 ===== */
+  .stlbox{display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-top:10px;
+          padding:10px 12px; border:1px dashed var(--line); border-radius:12px}
+  .stlbox select{border:1px solid var(--line); border-radius:8px; padding:4px 6px; font:inherit;
+                 font-size:12px; background:var(--bg,#fff); color:var(--text)}
+  .stl-infill{display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--text3)}
+  .stl-infill input{width:56px; border:1px solid var(--line); border-radius:8px; padding:4px 6px;
+                    font:inherit; font-size:12px; background:var(--bg,#fff); color:var(--text)}
+  .stl-info{flex:1 1 100%; font-size:11.5px; color:var(--text3); word-break:break-all}
+  @media (max-width:560px){
+    .stlbox .btn{flex:1 1 auto; justify-content:center}
+    .stl-info{flex-basis:100%}
+  }
   /* ===== 报价操作 / 历史 / 分享长图 ===== */
   .qact{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line)}
   .hist-list{display:flex; flex-direction:column; gap:8px}
@@ -502,6 +515,18 @@
             <div class="in"><input data-field="grams" type="number" min="0" step="1" value="55"><em class="suf">克</em></div></label>
           <label class="field"><span class="lb">材料损耗率（打废 / 换料 / 余料）</span>
             <div class="in"><input data-field="waste" type="number" min="0" max="100" step="1" value="5"><em class="suf">%</em></div></label>
+        </div>
+        <div class="stlbox">
+          <button type="button" class="btn sm" id="stlBtn">导入 STL 估算</button>
+          <input type="file" id="stlFile" accept=".stl" hidden>
+          <select id="matDensity" title="材料密度">
+            <option value="1.24">PLA 1.24</option>
+            <option value="1.27">PETG 1.27</option>
+            <option value="1.04">ABS 1.04</option>
+          </select>
+          <span class="pin stl-infill">填充<input data-field="infill" type="number" min="0" max="100" step="5" value="20"><em class="suf">%</em></span>
+          <button type="button" class="btn sm" id="stlFill" hidden>填入用量</button>
+          <div class="stl-info" id="stlInfo">支持二进制 / ASCII STL（单位 mm），本地解析</div>
         </div>
       </section>
 
@@ -1762,7 +1787,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.2.1";
+  var APP_VERSION = "1.3.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -1863,6 +1888,102 @@
     try{ window.open(target, "_blank", "noopener"); }
     catch(e){ location.href = target; }
   }
+
+  /* ===== STL 导入估算（本地解析，不上传） ===== */
+  var stlVol = 0, stlBBox = null; /* cm³ / [x,y,z] mm */
+  function stlParseBinary(buf){
+    if(buf.byteLength < 84) return null;
+    var dv = new DataView(buf);
+    /* ASCII 探测：以 "solid" 开头且含 "facet" */
+    var head = "";
+    for(var i = 0; i < Math.min(80, buf.byteLength); i++) head += String.fromCharCode(dv.getUint8(i));
+    if(/^\s*solid/.test(head) && buf.byteLength > 200){
+      var sample = head; /* 头部 80 字节若不足以判断，再抽样中部 */
+      if(sample.indexOf("facet") < 0){
+        var mid = Math.floor(buf.byteLength / 2);
+        for(var j = mid; j < Math.min(mid + 400, buf.byteLength); j++) sample += String.fromCharCode(dv.getUint8(j));
+      }
+      if(sample.indexOf("facet") >= 0) return null; /* 交给 ASCII 解析 */
+    }
+    var n = dv.getUint32(80, true);
+    if(n <= 0 || 84 + n * 50 > buf.byteLength) return null;
+    var tris = [];
+    for(var k = 0; k < n; k++){
+      var o = 84 + k * 50 + 12;
+      tris.push([
+        dv.getFloat32(o, true), dv.getFloat32(o + 4, true), dv.getFloat32(o + 8, true),
+        dv.getFloat32(o + 12, true), dv.getFloat32(o + 16, true), dv.getFloat32(o + 20, true),
+        dv.getFloat32(o + 24, true), dv.getFloat32(o + 28, true), dv.getFloat32(o + 32, true)
+      ]);
+    }
+    return tris;
+  }
+  function stlParseAscii(text){
+    var vs = [], re = /vertex\s+([-\d.eE+]+)\s+([-\d.eE+]+)\s+([-\d.eE+]+)/g, m;
+    while((m = re.exec(text)) !== null) vs.push([+m[1], +m[2], +m[3]]);
+    if(vs.length < 3 || vs.length % 3 !== 0) return null;
+    var tris = [];
+    for(var i = 0; i < vs.length; i += 3) tris.push(vs[i].concat(vs[i + 1], vs[i + 2]));
+    return tris;
+  }
+  function stlMeshStats(tris){
+    var vol = 0, mn = [Infinity, Infinity, Infinity], mx = [-Infinity, -Infinity, -Infinity];
+    tris.forEach(function(t){
+      var ax = t[0], ay = t[1], az = t[2], bx = t[3], by = t[4], bz = t[5], cx = t[6], cy = t[7], cz = t[8];
+      vol += (ax * (by * cz - bz * cy) + ay * (bz * cx - bx * cz) + az * (bx * cy - by * cx)) / 6;
+      [ax, bx, cx].forEach(function(v){ if(v < mn[0]) mn[0] = v; if(v > mx[0]) mx[0] = v; });
+      [ay, by, cy].forEach(function(v){ if(v < mn[1]) mn[1] = v; if(v > mx[1]) mx[1] = v; });
+      [az, bz, cz].forEach(function(v){ if(v < mn[2]) mn[2] = v; if(v > mx[2]) mx[2] = v; });
+    });
+    return { vol: Math.abs(vol), bbox: [mx[0] - mn[0], mx[1] - mn[1], mx[2] - mn[2]] };
+  }
+  function stlEstimate(){
+    if(!(stlVol > 0)) return 0;
+    var density = parseFloat($("#matDensity").value) || 1.24;
+    var infill = Math.min(100, Math.max(0, num("infill") || 0)) / 100;
+    return stlVol * density * (0.25 + 0.75 * infill);
+  }
+  function stlRender(){
+    var el = $("#stlInfo"), fill = $("#stlFill");
+    if(!(stlVol > 0)){ el.textContent = "支持二进制 / ASCII STL（单位 mm），本地解析"; fill.hidden = true; return; }
+    var est = stlEstimate();
+    var dn = $("#matDensity"), dName = dn.options[dn.selectedIndex].text.split(" ")[0];
+    el.textContent = "体积 " + stlVol.toFixed(2) + " cm³ · 包围盒 " +
+      stlBBox.map(function(v){ return +v.toFixed(1); }).join(" × ") +
+      " mm · 估算用量 " + est.toFixed(2) + " 克（" + dName + " · 填充 " + num("infill") + "%）";
+    fill.hidden = false;
+  }
+  function stlLoad(file){
+    if(!file) return;
+    var fr = new FileReader();
+    fr.onload = function(){
+      try{
+        var buf = fr.result, tris = stlParseBinary(buf);
+        if(!tris){
+          var bytes = new Uint8Array(buf), s = "";
+          for(var i = 0; i < bytes.length; i += 8192) s += String.fromCharCode.apply(null, bytes.subarray(i, Math.min(i + 8192, bytes.length)));
+          tris = stlParseAscii(s);
+        }
+        if(!tris || !tris.length){ toast("无法解析该 STL 文件"); return; }
+        var st = stlMeshStats(tris);
+        stlVol = st.vol / 1000; stlBBox = st.bbox;
+        stlRender();
+        toast("已解析模型：体积 " + stlVol.toFixed(2) + " cm³");
+      }catch(e){ toast("STL 解析失败"); }
+    };
+    fr.readAsArrayBuffer(file);
+  }
+  $("#stlBtn").addEventListener("click", function(){ $("#stlFile").click(); });
+  $("#stlFile").addEventListener("change", function(){ stlLoad(this.files && this.files[0]); this.value = ""; });
+  $("#matDensity").addEventListener("change", stlRender);
+  $("#infill") && $("#infill").addEventListener("input", stlRender);
+  $("#stlFill").addEventListener("click", function(){
+    var est = stlEstimate();
+    if(!(est > 0)) return;
+    $('[data-field="grams"]').value = est.toFixed(2);
+    update();
+    toast("已填入估算用量 " + est.toFixed(2) + " 克（建议按实际切片微调）");
+  });
 
   /* ===== 报价历史（仅本机 localStorage） ===== */
   var QKEY = "dpc_quotes_v1";
