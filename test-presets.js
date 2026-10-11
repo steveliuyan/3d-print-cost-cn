@@ -481,7 +481,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.4.0', dU.getElementById('footVer').textContent === '1.4.0',
+    ok('更新：footer 显示当前版本号 1.4.1', dU.getElementById('footVer').textContent === '1.4.1',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -585,7 +585,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.4.0');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.4.1');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -807,7 +807,20 @@ setTimeout(function () {
           var info3 = dS.getElementById('stlInfo').textContent;
           ok('v1.4：3MF 解析出 8.00 cm³', /8\.00/.test(info3), info3);
           ok('v1.4：3MF 估算 3.97 克（PLA 20% 填充）', /3\.97/.test(info3), info3);
-          done();
+          /* v1.4.1：真实 Deflate 压缩 3MF（Python zipfile 生成，3 条目，内置纯 JS inflate 解压） */
+          var b64 = 'UEsDBBQAAAAIAOKFS127VpL0wgAAAD0BAAATAAAAW0NvbnRlbnRfVHlwZXNdLnhtbIWQXWrDMBCEryL2tdhyUyil2M5D054gPcAir3+ItBLSOqS37zppKZRCH2dndj6Ydn8J3pwplyVyB/d1A4bYxWHhqYP341v1BPu+PX4kKkajXDqYRdKztcXNFLDUMRGrM8YcUFTmySZ0J5zI7prm0brIQiyVbB3QtwcacfViXi96vmEz+QLm5RbcWB1gSn5xKOrbMw+/KNUXodbPa6bMSyp3GgD7JyHEgfw/iPBT+zAE5HVEJ2vWJSrVW8E3wF736D8BUEsDBBQAAAAIAOKFS12r9/5HrgAAAAIBAAALAAAAX3JlbHMvLnJlbHNlj8kKwjAQhl8lzN1Ma0FEmvYiglepDxCS6YLNQpKKvr1RECxeBoaZ71/q9mFmdqcQJ2cFlLwARlY5PdlBwLU7bfbQNvWFZpnyRxwnH1lGbBQwpuQPiFGNZGTkzpPNl94FI1New4BeqpscCLdFscPwqwFrTdbJMFASgNURK22cppl/JrCzFpDZHKx7evqzNZMKLro+ceXMm5V26aVKS8gVsnNZYVF+NQGbGldlmhdQSwMEFAAAAAgA4oVLXY+aoHoyAQAAhgMAABAAAAAzRC8zZG1vZGVsLm1vZGVshdLdboMgFADg+z0FOfcrirZdFrF3e4LtASyetiwCDaBp9/RDaTKNut4gyQfnB09xuKmGdGidNJpDukmAoBamlvrM4evz4/UNDuVLoUyNDWm19ByUbBqp0KMFEm5rx+Hi/fWdUicuqCq3UVJY48zJb4RRNKtVpdtTJXxrQ1gqjEXKknRLEwZlYdGZ1gp0ZWGO3yg8kXWoBIi/XzFk6zOHYwrdpSxCpV4OZ/sd3siNQyj5Pqw//UrHxJ4bW8TnFon9l3AF2bIuIP1r11tZ6XMz3pIu5ZAD6RiHffhkHHb9rSXfRd/OPImeRmdrzqJnM88mPs+fTfLvZ55GT6Lna54/qT9bi59M3mcen036n8d/+HbUHx39CxrHksbJDZvRNB9b2dRlIT0qEj0Odh/iYXSY7vIXUEsBAhQAFAAAAAgA4oVLXbtWkvTCAAAAPQEAABMAAAAAAAAAAAAAAIABAAAAAFtDb250ZW50X1R5cGVzXS54bWxQSwECFAAUAAAACADihUtdq/f+R64AAAACAQAACwAAAAAAAAAAAAAAgAHzAAAAX3JlbHMvLnJlbHNQSwECFAAUAAAACADihUtdj5qgejIBAACGAwAAEAAAAAAAAAAAAAAAgAHKAQAAM0QvM2Rtb2RlbC5tb2RlbFBLBQYAAAAAAwADALgAAAAqAwAAAAA=';
+          var binStr = atob(b64);
+          var rawU8 = new Uint8Array(binStr.length);
+          for (var bi = 0; bi < binStr.length; bi++) rawU8[bi] = binStr.charCodeAt(bi);
+          var f4 = new wS.File([rawU8.buffer], 'real.3mf', { type: '' });
+          try { Object.defineProperty(inp, 'files', { value: [f4], configurable: true }); } catch (e) {}
+          inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+          setTimeout(function () {
+            var info4 = dS.getElementById('stlInfo').textContent;
+            ok('v1.4.1：真实 Deflate 3MF 解析出 8.00 cm³', /8\.00/.test(info4), info4);
+            ok('v1.4.1：Deflate 3MF 估算 3.97 克', /3\.97/.test(info4), info4);
+            done();
+          }, 400);
         }, 400);
       }, 120);
     }, 120);
