@@ -280,23 +280,33 @@ public class MainActivity extends Activity {
 
   /* ===== 在线升级：DownloadManager 下载 Release APK → 拉起系统安装器 ===== */
 
-  private void startUpdate(String url) {
+  private void startUpdate(String url, String version) {
     try {
       DownloadManager dm = (DownloadManager) getSystemService(Context.DOWNLOAD_SERVICE);
       if (dm == null) { toast("无法下载更新"); return; }
+      String ver = cleanVersion(version);
       DownloadManager.Request req = new DownloadManager.Request(Uri.parse(url));
       req.setMimeType("application/vnd.android.package-archive");
-      req.setTitle(getString(R.string.app_name) + " 更新包");
-      req.setDescription("正在下载新版本安装包…");
+      req.setTitle(getString(R.string.app_name) + (ver.isEmpty() ? " 更新包" : " v" + ver + " 更新包"));
+      req.setDescription(ver.isEmpty() ? "正在下载新版本安装包…" : "正在下载新版本 v" + ver + "…");
       req.setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED);
       req.setDestinationInExternalPublicDir(Environment.DIRECTORY_DOWNLOADS, "print-cost-update.apk");
       long id = dm.enqueue(req);
-      toast("开始下载新版本…");
+      toast(ver.isEmpty() ? "开始下载新版本…" : "开始下载 v" + ver + "…");
       pollDownload(dm, id, 0);
     } catch (Exception e) {
       Log.w(TAG, "update failed: " + e);
       toast("下载失败：" + e.getMessage());
     }
+  }
+
+  /** 规整前端传来的版本号：去掉前缀 v、空白与 WebView 传 undefined/null 的兜底。 */
+  private static String cleanVersion(String version) {
+    if (version == null) return "";
+    String v = version.trim();
+    if (v.isEmpty() || "undefined".equalsIgnoreCase(v) || "null".equalsIgnoreCase(v)) return "";
+    if (v.startsWith("v") || v.startsWith("V")) v = v.substring(1).trim();
+    return v.replaceAll("[^0-9A-Za-z._-]", "");
   }
 
   /** 轮询下载状态（避免广播接收器在 targetSdk 34+ 上的注册限制），每秒一次，最长 10 分钟。 */
@@ -378,11 +388,11 @@ public class MainActivity extends Activity {
       return true;
     }
 
-    /** 检查更新后由前端调用：url 为 GitHub Release 的 APK 下载地址。 */
+    /** 检查更新后由前端调用：url 为 GitHub Release 的 APK 下载地址，version 为新版本号（用于下载通知文案）。 */
     @JavascriptInterface
-    public boolean updateApp(String url) {
+    public boolean updateApp(String url, String version) {
       if (url == null || !url.startsWith("https://")) return false;
-      runOnUiThread(() -> startUpdate(url));
+      runOnUiThread(() -> startUpdate(url, version));
       return true;
     }
 

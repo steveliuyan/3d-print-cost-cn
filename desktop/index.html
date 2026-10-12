@@ -391,11 +391,70 @@
   .bk h4:not(:first-child){margin-top:16px}
   .bk-note{margin:0 0 10px; font-size:12px; color:var(--text3); line-height:1.6}
   .bk-row{display:flex; gap:8px; flex-wrap:wrap}
-  /* ===== 更新弹窗 ===== */
+  /* ===== 更新弹窗 / 更新日志 ===== */
+  .upd-wrap{padding:14px 18px}
   .upd-wrap p{margin:0 0 10px; font-size:13px; color:var(--text); line-height:1.7}
-  .upd-notes{margin:0; max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word;
-             font-family:inherit; font-size:12px; line-height:1.7; color:var(--text2);
-             background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+  .upd-lead{margin:0 0 12px !important}
+  .upd-lead b{color:var(--accent); font-weight:650}
+  /* —— 发布说明 Markdown 渲染 —— */
+  .upd-md{margin:0; font-size:12.5px; color:var(--text2); line-height:1.7}
+  .upd-sec{margin:0 0 9px}
+  .upd-sec:last-child{margin-bottom:0}
+  .upd-sec h5{margin:0 0 5px; font-size:12.5px; font-weight:650; color:var(--text);
+              display:flex; align-items:center; gap:6px}
+  .upd-sec h5::before{content:""; width:3px; height:13px; border-radius:2px; background:var(--accent)}
+  .upd-list{margin:0; padding:0; list-style:none}
+  .upd-list li{position:relative; padding:2px 0 2px 15px; font-size:12.5px; color:var(--text2); line-height:1.72}
+  .upd-list li::before{content:""; position:absolute; left:2px; top:.72em; width:5px; height:5px;
+                       border-radius:50%; background:var(--accent-line)}
+  .upd-list li.sub{padding-left:30px; color:var(--text3); font-size:12px}
+  .upd-list li.sub::before{left:17px; width:4px; height:4px; background:var(--text4)}
+  .upd-md code{font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11.5px;
+               background:var(--chip); color:var(--text); border-radius:5px; padding:1px 5px}
+  .upd-md b{color:var(--text); font-weight:650}
+  .upd-note{margin:10px 0 0 !important; padding-top:8px; border-top:1px dashed var(--line);
+            font-size:11.5px; color:var(--text3)}
+  /* —— 平台产物行 —— */
+  .upd-dl{display:flex; align-items:center; gap:8px; margin:12px 0 0; padding:9px 11px;
+          border:1px solid var(--line); border-radius:10px; background:var(--bg3); font-size:12px}
+  .upd-dl .dock{flex:none; font-size:10.5px; font-weight:650; letter-spacing:.04em; text-transform:uppercase;
+                color:var(--accent); background:var(--accent-soft); border-radius:6px; padding:2px 6px}
+  .upd-dl .fname{flex:1 1 auto; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+                 font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11.5px; color:var(--text)}
+  .upd-dl .fsize{flex:none; color:var(--text3); font-variant-numeric:tabular-nums; font-size:11.5px}
+  .upd-plat{margin:8px 0 0 !important; font-size:11.5px; color:var(--text3)}
+  /* —— 四态（检查中 / 最新 / 失败） —— */
+  .upd-state{display:flex; align-items:center; gap:9px; font-size:12.5px; color:var(--text2); line-height:1.6}
+  .upd-state .ic{flex:none; width:22px; height:22px; border-radius:50%; display:inline-flex;
+                 align-items:center; justify-content:center; font-size:13px; font-weight:700}
+  .upd-state.load{color:var(--text3)}
+  .upd-state.ok{color:var(--good)}
+  .upd-state.ok .ic{background:rgba(12,138,85,.12); color:var(--good)}
+  .upd-state.err{color:var(--danger); flex-wrap:wrap}
+  .upd-state.err .ic{background:var(--danger-soft); color:var(--danger)}
+  .upd-state [data-updretry]{margin-left:auto}
+  .spin{flex:none; width:15px; height:15px; border-radius:50%;
+        border:2px solid var(--line2); border-top-color:var(--accent); animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  /* —— 版本徽标（弹窗头部） —— */
+  .upd-ver{margin-left:auto; margin-right:10px; display:inline-flex; align-items:center; gap:5px;
+           font-size:11px; font-variant-numeric:tabular-nums; color:var(--text3)}
+  .upd-ver .next{color:var(--accent); font-weight:650}
+  .upd-ver .arw{color:var(--text4)}
+  /* ===== 更新日志面板 ===== */
+  .cl-wrap{padding:4px 0}
+  .cl-item{border-bottom:1px solid var(--line)}
+  .cl-item:last-child{border-bottom:0}
+  .cl-head{display:flex; align-items:center; gap:10px; padding:12px 18px; cursor:pointer; user-select:none;
+           transition:background .15s}
+  .cl-head:hover{background:var(--surface-hover)}
+  .cl-item .tag{font-weight:650; font-size:13px; color:var(--text); font-variant-numeric:tabular-nums}
+  .cl-item.open .tag{color:var(--accent)}
+  .cl-item .date{margin-left:auto; font-size:11.5px; color:var(--text3); font-variant-numeric:tabular-nums}
+  .cl-item .chev{flex:none; width:14px; text-align:center; color:var(--text4); transition:transform .18s}
+  .cl-item.open .chev{transform:rotate(180deg)}
+  .cl-body{display:none; padding:0 18px 14px}
+  .cl-item.open .cl-body{display:block}
   .foot .lnk{background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer;
              text-decoration:underline; text-underline-offset:3px}
   .foot .lnk:disabled{color:var(--text4); cursor:not-allowed; text-decoration:none}
@@ -712,7 +771,7 @@
   <footer class="foot">
     <span>本地运行 · 参数与预设仅保存在浏览器 localStorage</span>
     <span>预设价格为 2026-10 电商参考价，请按实际购入价修改</span>
-    <span>v<span id="footVer">…</span> · <button type="button" class="lnk" id="btnCheckUpd">检查更新</button></span>
+    <span>v<span id="footVer">…</span> · <button type="button" class="lnk" id="btnCheckUpd">检查更新</button> · <button type="button" class="lnk" id="btnChangelog">更新日志</button></span>
   </footer>
 </div>
 
@@ -879,6 +938,7 @@
   <div class="ov-panel" style="width:min(460px,calc(100vw - 28px)); margin-top:16vh">
     <div class="ov-head">
       <h3>软件更新</h3>
+      <span class="upd-ver" id="updVerBadge"></span>
       <button class="x" data-upclose aria-label="关闭">×</button>
     </div>
     <div class="ov-body">
@@ -888,6 +948,23 @@
       <span class="pp-hint" id="updHint"></span>
       <button class="btn" data-upclose>稍后再说</button>
       <button class="btn primary" id="updGo" hidden>立即升级</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== 更新日志（可翻看历史版本） ===== -->
+<div class="ov" id="clBox" role="dialog" aria-modal="true" aria-label="更新日志">
+  <div class="ov-bg" data-clclose></div>
+  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:8vh">
+    <div class="ov-head">
+      <h3>更新日志</h3>
+      <button class="x" data-clclose aria-label="关闭">×</button>
+    </div>
+    <div class="ov-body">
+      <div class="cl-wrap" id="clBody"></div>
+    </div>
+    <div class="ov-foot">
+      <button class="btn" data-clclose>关闭</button>
     </div>
   </div>
 </div>
@@ -1865,7 +1942,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.5.0";
+  var APP_VERSION = "1.5.1";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -1879,48 +1956,132 @@
     return false;
   }
 
-  function updShow(html){
-    $("#updBody").innerHTML = html;
-    $("#updBox").classList.add("open");
+  var UPD_API = "https://api.github.com/repos/" + UPD_REPO;
+
+  /* 数据获取：Electron 桌面端走 preload 暴露的原生桥（主进程 net，无 CORS 限制）；
+     其余环境走 fetch。path 供原生桥拼接 API，url 供浏览器直连。 */
+  function updFetchJson(path, url){
+    /* 原生桥可能直接回传已解析的 JSON，也可能回传 fetch 风格 Response（带 .json()）*/
+    function asJson(v){ return (v && typeof v.json === "function") ? Promise.resolve(v.json()) : Promise.resolve(v); }
+    try{
+      if(window.dpc && typeof window.dpc.fetchJson === "function"){
+        return Promise.resolve(window.dpc.fetchJson(path)).then(asJson);
+      }
+    }catch(e){}
+    if(typeof fetch !== "function") return Promise.reject(new Error("no-fetch"));
+    return fetch(url, { cache: "no-store" }).then(function(r){
+      if(!r.ok) throw new Error("HTTP " + r.status);
+      return r.json();
+    });
   }
-  function updHide(){ $("#updBox").classList.remove("open"); }
+
+  /* —— 轻量 Markdown 渲染（仅覆盖发布说明用到的语法；先转义再行内解析）—— */
+  function inlineMd(s){
+    return s.replace(/`([^`]+)`/g, "<code>$1</code>")
+            .replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>");
+  }
+  function renderMd(md){
+    var lines = String(md == null ? "" : md).replace(/\r\n?/g, "\n").split("\n");
+    var out = "", inList = false, inSec = false;
+    function endList(){ if(inList){ out += "</ul>"; inList = false; } }
+    function endSec(){ endList(); if(inSec){ out += "</div>"; inSec = false; } }
+    lines.forEach(function(raw){
+      var line = raw.replace(/\s+$/, ""), t = line.trim();
+      if(!t){ endList(); return; }
+      var h = /^#{2,6}\s+(.*)$/.exec(t);
+      if(h){ endSec(); out += '<div class="upd-sec"><h5>' + inlineMd(esc(h[1])) + "</h5>"; inSec = true; return; }
+      var li = /^(\s*)-\s+(.*)$/.exec(line);
+      if(li){
+        if(!inSec){ out += '<div class="upd-sec">'; inSec = true; }
+        if(!inList){ out += '<ul class="upd-list">'; inList = true; }
+        out += "<li" + (li[1].length >= 2 ? ' class="sub"' : "") + ">" + inlineMd(esc(li[2])) + "</li>";
+        return;
+      }
+      endList();
+      if(!inSec){ out += '<div class="upd-sec">'; inSec = true; }
+      out += '<p class="' + (/^下载[:：]/.test(t) ? "upd-note" : "upd-p") + '">' + inlineMd(esc(t)) + "</p>";
+    });
+    endSec();
+    return out;
+  }
+
+  /* —— 资源挑选 / 体积格式化 —— */
+  function pickAsset(rel, re){
+    var list = (rel && rel.assets) || [];
+    for(var i = 0; i < list.length; i++){ if(re.test(list[i].name)) return list[i]; }
+    return null;
+  }
+  function pickUrl(rel, re){ var a = pickAsset(rel, re); return a ? a.browser_download_url : ""; }
+  function fmtSize(b){
+    b = +b || 0;
+    if(b <= 0) return "";
+    if(b < 1024) return b + " B";
+    if(b < 1048576) return (b / 1024).toFixed(1) + " KB";
+    return (b / 1048576).toFixed(1) + " MB";
+  }
+  function assetForPlatform(rel, platform){
+    if(platform === "android") return pickAsset(rel, /\.apk$/i) || pickAsset(rel, /\.exe$/i) || pickAsset(rel, /\.html?$/i);
+    if(platform === "electron") return pickAsset(rel, /\.exe$/i) || pickAsset(rel, /\.html?$/i);
+    return pickAsset(rel, /\.html?$/i) || pickAsset(rel, /\.exe$/i);
+  }
+
+  function updShow(html){
+    var b = $("#updBody"); if(b) b.innerHTML = html;
+    var box = $("#updBox"); if(box) box.classList.add("open");
+  }
+  function updHide(){ var box = $("#updBox"); if(box) box.classList.remove("open"); }
+  function updBadge(next){
+    var el = $("#updVerBadge"); if(!el) return;
+    el.innerHTML = next
+      ? '<span class="cur">v' + esc(APP_VERSION) + '</span><span class="arw">→</span><span class="next">v' + esc(next) + "</span>"
+      : '<span class="cur">v' + esc(APP_VERSION) + "</span>";
+  }
+  function updSetGo(show, label){
+    var g = $("#updGo"); if(!g) return;
+    g.hidden = !show;
+    if(label) g.textContent = label;
+  }
 
   function checkUpdate(manual){
-    if(typeof fetch !== "function"){
-      if(manual) updShow("<p>当前环境不支持联网检查更新。</p>");
-      return;
-    }
     var btn = $("#btnCheckUpd");
+    if(manual){
+      updBadge("");
+      updSetGo(false);
+      updShow('<div class="upd-state load"><span class="spin"></span><span>正在检查更新…</span></div>');
+    }
     if(btn){ btn.disabled = true; btn.textContent = "检查中…"; }
-    fetch("https://api.github.com/repos/" + UPD_REPO + "/releases/latest", { cache: "no-store" })
-      .then(function(r){ if(!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+    updFetchJson("/repos/" + UPD_REPO + "/releases/latest", UPD_API + "/releases/latest")
       .then(function(rel){
-        var tag = String(rel.tag_name || "").replace(/^v/i, "");
+        var tag = String((rel && rel.tag_name) || "").replace(/^v/i, "");
         if(isNewerVersion(tag, APP_VERSION)){
-          var apk = "", exe = "", webHtml = "";
-          (rel.assets || []).forEach(function(a){
-            if(/\.apk$/i.test(a.name) && !apk) apk = a.browser_download_url;
-            else if(/\.exe$/i.test(a.name) && !exe) exe = a.browser_download_url;
-            else if(/\.html?$/i.test(a.name) && !webHtml) webHtml = a.browser_download_url;
-          });
-          updInfo = { tag: tag, apk: apk, exe: exe, webHtml: webHtml, url: rel.html_url };
           var platform = updPlatform();
+          var asset = assetForPlatform(rel, platform);
+          updInfo = { tag: tag, url: rel.html_url,
+                      apk: pickUrl(rel, /\.apk$/i), exe: pickUrl(rel, /\.exe$/i), webHtml: pickUrl(rel, /\.html?$/i) };
           var platTip = platform === "android"
-            ? (apk ? "点击「立即升级」将下载新版安装包（APK）。" : "点击「立即升级」前往发布页下载。")
+            ? (updInfo.apk ? "点击「立即升级」将下载新版安装包（APK）。" : "点击「立即升级」前往发布页下载。")
             : platform === "electron"
-            ? (exe ? "点击「立即升级」将下载新版 Windows 程序（EXE）。" : "点击「立即升级」前往发布页下载。")
-            : (webHtml ? "点击「立即升级」将下载新版网页文件（HTML）。" : "点击「立即升级」前往发布页下载。");
+            ? (updInfo.exe ? "点击「立即升级」将下载新版 Windows 程序（EXE）。" : "点击「立即升级」前往发布页下载。")
+            : (updInfo.webHtml ? "点击「立即升级」将下载新版网页文件（HTML）。" : "点击「立即升级」前往发布页下载。");
+          var dock = platform === "android" ? "APK" : platform === "electron" ? "EXE" : "HTML";
+          var dl = asset
+            ? '<div class="upd-dl"><span class="dock">' + dock + '</span>' +
+              '<span class="fname">' + esc(asset.name) + '</span>' +
+              '<span class="fsize">' + fmtSize(asset.size) + "</span></div>"
+            : "";
+          updBadge(tag);
           updShow(
-            "<p>发现新版本 <b>v" + esc(tag) + "</b>（当前 v" + esc(APP_VERSION) + "）。</p>" +
-            (rel.body ? '<pre class="upd-notes">' + esc(rel.body) + "</pre>" : "") +
-            "<p style=\"margin-top:10px;color:var(--text3);font-size:12px\">" +
-            platTip + "</p>");
-          $("#updGo").hidden = false;
-          $("#updHint").textContent = "";
+            '<p class="upd-lead">发现新版本 <b>v' + esc(tag) + "</b>（当前 v" + esc(APP_VERSION) + "）</p>" +
+            (rel.body ? '<div class="upd-md">' + renderMd(rel.body) + "</div>" : "") +
+            dl +
+            '<p class="upd-plat">' + platTip + "</p>");
+          updSetGo(true, "立即升级");
+          var hint = $("#updHint"); if(hint) hint.textContent = "";
         } else {
+          updBadge("");
           if(manual){
-            updShow("<p>当前已是最新版本 v" + esc(APP_VERSION) + "。</p>");
-            $("#updGo").hidden = true;
+            updShow('<div class="upd-state ok"><span class="ic">✓</span><span>已是最新版本 v' + esc(APP_VERSION) + "。</span></div>");
+            updSetGo(false);
           } else {
             toast("已是最新版本 v" + APP_VERSION);
           }
@@ -1928,8 +2089,11 @@
       })
       .catch(function(){
         if(manual){
-          updShow("<p>检查更新失败，请确认网络连接后重试。</p>");
-          $("#updGo").hidden = true;
+          updBadge("");
+          updShow('<div class="upd-state err"><span class="ic">!</span>' +
+                  "<span>检查更新失败，请确认网络连接后重试。</span>" +
+                  '<button class="btn" type="button" data-updretry>重试</button></div>');
+          updSetGo(false);
         }
       })
       .then(function(){
@@ -1950,11 +2114,11 @@
   function doUpgrade(){
     if(!updInfo) return;
     var b = androidBridge();
-    /* Android 壳：交给原生 DownloadManager 下载 APK 并拉起安装 */
+    /* Android 壳：交给原生 DownloadManager 下载 APK 并拉起安装（带版本号用于通知文案） */
     if(b && typeof b.updateApp === "function" && updInfo.apk){
       try{
         updHide();
-        b.updateApp(updInfo.apk);
+        b.updateApp(updInfo.apk, updInfo.tag);
         return;
       }catch(e){ /* 桥异常 → 落回通用逻辑 */ }
     }
@@ -1966,6 +2130,40 @@
     try{ window.open(target, "_blank", "noopener"); }
     catch(e){ location.href = target; }
   }
+
+  /* ===== 更新日志（可翻看历史版本） ===== */
+  function renderChangelog(list){
+    var html = "";
+    list.forEach(function(rel, i){
+      var tag = String((rel && rel.tag_name) || "").replace(/^v/i, "");
+      var date = String((rel && (rel.published_at || rel.created_at)) || "").slice(0, 10);
+      html += '<div class="cl-item' + (i === 0 ? " open" : "") + '">' +
+                '<div class="cl-head"><span class="tag">v' + esc(tag) + "</span>" +
+                  '<span class="date">' + esc(date) + "</span>" +
+                  '<span class="chev">⌄</span></div>' +
+                '<div class="cl-body">' +
+                  (rel && rel.body ? '<div class="upd-md">' + renderMd(rel.body) + "</div>" : "") +
+                "</div>" +
+              "</div>";
+    });
+    var b = $("#clBody"); if(b) b.innerHTML = html;
+  }
+  function openChangelog(){
+    var body = $("#clBody");
+    if(body) body.innerHTML = '<div class="upd-state load" style="padding:16px 18px"><span class="spin"></span><span>正在加载更新日志…</span></div>';
+    var box = $("#clBox"); if(box) box.classList.add("open");
+    updFetchJson("/repos/" + UPD_REPO + "/releases?per_page=30", UPD_API + "/releases?per_page=30")
+      .then(function(list){
+        if(!(list && list.length)) throw new Error("empty");
+        renderChangelog(list);
+      })
+      .catch(function(){
+        if(body) body.innerHTML = '<div class="upd-state err" style="padding:16px 18px"><span class="ic">!</span>' +
+          "<span>暂时无法加载更新日志，请稍后重试。</span>" +
+          '<button class="btn" type="button" data-clretry>重试</button></div>';
+      });
+  }
+  function closeChangelog(){ var box = $("#clBox"); if(box) box.classList.remove("open"); }
 
   /* ===== STL 导入估算（本地解析，不上传） ===== */
   var stlVol = 0, stlBBox = null; /* cm³ / [x,y,z] mm */
@@ -2597,6 +2795,7 @@
       if($("#pprev").classList.contains("open")){ closePrint(); return; }
       if($("#exBox").classList.contains("open")){ closeOv("exBox"); return; }
       if($("#updBox").classList.contains("open")){ updHide(); return; }
+      if($("#clBox").classList.contains("open")){ closeChangelog(); return; }
       if($("#histBox").classList.contains("open")){ $("#histBox").classList.remove("open"); return; }
       if($("#shareBox").classList.contains("open")){ $("#shareBox").classList.remove("open"); return; }
       if($("#picker").classList.contains("open")){ closePicker(); return; }
@@ -2751,7 +2950,18 @@
   $("#btnCheckUpd").addEventListener("click", function(){ checkUpdate(true); });
   $("#updGo").addEventListener("click", doUpgrade);
   $("#updBox").addEventListener("click", function(e){
-    if(e.target.closest && e.target.closest("[data-upclose]")) updHide();
+    if(e.target.closest && e.target.closest("[data-upclose]")){ updHide(); return; }
+    if(e.target.closest && e.target.closest("[data-updretry]")) checkUpdate(true);
+  });
+  /* ===== 更新日志事件 ===== */
+  $("#btnChangelog").addEventListener("click", openChangelog);
+  $("#clBox").addEventListener("click", function(e){
+    var t = e.target;
+    if(!t || !t.closest) return;
+    if(t.closest("[data-clclose]")){ closeChangelog(); return; }
+    if(t.closest("[data-clretry]")){ openChangelog(); return; }
+    var head = t.closest(".cl-head");
+    if(head){ var item = head.closest(".cl-item"); if(item) item.classList.toggle("open"); }
   });
 
   /* ===== 报价历史 / 分享长图事件 ===== */
@@ -2822,6 +3032,8 @@
      纯网页访问不自动联网检查，手动点「检查更新」仍然可用） */
   $("#footVer").textContent = APP_VERSION;
   var isElectron = /Electron/i.test(navigator.userAgent);
+  /* Electron 菜单「检查更新…」→ 走同一套页面内弹窗 */
+  try{ if(window.dpc && typeof window.dpc.onCheckUpdate === "function") window.dpc.onCheckUpdate(function(){ checkUpdate(true); }); }catch(e){}
   if(androidBridge() || isElectron){
     setTimeout(function(){ checkUpdate(false); }, 3000);
   }

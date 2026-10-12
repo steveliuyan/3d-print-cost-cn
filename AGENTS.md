@@ -31,12 +31,12 @@
 ```
 3d-print-cost-calculator/
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（196 项断言）
+├─ test-presets.js         ← jsdom 回归测试（234 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6）
 ├─ README.md               ← 面向用户的说明
 ├─ AGENTS.md               ← 本文件
 ├─ .secrets/               ← 凭据（被 .gitignore 忽略，绝不入库）
-├─ desktop/                ← Electron 工程（node_modules 可再生，未随包带上）
+├─ desktop/                ← Electron 工程（main.js / preload.js / build-win.js；node_modules 可再生）
 ├─ android/                ← Android WebView 工程
 └─ dist/                   ← 构建产物（不入库；本次迁移未带）
 ```
@@ -49,7 +49,7 @@
 cd H:/3d-print-cost-calculator
 NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules" \
   "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-2/node.exe" test-presets.js
-# 期望：结果: 196/196 通过
+# 期望：结果: 234/234 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -163,11 +163,20 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | v1.5.0 | **深色模式**：浅色 / 深色 / 跟随系统三档。顶栏分段控件；`<head>` 内联防闪脚本；~30 处硬编码浅色提升为设计令牌；深色令牌包在 `@media screen` 内保证打印恒浅色 |
 | — | **推送**：github.com 被墙（SSH 也被 RST），改走 **GitHub Git Data API**。发现远端/本地曾分叉成两条内容等价平行链，按「以本地为准」把 12 个提交以**完全一致 SHA** 重建到远端 → 远端 main = 本地 HEAD = `7c1152292e`。CNAME 保留、8 个 tag/Release 完好 |
 | — | **打包 + 发版**：APK（vc9 / 1.5.0，签名证书 `O=DPC`）与 Electron portable exe 打包完成，发布 **v1.5.0 Release**（3 附件：exe/apk/web.html） |
+| — | **更新体验重做（TDD，回归 196 → 234）**：① 更新弹窗重做——发布说明改轻量 Markdown 渲染（小节/列表/二级缩进/粗体/行内代码/「下载：」弱化注脚），四态（检查中转圈 / 发现新版 / 已是最新 / 失败+重试），头部版本徽标 `v当前 → v新版`，平台产物行（web.html / .apk / .exe + 体积 KB/MB，按平台自动切换）；② 新增**更新日志面板**（页脚「更新日志」），拉 `/releases?per_page=30`，首条展开、点击条目折叠/展开；③ **Electron 统一为应用内弹窗**（新增 `desktop/preload.js` 暴露 `window.dpc.fetchJson`，主进程 `ipcMain.handle('dpc:fetchJson')` + `net` 代理规避 CORS；菜单「检查更新…」改为 `webContents.send('dpc:check-update')`）；④ **Android** `updateApp(url, version)` 增加版本号参数，用于下载通知文案 |
+| — | 修复 Electron 老 bug：「立即升级」在 Windows 上误打开 APK（现按平台挑 EXE） |
 
 **验证证据**：v1.5.0 回归 **196/196 通过**；变异测试两次均被抓住（改错点击处理 → 5 条 FAIL；
 把 `@media screen` 改成 `@media screenX` → 打印保护断言 FAIL）。
 三份副本逐字节一致：147,578 B，md5 `980a7db2da78ecfa17c0ce29c13ec1ae`。
 APK 内 `assets/index.html` md5 同为此值；EXE 74,227,927 B / APK 1,057,560 B。
+
+**更新体验重做证据**：回归 **234/234 通过**（新增 38 条断言）。变异测试 4 组全部被捕获：
+M1 二级标题正则收紧 `#{2,6}`→`#{3,6}` → `## 渲染为小节标题` FAIL；
+M2 更新日志首条不再默认展开 → `最新一条默认展开` FAIL；
+M3 Android 桥丢掉版本号 → `原生桥带上新版本号` FAIL；
+M4 去掉 Electron `window.dpc` 分支 → 3 条 Electron 断言 FAIL。
+三份副本逐字节一致：159,160 B，md5 `9f927e975490e518351078d05cfd3347`（v1.5.1）。
 
 ## 9. 未完成 / 待办
 
@@ -176,6 +185,12 @@ APK 内 `assets/index.html` md5 同为此值；EXE 74,227,927 B / APK 1,057,560 
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ 已 push 完成（见下方 §8 末）；✅ 已重新打包 APK/EXE 并发布 v1.5.0 Release。
+- ⏳ **更新体验重做（v1.5.1）尚未发版**：代码已落地、回归 234/234，版本号已四处联动升到 **1.5.1**
+  （`index.html` APP_VERSION / `android/app/build.gradle` versionCode 10 + versionName 1.5.1 /
+  `desktop/package.json` version + artifactName / `README.md`），`test-presets.js` 的版本断言也已同步。
+  **待办**：重新打包 APK/EXE → 发布 v1.5.1 Release。
+- 💡 Electron 打包新增 `desktop/preload.js`：`package.json` 的 `build.files` 与 `build-win.js`
+  的 `stageApp()` 都已加进白名单，**别漏**，否则打包后 `window.dpc` 不存在、更新检查会静默失败。
 - 💡 可选项：`http://` 已能 301 跳 `https://`；GitHub Pages 后台可能有域名 DNS 校验警告，不影响访问。
 
 ## 10. 关联项目

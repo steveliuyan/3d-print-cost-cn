@@ -22,6 +22,7 @@ const stage = fs.mkdtempSync(path.join(os.tmpdir(), 'dpc-stage-'));
 
 function stageApp() {
   fs.copyFileSync(path.join(here, 'main.js'), path.join(stage, 'main.js'));
+  fs.copyFileSync(path.join(here, 'preload.js'), path.join(stage, 'preload.js'));
 
   const src = path.join(root, 'index.html');
   if (!fs.existsSync(src)) throw new Error('缺少页面文件：' + src);

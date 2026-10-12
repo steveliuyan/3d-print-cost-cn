@@ -1,64 +1,41 @@
 // 3D 打印成本计算器 —— Electron 主进程
 // 本地离线运行，不加载任何远程内容；数据保存在 WebView 的 localStorage 中。
-const { app, BrowserWindow, Menu, shell, dialog, net } = require('electron');
+const { app, BrowserWindow, Menu, shell, dialog, net, ipcMain } = require('electron');
 const path = require('path');
 
 const isMac = process.platform === 'darwin';
 const REPO = 'steveliuyan/3d-print-cost-cn';
+const API_BASE = 'https://api.github.com';
 
 let mainWin = null;
 
-/* ===== 检查更新（GitHub Releases） ===== */
-function vParts(s) {
-  const a = String(s || '').replace(/^v/i, '').trim().split('.');
-  return [(+a[0] || 0), (+a[1] || 0), (+a[2] || 0)];
-}
-function isNewerVersion(remote, local) {
-  const r = vParts(remote), l = vParts(local);
-  for (let i = 0; i < 3; i++) { if (r[i] !== l[i]) return r[i] > l[i]; }
-  return false;
+/* ===== 检查更新 =====
+   统一走页面内弹窗（与 Web / Android 端一致），主进程只提供网络代理：
+   contextIsolation 下渲染进程无法直连 GitHub API，改由 IPC + net 规避 CORS。
+   仅放行本仓库 releases 相关路径，避免代理被滥用。 */
+function githubGet(pathname) {
+  return new Promise((resolve, reject) => {
+    const allow = new RegExp('^/repos/' + REPO.replace('/', '\\/') + '/releases(\\?|/|$)');
+    if (!allow.test(pathname)) { reject(new Error('forbidden path')); return; }
+    const req = net.request(API_BASE + pathname);
+    req.setHeader('User-Agent', 'print-cost-calculator');
+    req.setHeader('Accept', 'application/vnd.github+json');
+    let data = '';
+    req.on('response', (res) => {
+      res.on('data', (c) => { data += c; });
+      res.on('end', () => {
+        if (res.statusCode < 200 || res.statusCode >= 300) { reject(new Error('HTTP ' + res.statusCode)); return; }
+        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
 }
 
-function checkUpdate(interactive) {
-  const req = net.request('https://api.github.com/repos/' + REPO + '/releases/latest');
-  req.setHeader('User-Agent', 'print-cost-calculator');
-  req.setHeader('Accept', 'application/vnd.github+json');
-  let data = '';
-  req.on('response', (res) => {
-    res.on('data', (c) => { data += c; });
-    res.on('end', () => {
-      try {
-        const rel = JSON.parse(data);
-        const tag = String(rel.tag_name || '').replace(/^v/i, '');
-        if (isNewerVersion(tag, app.getVersion())) {
-          let apk = '';
-          (rel.assets || []).forEach((a) => { if (/\.apk$/i.test(a.name) && !apk) apk = a.browser_download_url; });
-          dialog.showMessageBox(mainWin, {
-            type: 'info',
-            title: '软件更新',
-            message: '发现新版本 v' + tag + '（当前 v' + app.getVersion() + '）',
-            detail: (rel.body || '').slice(0, 800) || '点击「立即升级」前往下载新版本。',
-            buttons: ['立即升级', '稍后再说'],
-            defaultId: 0,
-            cancelId: 1
-          }).then(({ response }) => {
-            if (response === 0) shell.openExternal(apk || rel.html_url);
-          });
-        } else if (interactive) {
-          dialog.showMessageBox(mainWin, {
-            type: 'info', title: '软件更新',
-            message: '当前已是最新版本 v' + app.getVersion()
-          });
-        }
-      } catch (e) {
-        if (interactive) dialog.showErrorBox('软件更新', '检查更新失败，请稍后重试。');
-      }
-    });
-  });
-  req.on('error', () => {
-    if (interactive) dialog.showErrorBox('软件更新', '检查更新失败，请检查网络连接。');
-  });
-  req.end();
+/* 菜单「检查更新…」→ 通知页面跑统一弹窗（不再使用系统原生对话框） */
+function requestCheckUpdate() {
+  if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('dpc:check-update');
 }
 
 function createWindow() {
@@ -71,6 +48,7 @@ function createWindow() {
     title: '3D 打印成本计算器',
     show: false,
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
       nodeIntegration: false,
       sandbox: true,
@@ -143,7 +121,7 @@ function buildMenu() {
       submenu: [
         {
           label: '检查更新…',
-          click: () => checkUpdate(true)
+          click: () => requestCheckUpdate()
         },
         { type: 'separator' },
         {
@@ -178,10 +156,11 @@ if (!gotLock) {
   });
 
   app.whenReady().then(() => {
+    /* 更新检查的网络代理（渲染进程经 preload 调用） */
+    ipcMain.handle('dpc:fetchJson', (e, p) => githubGet(String(p || '')));
     buildMenu();
     createWindow();
-    // 启动后 3 秒静默检查更新（仅在有网时弹窗，检查失败不打扰用户）
-    setTimeout(() => checkUpdate(false), 3000);
+    /* 启动静默检查更新交由页面内统一弹窗处理（3s 后自动触发，仅壳内生效） */
     app.on('activate', () => {
       if (BrowserWindow.getAllWindows().length === 0) createWindow();
     });

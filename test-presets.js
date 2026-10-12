@@ -448,25 +448,61 @@ setTimeout(function () {
   }
 
   /* ===== 17. 检查更新（v1.1.0） ===== */
+  function fakeMarkdown() {
+    return [
+      '## 新增',
+      '- **深色模式**：浅色 / 深色 / 跟随系统三档',
+      '  - 深色仅作用于屏幕，打印恒浅色',
+      '- 在线即用：3d.20050905.xyz，`v1.6.0` 起生效',
+      '',
+      '## 修复',
+      '- 分享长图不再被打成第三页',
+      '',
+      '下载：web.html / 3d-print-cost-cn-9.9.9-portable.exe / 3d-print-cost-cn-9.9.9.apk',
+      '<script>window.__pwned = 1</script>'
+    ].join('\n');
+  }
   function fakeRelease(tag) {
     return Promise.resolve({
       ok: true,
       json: function () {
         return Promise.resolve({
           tag_name: tag,
+          published_at: '2026-10-02T04:00:00Z',
           html_url: 'https://github.com/steveliuyan/3d-print-cost-cn/releases/tag/v' + tag,
-          body: '测试更新说明',
+          body: fakeMarkdown(),
           assets: [
-            { name: '3d-print-cost-1.1.0.apk', browser_download_url: 'https://github.com/x/app.apk' },
-            { name: '3D打印成本计算器-1.1.0-便携版.exe', browser_download_url: 'https://github.com/x/app.exe' },
-            { name: 'web.html', browser_download_url: 'https://github.com/x/web.html' }
+            { name: '3d-print-cost-cn-9.9.9.apk', size: 1057560, browser_download_url: 'https://github.com/x/app.apk' },
+            { name: '3d-print-cost-cn-9.9.9-portable.exe', size: 74227927, browser_download_url: 'https://github.com/x/app.exe' },
+            { name: 'web.html', size: 147578, browser_download_url: 'https://github.com/x/web.html' }
           ]
         });
       }
     });
   }
+  function fakeReleasesList() {
+    return Promise.resolve({
+      ok: true,
+      json: function () {
+        return Promise.resolve([
+          { tag_name: 'v9.9.9', published_at: '2026-10-02T00:00:00Z', body: fakeMarkdown() },
+          { tag_name: 'v1.5.0', published_at: '2026-09-20T00:00:00Z', body: '## 新增\n- 深色模式' },
+          { tag_name: 'v1.4.2', published_at: '2026-09-01T00:00:00Z', body: '## 修复\n- 打印第三页' }
+        ]);
+      }
+    });
+  }
+  /* 按 URL 分发的 fetch 桩：/releases/latest → 单个版本；/releases?... → 版本列表 */
+  function fakeFetchRouter(urls) {
+    return function (url) {
+      urls.push(url);
+      if (/\/releases\/latest/.test(url)) return fakeRelease('9.9.9');
+      if (/\/releases\?/.test(url)) return fakeReleasesList();
+      return Promise.reject(new Error('unexpected ' + url));
+    };
+  }
   function runUpdateTests(done) {
-    /* Android 壳：发现新版本 → 弹窗 →「立即升级」走原生桥 updateApp */
+    /* Android 壳：发现新版本 → 弹窗 →「立即升级」走原生桥 updateApp（带版本号） */
     var updCalls = [];
     var domU = new JSDOM(html, {
       runScripts: 'dangerously',
@@ -475,13 +511,13 @@ setTimeout(function () {
       beforeParse: function (win) {
         win.AndroidBridge = {
           saveText: function () {}, printPage: function () { return true; },
-          updateApp: function (u) { updCalls.push(u); return true; }
+          updateApp: function (u, v) { updCalls.push([u, v]); return true; }
         };
         win.fetch = function (url) { win.__fetchUrl = url; return fakeRelease('9.9.9'); };
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.5.0', dU.getElementById('footVer').textContent === '1.5.0',
+    ok('更新：footer 显示当前版本号 1.5.1', dU.getElementById('footVer').textContent === '1.5.1',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -492,8 +528,11 @@ setTimeout(function () {
       ok('更新：弹窗展示新版本号', /9\.9\.9/.test(dU.getElementById('updBody').textContent));
       ok('更新：「立即升级」按钮可见', dU.getElementById('updGo').hidden === false);
       dU.getElementById('updGo').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
-      ok('更新：Android 端升级走原生桥 updateApp', updCalls.length === 1 && /app\.apk$/.test(updCalls[0] || ''),
+      ok('更新：Android 端升级走原生桥 updateApp',
+         updCalls.length === 1 && /app\.apk$/.test((updCalls[0] || [])[0] || ''),
          JSON.stringify(updCalls));
+      ok('更新：原生桥带上新版本号（用于下载通知文案）',
+         updCalls.length === 1 && (updCalls[0] || [])[1] === '9.9.9', JSON.stringify(updCalls[0]));
       ok('更新：点升级后弹窗关闭', !dU.getElementById('updBox').classList.contains('open'));
 
       /* 普通浏览器（无桥）：升级按钮跳转下载链接 */
@@ -556,6 +595,201 @@ setTimeout(function () {
     }, 80);
   }
 
+  /* ===== 17b. 更新弹窗重做：Markdown 渲染 / 四态 / 平台产物行（v1.6.0） ===== */
+  function runUpdUiTests(done) {
+    var urls = [];
+    var domA = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.fetch = fakeFetchRouter(urls);
+        win.open = function () { return {}; };
+      }
+    });
+    var wA = domA.window, dA = wA.document;
+    dA.getElementById('btnCheckUpd').dispatchEvent(new wA.MouseEvent('click', { bubbles: true }));
+    ok('更新弹窗：点击后立即进入「检查中」态（转圈）', !!dA.querySelector('#updBody .spin'));
+
+    setTimeout(function () {
+      var body = dA.getElementById('updBody');
+      ok('更新弹窗：请求 releases/latest', /\/releases\/latest/.test(urls[0] || ''), urls[0]);
+      ok('更新弹窗：弹窗已打开', dA.getElementById('updBox').classList.contains('open'));
+
+      /* —— 发布说明渲染 —— */
+      var sec = dA.querySelector('#updBody .upd-sec h5');
+      ok('Markdown：`##` 渲染为小节标题', !!sec && sec.textContent === '新增', sec && sec.textContent);
+      var lis = dA.querySelectorAll('#updBody .upd-list li');
+      ok('Markdown：`-` 渲染为列表项（≥4 条）', lis.length >= 4, 'n=' + lis.length);
+      ok('Markdown：`**粗体**` 转 <b>', /<b>深色模式<\/b>/.test(body.innerHTML));
+      ok('Markdown：二级缩进项渲染为 .sub', !!dA.querySelector('#updBody .upd-list li.sub'));
+      ok('Markdown：反引号转 <code>', !!dA.querySelector('#updBody .upd-list code'));
+      ok('Markdown：不再出现 `**` 原文残留', !/\*\*/.test(body.textContent));
+      ok('Markdown：弃用 <pre class="upd-notes">', !dA.querySelector('#updBody pre.upd-notes'));
+      ok('Markdown：「下载：」行渲染为弱化注脚 .upd-note',
+         !!dA.querySelector('#updBody .upd-note') &&
+         /下载：/.test(dA.querySelector('#updBody .upd-note').textContent));
+      ok('安全：发布说明里的 <script> 被转义',
+         !dA.querySelector('#updBody script') && wA.__pwned === undefined);
+
+      /* —— 版本徽标 + 平台产物行（网页） —— */
+      var badge = dA.getElementById('updVerBadge');
+      ok('更新弹窗：版本徽标同时含当前与新版本',
+         !!badge && /v1\.5\.1/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         badge && badge.textContent);
+      var dl = dA.querySelector('#updBody .upd-dl');
+      var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
+      var fsize = dl ? (dl.querySelector('.fsize') || {}).textContent : '';
+      ok('更新弹窗：网页端产物行为 web.html', !!dl && /web\.html$/.test(fname || ''), fname);
+      ok('更新弹窗：网页端大小格式化为 KB', /KB/.test(fsize || ''), fsize);
+
+      /* —— Android 壳：产物行为 APK、大小为 MB —— */
+      var domB = new JSDOM(html, {
+        runScripts: 'dangerously', url: 'https://appassets.androidplatform.net/assets/index.html',
+        pretendToBeVisual: true,
+        beforeParse: function (win) {
+          win.AndroidBridge = { saveText: function () {}, printPage: function () { return true; },
+                                updateApp: function () { return true; } };
+          win.fetch = function () { return fakeRelease('9.9.9'); };
+        }
+      });
+      var wB = domB.window, dB = wB.document;
+      dB.getElementById('btnCheckUpd').dispatchEvent(new wB.MouseEvent('click', { bubbles: true }));
+      setTimeout(function () {
+        var dlB = dB.querySelector('#updBody .upd-dl');
+        ok('更新弹窗：Android 端产物行为 .apk',
+           !!dlB && /\.apk$/.test((dlB.querySelector('.fname') || {}).textContent || ''),
+           dlB && (dlB.querySelector('.fname') || {}).textContent);
+        ok('更新弹窗：Android 端大小格式化为 MB',
+           /MB/.test((dlB && dlB.querySelector('.fsize').textContent) || ''),
+           dlB && dlB.querySelector('.fsize').textContent);
+
+        /* —— Electron 壳：产物行为 EXE —— */
+        var domE = new JSDOM(html, {
+          runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+          beforeParse: function (win) {
+            win.fetch = function () { return fakeRelease('9.9.9'); };
+            win.open = function () { return {}; };
+            Object.defineProperty(win.navigator, 'userAgent',
+              { value: 'Mozilla/5.0 Electron/33.0 Chrome/130', configurable: true });
+          }
+        });
+        var wE = domE.window, dE = wE.document;
+        dE.getElementById('btnCheckUpd').dispatchEvent(new wE.MouseEvent('click', { bubbles: true }));
+        setTimeout(function () {
+          var dlE = dE.querySelector('#updBody .upd-dl');
+          ok('更新弹窗：Electron 端产物行为 .exe',
+             !!dlE && /\.exe$/.test((dlE.querySelector('.fname') || {}).textContent || ''),
+             dlE && (dlE.querySelector('.fname') || {}).textContent);
+
+          /* —— 已是最新态 —— */
+          var domOk = new JSDOM(html, {
+            runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.5.1'); }; }
+          });
+          var wOk = domOk.window, dOk = wOk.document;
+          dOk.getElementById('btnCheckUpd').dispatchEvent(new wOk.MouseEvent('click', { bubbles: true }));
+          setTimeout(function () {
+            ok('更新弹窗：已是最新渲染 .upd-state.ok',
+               !!dOk.querySelector('#updBody .upd-state.ok'));
+            ok('更新弹窗：已是最新文案含版本号',
+               /已是最新版本 v1\.5\.1/.test(dOk.getElementById('updBody').textContent));
+            ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
+
+            /* —— 检查失败态 + 重试 —— */
+            var tries = [];
+            var domErr = new JSDOM(html, {
+              runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+              beforeParse: function (win) {
+                win.fetch = function (u) { tries.push(u); return Promise.reject(new Error('net')); };
+              }
+            });
+            var wEr = domErr.window, dEr = wEr.document;
+            dEr.getElementById('btnCheckUpd').dispatchEvent(new wEr.MouseEvent('click', { bubbles: true }));
+            setTimeout(function () {
+              ok('更新弹窗：失败渲染 .upd-state.err', !!dEr.querySelector('#updBody .upd-state.err'));
+              var retry = dEr.querySelector('#updBody [data-updretry]');
+              ok('更新弹窗：失败态提供「重试」按钮', !!retry);
+              if (retry) {
+                retry.dispatchEvent(new wEr.MouseEvent('click', { bubbles: true }));
+                setTimeout(function () {
+                  ok('更新弹窗：点重试会再次请求', tries.length === 2, 'tries=' + tries.length);
+                  done();
+                }, 80);
+              } else {
+                done();
+              }
+            }, 80);
+          }, 80);
+        }, 80);
+      }, 80);
+    }, 80);
+  }
+
+  /* ===== 17c. 更新日志面板（可翻看历史版本） ===== */
+  function runChangelogTests(done) {
+    var urls = [];
+    var domC = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) { win.fetch = fakeFetchRouter(urls); }
+    });
+    var wC = domC.window, dC = wC.document;
+    var btnCl = dC.getElementById('btnChangelog');
+    ok('更新日志：页脚提供「更新日志」入口', !!btnCl);
+    if (btnCl) btnCl.dispatchEvent(new wC.MouseEvent('click', { bubbles: true }));
+
+    setTimeout(function () {
+      ok('更新日志：请求 releases 列表（per_page=30）',
+         urls.some(function (u) { return /\/releases\?per_page=30/.test(u); }),
+         JSON.stringify(urls));
+      ok('更新日志：面板已打开', !!dC.getElementById('clBox') &&
+         dC.getElementById('clBox').classList.contains('open'));
+      var items = dC.querySelectorAll('#clBody .cl-item');
+      ok('更新日志：渲染出全部版本条目（3 条）', items.length === 3, 'n=' + items.length);
+      ok('更新日志：首个条目为最新版本 v9.9.9',
+         !!items[0] && /v9\.9\.9/.test(items[0].querySelector('.tag').textContent),
+         items[0] && items[0].querySelector('.tag').textContent);
+      ok('更新日志：最新一条默认展开', !!items[0] && items[0].classList.contains('open'));
+      ok('更新日志：非最新一条默认折叠', !!items[1] && !items[1].classList.contains('open'));
+      ok('更新日志：条目显示发布日期',
+         !!items[0] && /2026-10-02/.test(items[0].querySelector('.date').textContent),
+         items[0] && items[0].querySelector('.date').textContent);
+      ok('更新日志：条目内说明也做了 Markdown 渲染',
+         !!items[0] && !!items[0].querySelector('.cl-body .upd-list li'));
+      if (items[1]) {
+        items[1].querySelector('.cl-head').dispatchEvent(new wC.MouseEvent('click', { bubbles: true }));
+        ok('更新日志：点击条目可展开', items[1].classList.contains('open'));
+      } else {
+        ok('更新日志：点击条目可展开', false);
+      }
+
+      /* Electron：有 window.dpc 时应走原生桥，不直接 fetch */
+      var dpcPaths = [], rawFetch = 0;
+      var domD = new JSDOM(html, {
+        runScripts: 'dangerously', url: 'file:///app/index.html', pretendToBeVisual: true,
+        beforeParse: function (win) {
+          Object.defineProperty(win.navigator, 'userAgent',
+            { value: 'Mozilla/5.0 Electron/33.0 Chrome/130', configurable: true });
+          win.dpc = {
+            fetchJson: function (p) {
+              dpcPaths.push(p);
+              return /latest/.test(p) ? fakeRelease('9.9.9') : fakeReleasesList();
+            }
+          };
+          win.fetch = function () { rawFetch++; return Promise.reject(new Error('should not fetch')); };
+        }
+      });
+      var wD = domD.window, dD = wD.document;
+      dD.getElementById('btnCheckUpd').dispatchEvent(new wD.MouseEvent('click', { bubbles: true }));
+      setTimeout(function () {
+        ok('Electron：检查更新走 window.dpc 原生桥', dpcPaths.some(function (p) {
+          return /\/releases\/latest/.test(p);
+        }), JSON.stringify(dpcPaths));
+        ok('Electron：有原生桥时不再直接 fetch', rawFetch === 0, 'fetch=' + rawFetch);
+        ok('Electron：弹窗照样渲染新版本号', /9\.9\.9/.test(dD.getElementById('updBody').textContent));
+        done();
+      }, 100);
+    }, 100);
+  }
+
   /* ===== 18. 批量优惠 / 报价历史 / 分享长图（v1.2.0） ===== */
   function runV120Tests(done) {
     var domV = new JSDOM(html, {
@@ -585,7 +819,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.5.0');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.5.1');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -932,7 +1166,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(finish); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(finish); }); }); }); }); });
     }, 900);
   });
 }, 300);
