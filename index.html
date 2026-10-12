@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润。支持设备与耗材预设、自定义分类。">
 <meta name="theme-color" content="#4f46e5" id="metaThemeColor">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='3.523' stroke-linejoin='round'%3E%3Cpath d='M25.248 6.4 41.101 15.56 25.248 24.719 9.394 15.56Z'/%3E%3Cpath d='M9.394 15.56 25.248 24.719 25.248 43.039 9.394 33.879Z'/%3E%3Cpath d='M41.101 15.56 25.248 24.719 25.248 43.039 41.101 33.879Z'/%3E%3C/g%3E%3Ccircle cx='44.037' cy='47.031' r='10.569' fill='%23ffffff'/%3E%3Cpath d='M39.774 40.643 44.037 47.231M48.299 40.643 44.037 47.231M44.037 47.231 44.037 53.431M40.937 48.393 47.137 48.393M40.937 50.871 47.137 50.871' fill='none' stroke='%234f46e5' stroke-width='2.818' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M32 12.48 48.892 22.24 32 32 15.108 22.24Z'/%3E%3Cpath d='M15.108 22.24 32 32 32 51.52 15.108 41.76Z'/%3E%3Cpath d='M48.892 22.24 32 32 32 51.52 48.892 41.76Z'/%3E%3C/g%3E%3Cpath d='M15.108 22.24 32 32M48.892 22.24 32 32M32 32 32 51.52' fill='none' stroke='%234f46e5' stroke-width='2.377' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
 <link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
 <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png">
 <link rel="apple-touch-icon" sizes="167x167" href="./apple-touch-icon-167.png">
@@ -682,7 +682,7 @@
 
   <header class="topbar">
     <div class="brand">
-      <span class="mark"><svg viewBox='10.75 8.2 42.5 47.6' fill='none' aria-hidden='true'><g stroke='#ffffff' stroke-width='3' stroke-linejoin='round'><path d='M26.25 10.2 39.75 18 26.25 25.8 12.75 18Z'/><path d='M12.75 18 26.25 25.8 26.25 41.4 12.75 33.6Z'/><path d='M39.75 18 26.25 25.8 26.25 41.4 39.75 33.6Z'/></g><circle cx='42.25' cy='44.8' r='9' fill='#ffffff'/><g transform='translate(34.33 36.72) scale(0.66)' stroke='#4f46e5' stroke-width='3.6' stroke-linecap='round' fill='none'><path d='M6.5 4 12 12.5M17.5 4 12 12.5M12 12.5V20.5M8 14h8M8 17.2h8'/></g></svg></span>
+      <span class="mark"><svg viewBox='16.5 14.4 31 35.2' fill='none' aria-hidden='true'><g fill='#ffffff'><path d='M32 16.4 45.5 24.2 32 32 18.5 24.2Z'/><path d='M18.5 24.2 32 32 32 47.6 18.5 39.8Z'/><path d='M45.5 24.2 32 32 32 47.6 45.5 39.8Z'/></g><path d='M18.5 24.2 32 32M45.5 24.2 32 32M32 32 32 47.6' fill='none' stroke='#4f46e5' stroke-width='1.9' stroke-linecap='round' stroke-linejoin='round'/></svg></span>
       <div>
         <h1>3D 打印成本计算器</h1>
         <p>材料 · 折旧 · 电费 · 人工 · 后处理 · 失败率 → 单件成本与建议售价</p>
@@ -2115,18 +2115,14 @@
 
   /* ===== 检查更新 ===== */
   /* ================= 品牌标识（矢量，内嵌；currentColor 随父级着色） =================
-     v1.8.0：由位图重绘为 SVG —— 圆角方框 + 等距立方体 + 右下角 ¥ 成本徽标。
+     v1.8.0：手绘矢量 SVG —— 圆角方框 + 等距立方体（顶/左/右三面线框，无徽标）。
      报价单抬头 / 分享长图 / 空状态复用同一份路径，保证单文件离线与三端一致。 */
   var BRAND_SVG =
     '<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">' +
       '<rect x="4" y="4" width="56" height="56" rx="14" stroke="currentColor" stroke-width="4"/>' +
-      '<path d="M26.25 10.2 39.75 18 26.25 25.8 12.75 18Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
-      '<path d="M12.75 18 26.25 25.8 26.25 41.4 12.75 33.6Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
-      '<path d="M39.75 18 26.25 25.8 26.25 41.4 39.75 33.6Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
-      '<circle cx="42.25" cy="44.8" r="9" fill="currentColor"/>' +
-      '<g transform="translate(34.33 36.72) scale(0.66)" stroke="#fff" stroke-width="3.6" stroke-linecap="round">' +
-        '<path d="M6.5 4 12 12.5M17.5 4 12 12.5M12 12.5V20.5M8 14h8M8 17.2h8"/>' +
-      "</g>" +
+      '<path d="M32 16.4 45.5 24.2 32 32 18.5 24.2Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
+      '<path d="M18.5 24.2 32 32 32 47.6 18.5 39.8Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
+      '<path d="M45.5 24.2 32 32 32 47.6 45.5 39.8Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
     "</svg>";
   var BRAND_NAME = "3D 打印成本计算器";
   /* 报价单抬头：标识 + 名称 + 主色分隔线 */

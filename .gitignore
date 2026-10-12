@@ -32,10 +32,11 @@ android/keystore.properties
 # ===== 图像生成工具的草稿产出（不入库）=====
 generated-images/
 
-# ===== 品牌/图标探索草稿（不入库；成品母版见 docs/brand/icon-master-{rounded,bleed}.png）=====
+# ===== 品牌/图标探索草稿（不入库；正式几何唯一来源 = _gen_icons.py）=====
 _icon_ai/
 docs/brand/concepts/
 _gen_brand_concepts.py
+_cube_variants.py
 _render_concepts.js
 _crop_icon.py
 

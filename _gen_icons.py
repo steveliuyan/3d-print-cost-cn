@@ -3,8 +3,8 @@
 """
 _gen_icons.py —— 从品牌标识生成三端全套图标（可复现）
 
-品牌标识（64×64 空间）：等距立方体 + 右下角成本徽标圆（内含 ¥）。
-应用图标 = 靛蓝圆角方框底（框本身即「圆角方框」）+ 白色立方体 + 白色徽标圆（靛蓝 ¥）。
+品牌标识（64×64 空间）：等距立方体（顶/左/右三面），无徽标。
+应用图标 = 靛蓝圆角方框底 + 实心白立方体（三面填白）+ 靛蓝细缝（立方体三条内棱）。
 标识按包围盒自动居中 + 缩放到指定占比，保证各尺寸构图一致。
 
 产物：
@@ -15,7 +15,8 @@ _gen_icons.py —— 从品牌标识生成三端全套图标（可复现）
               res/drawable/ic_launcher_foreground.xml（自适应前景）
               res/values/ic_launcher_background.xml
               res/mipmap-anydpi-v26/ic_launcher.xml (+_round)
-  docs/brand  icon-tile.svg（应用图标规范源）
+  docs/brand  icon-tile.svg（应用图标规范源）/ logo-mark.svg（描边版，供设计/深色底）
+  并同步 index.html 三处：内联 favicon data-URI / 顶栏 .mark 标识 / 报价单抬头 BRAND_SVG
 
 用法：python _gen_icons.py
 """
@@ -28,30 +29,20 @@ WHITE = (255, 255, 255, 255)
 SS    = 4                     # 超采样倍率（抗锯齿）
 BORDER = 64                   # 逻辑画布
 
-# —— 64×64 坐标系中的几何（唯一来源：docs/brand/logo-mark.svg 亦由本文件生成）——
-# v1.8.0 修订：徽标整体按包围盒居中（bbox 中心 = 画布中心 32,32），
-# 并收小 ¥ 徽标（r 11.5→9）、内收至离外框描边留白 ≥4，消除「右下角压边 / 比例失衡」。
+# —— 64×64 坐标系中的几何（唯一来源：docs/brand/*.svg 亦由本文件生成）——
+# v1.8.0 修订：去掉右下角 ¥ 成本徽标，改回纯立方体；立方体以画布中心 (32,32) 居中。
 CUBE = [
-    [(26.25, 10.2), (39.75, 18.0), (26.25, 25.8), (12.75, 18.0)],  # 顶面
-    [(12.75, 18.0), (26.25, 25.8), (26.25, 41.4), (12.75, 33.6)],  # 左面
-    [(39.75, 18.0), (26.25, 25.8), (26.25, 41.4), (39.75, 33.6)],  # 右面
+    [(32.0, 16.4), (45.5, 24.2), (32.0, 32.0), (18.5, 24.2)],  # 顶面
+    [(18.5, 24.2), (32.0, 32.0), (32.0, 47.6), (18.5, 39.8)],  # 左面
+    [(45.5, 24.2), (32.0, 32.0), (32.0, 47.6), (45.5, 39.8)],  # 右面
 ]
-CUBE_W = 3.0
-BADGE = (42.25, 44.8, 9.0)                     # cx, cy, r（内收 + 收小）
-YEN_W = 2.4
-YEN = [
-    ((38.62, 39.36), (42.25, 44.97)),
-    ((45.88, 39.36), (42.25, 44.97)),
-    ((42.25, 44.97), (42.25, 50.25)),
-    ((39.61, 45.96), (44.89, 45.96)),
-    ((39.61, 48.07), (44.89, 48.07)),
-]
-# 描边版（logo-mark.svg / 打印抬头）使用：外框 + 立方体线宽 + ¥ 圆变换参数
+SEAM_W = 1.9                                   # 内棱线宽（64 空间）
+SEAMS = [((18.5, 24.2), (32.0, 32.0)),         # 顶-左 内棱
+         ((45.5, 24.2), (32.0, 32.0)),         # 顶-右 内棱
+         ((32.0, 32.0), (32.0, 47.6))]         # 左-右 内棱
+# 描边版（logo-mark.svg / 打印抬头）使用：外框 + 立方体线宽
 FRAME_W = 4.0
 CUBE_W_LINE = 3.4
-YEN_XF = (34.33, 36.72, 0.66)                  # translate(tx ty) scale(s)
-YEN_W_LINE = 3.6                               # 变换后视觉线宽 ≈ 3.6*0.66 = 2.376
-YEN_PATH = "M6.5 4 12 12.5M17.5 4 12 12.5M12 12.5V20.5M8 14h8M8 17.2h8"
 
 
 def mark_bbox():
@@ -59,10 +50,6 @@ def mark_bbox():
     for face in CUBE:
         for (x, y) in face:
             xs.append(x); ys.append(y)
-    bx, by, br = BADGE
-    xs += [bx - br, bx + br]; ys += [by - br, by + br]
-    for (a, b) in YEN:
-        xs += [a[0], b[0]]; ys += [a[1], b[1]]
     return min(xs), min(ys), max(xs), max(ys)
 
 
@@ -79,18 +66,13 @@ def build_xf(target_frac, canvas):
 
 
 def mark_radius():
-    """标识上离包围盒中心最远的点（含徽标外缘）到中心的距离。"""
+    """标识上离包围盒中心最远的点（立方体顶点）到中心的距离。"""
     x0, y0, x1, y1 = mark_bbox()
     cx, cy = (x0 + x1) / 2.0, (y0 + y1) / 2.0
     r = 0.0
     for face in CUBE:
         for (x, y) in face:
             r = max(r, ((x - cx) ** 2 + (y - cy) ** 2) ** 0.5)
-    bx, by, br = BADGE
-    r = max(r, ((bx - cx) ** 2 + (by - cy) ** 2) ** 0.5 + br)
-    for (a, b) in YEN:
-        for p in (a, b):
-            r = max(r, ((p[0] - cx) ** 2 + (p[1] - cy) ** 2) ** 0.5)
     return r
 
 
@@ -105,15 +87,30 @@ def build_xf_radial(safe_frac, canvas):
     return f, k
 
 
-STYLES = {"tile": 0.80, "maskable": 0.56, "touch": 0.68, "round": 0.72}
+# 每种样式的标识占比：(frac, radial)
+#   linear = 按包围盒较长边占画布比例；radial = 按最远点占画布半径比例（圆形/自适应安全区）
+STYLES = {
+    "tile":     (0.61, False),   # 网页/PWA/Windows 圆角方框
+    "touch":    (0.55, False),   # iOS 满幅（系统自行圆角）
+    "round":    (0.44, True),    # 安卓圆形图标
+    "maskable": (0.40, True),    # PWA maskable（安全圆内）
+}
+
+
+def _seam_polylines():
+    """两条折线：V 形（顶面两条内棱）+ 竖直（左右面内棱）。"""
+    return [[SEAMS[0][0], (32.0, 32.0), SEAMS[1][0]], [SEAMS[2][0], SEAMS[2][1]]]
 
 
 def render(size, style):
+    frac, radial = STYLES[style]
     W = size * SS
-    pxf, k = build_xf(STYLES[style], BORDER)          # 64 空间变换
+    pxf, k = build_xf_radial(frac, BORDER) if radial else build_xf(frac, BORDER)
+
     def P(p):
         q = pxf(p)
         return (q[0] * W / BORDER, q[1] * W / BORDER)
+
     def lw(w):
         return max(1, int(round(w * k * W / BORDER)))
 
@@ -126,14 +123,12 @@ def render(size, style):
     else:
         d.rectangle([0, 0, W, W], fill=INK)
 
+    # 三面填白（不加外描边：外轮廓即白/靛蓝硬边，干净）
     for face in CUBE:
-        pts = [P(p) for p in face] + [P(face[0])]
-        d.line(pts, fill=WHITE, width=lw(CUBE_W), joint="curve")
-    bx, by, br = BADGE
-    c = P((bx, by)); rp = br * k * W / BORDER
-    d.ellipse([c[0] - rp, c[1] - rp, c[0] + rp, c[1] + rp], fill=WHITE)
-    for (a, b) in YEN:
-        d.line([P(a), P(b)], fill=INK, width=lw(YEN_W))
+        d.polygon([P(p) for p in face], fill=WHITE)
+    # 三条内棱：靛蓝细缝（与底色同色，只在面与面之间可见）
+    for pl in _seam_polylines():
+        d.line([P(p) for p in pl], fill=INK, width=lw(SEAM_W), joint="curve")
 
     return img.resize((size, size), Image.LANCZOS)
 
@@ -142,32 +137,31 @@ def fmt(v):
     return ("%.3f" % v).rstrip("0").rstrip(".")
 
 
+def _face_path(pts):
+    return "M%sZ" % " ".join("%s %s" % (fmt(p[0]), fmt(p[1])) for p in pts)
+
+
 def build_svg(target_frac, rounded):
     f, k = build_xf(target_frac, BORDER)
+
     def c(p):
         q = f(p)
         return "%s %s" % (fmt(q[0]), fmt(q[1]))
-    sw = fmt(CUBE_W * k)
-    face = "".join('<path d="M%sZ"/>' % " ".join(c(p) for p in fc) for fc in CUBE)
-    bx, by, br = BADGE
-    bc = f((bx, by))
-    segs = []
-    for (a, b) in YEN:
-        pa, pb = f(a), f(b)
-        segs.append("M%s %s %s %s" % (fmt(pa[0]), fmt(pa[1]), fmt(pb[0]), fmt(pb[1])))
-    yen_path = "".join(segs)
-    yen_sw = fmt(YEN_W * k)
+
+    faces = "".join('<path d="%s"/>' % " ".join(c(p) for p in fc) for fc in CUBE)
+    seams = "".join("M%s %s %s %s" % (fmt(f(a)[0]), fmt(f(a)[1]), fmt(f(b)[0]), fmt(f(b)[1]))
+                    for (a, b) in SEAMS)
     bg = '<rect width="64" height="64" rx="14" fill="#4f46e5"/>' if rounded else ""
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" '
         'role="img" aria-label="3D 打印成本计算器">\n'
         '  <title>3D 打印成本计算器 · 应用图标</title>\n'
         '  %s\n'
-        '  <g fill="none" stroke="#ffffff" stroke-width="%s" stroke-linejoin="round">%s</g>\n'
-        '  <circle cx="%s" cy="%s" r="%s" fill="#ffffff"/>\n'
-        '  <path d="%s" fill="none" stroke="#4f46e5" stroke-width="%s" stroke-linecap="round"/>\n'
+        '  <g fill="#ffffff">%s</g>\n'
+        '  <path d="%s" fill="none" stroke="#4f46e5" stroke-width="%s" '
+        'stroke-linecap="round" stroke-linejoin="round"/>\n'
         '</svg>\n'
-    ) % (bg, sw, face, fmt(bc[0]), fmt(bc[1]), fmt(br * k), yen_path, yen_sw)
+    ) % (bg, faces, seams, fmt(SEAM_W * k))
 
 
 def build_svg_compact(target_frac):
@@ -177,21 +171,18 @@ def build_svg_compact(target_frac):
     def c(p):
         q = f(p)
         return "%s %s" % (fmt(q[0]), fmt(q[1]))
-    face = "".join("<path d='M%sZ'/>" % " ".join(c(p) for p in fc) for fc in CUBE)
-    bx, by, br = BADGE
-    bc = f((bx, by))
-    segs = []
-    for (a, b) in YEN:
-        pa, pb = f(a), f(b)
-        segs.append("M%s %s %s %s" % (fmt(pa[0]), fmt(pa[1]), fmt(pb[0]), fmt(pb[1])))
+
+    faces = "".join("<path d='M%sZ'/>" % " ".join(c(p) for p in fc) for fc in CUBE)
+    seams = "".join("M%s %s %s %s" % (fmt(f(a)[0]), fmt(f(a)[1]), fmt(f(b)[0]), fmt(f(b)[1]))
+                    for (a, b) in SEAMS)
     raw = (
         "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
         "<rect width='64' height='64' rx='14' fill='#4f46e5'/>"
-        "<g fill='none' stroke='#ffffff' stroke-width='%s' stroke-linejoin='round'>%s</g>"
-        "<circle cx='%s' cy='%s' r='%s' fill='#ffffff'/>"
-        "<path d='%s' fill='none' stroke='#4f46e5' stroke-width='%s' stroke-linecap='round'/>"
+        "<g fill='#ffffff'>%s</g>"
+        "<path d='%s' fill='none' stroke='#4f46e5' stroke-width='%s' "
+        "stroke-linecap='round' stroke-linejoin='round'/>"
         "</svg>"
-    ) % (fmt(CUBE_W * k), face, fmt(bc[0]), fmt(bc[1]), fmt(br * k), "".join(segs), fmt(YEN_W * k))
+    ) % (faces, seams, fmt(SEAM_W * k))
     # data-URI 安全化：<> 与 # 必须编码（引号统一用单引号，避免与外层 href="…" 冲突）
     return raw.replace("<", "%3C").replace(">", "%3E").replace("#", "%23")
 
@@ -199,7 +190,7 @@ def build_svg_compact(target_frac):
 def sync_favicon_uri():
     """把内联 favicon data-URI 同步进 index.html（唯一来源 = 本脚本的几何常量）。"""
     import re
-    uri = build_svg_compact(STYLES["tile"])
+    uri = build_svg_compact(STYLES["tile"][0])
     p = os.path.join(ROOT, "index.html")
     with open(p, encoding="utf-8", newline="") as f:
         s = f.read()
@@ -219,49 +210,78 @@ def sync_favicon_uri():
     return True
 
 
+def build_brand_svg_js():
+    """index.html 中 BRAND_SVG 变量的 JS 字面量（描边版，currentColor；供报价单抬头 / 分享长图 / 空状态）。"""
+    lines = []
+    for fc in CUBE:
+        lines.append('      \'<path d="%s" stroke="currentColor" stroke-width="%s" '
+                     'stroke-linejoin="round"/>\' +' % (_face_path(fc), fmt(CUBE_W_LINE)))
+    body = "\n".join(lines)
+    return (
+        '  var BRAND_SVG =\n'
+        '    \'<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">\' +\n'
+        '      \'<rect x="4" y="4" width="56" height="56" rx="14" stroke="currentColor" '
+        'stroke-width="%s"/>\' +\n'
+        '%s\n'
+        '    "</svg>";'
+    ) % (fmt(FRAME_W), body)
+
+
+def sync_brand_svg():
+    """把 index.html 的 BRAND_SVG 变量替换为最新描边版立方体标识（唯一来源 = 本脚本几何）。"""
+    import re
+    p = os.path.join(ROOT, "index.html")
+    with open(p, encoding="utf-8", newline="") as f:
+        s = f.read()
+    pat = re.compile(r'  var BRAND_SVG =[\s\S]*?"</svg>";')
+    new = build_brand_svg_js()
+    if not pat.search(s):
+        print("  [warn] index.html 未找到 BRAND_SVG 变量，跳过")
+        return False
+    s2 = pat.sub(lambda m: new, s, count=1)
+    if s2 != s:
+        with open(p, "w", encoding="utf-8", newline="\n") as f:
+            f.write(s2)
+        print("  index.html 报价单抬头 BRAND_SVG 已更新")
+    else:
+        print("  index.html BRAND_SVG 已是最新")
+    return True
+
+
 def build_mark_svg():
-    """描边版品牌标识（docs/brand/logo-mark.svg）：外框 + 立方体 + ¥ 徽标，currentColor 着色。"""
+    """描边版品牌标识（docs/brand/logo-mark.svg）：外框 + 立方体三面线框，currentColor 着色。"""
     def cp(p):
         return "%s %s" % (fmt(p[0]), fmt(p[1]))
     faces = "".join(
         '  <path d="M%sZ" stroke="currentColor" stroke-width="%s" stroke-linejoin="round"/>\n'
         % (" ".join(cp(p) for p in fc), fmt(CUBE_W_LINE)) for fc in CUBE)
-    bx, by, br = BADGE
-    tx, ty, s = YEN_XF
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" '
         'role="img" aria-label="3D 打印成本计算器" color="#4f46e5" fill="none">\n'
         '  <title>3D 打印成本计算器 · 品牌标识</title>\n'
         '  <rect x="4" y="4" width="56" height="56" rx="14" stroke="currentColor" stroke-width="%s"/>\n'
         '%s'
-        '  <circle cx="%s" cy="%s" r="%s" fill="currentColor"/>\n'
-        '  <g transform="translate(%s %s) scale(%s)" stroke="#ffffff" stroke-width="%s" stroke-linecap="round" fill="none">\n'
-        '    <path d="%s"/>\n'
-        '  </g>\n'
         '</svg>\n'
-    ) % (fmt(FRAME_W), faces, fmt(bx), fmt(by), fmt(br),
-         fmt(tx), fmt(ty), fmt(s), fmt(YEN_W_LINE), YEN_PATH)
+    ) % (fmt(FRAME_W), faces)
 
 
 def build_mark_inner_svg():
-    """顶栏用实心白版标识（无外框，viewBox 紧贴包围盒）：白立方体 + 白徽标圆 + 靛蓝 ¥。"""
+    """顶栏用实心白版标识（无外框，viewBox 紧贴包围盒）：三面填白 + 靛蓝内棱缝。"""
     x0, y0, x1, y1 = mark_bbox()
     pad = 2.0
     vb = "%s %s %s %s" % (fmt(x0 - pad), fmt(y0 - pad),
                           fmt((x1 - x0) + 2 * pad), fmt((y1 - y0) + 2 * pad))
     faces = "".join("<path d='M%sZ'/>" % " ".join(
         "%s %s" % (fmt(p[0]), fmt(p[1])) for p in fc) for fc in CUBE)
-    bx, by, br = BADGE
-    tx, ty, s = YEN_XF
+    seams = "".join("M%s %s %s %s" % (fmt(a[0]), fmt(a[1]), fmt(b[0]), fmt(b[1]))
+                    for (a, b) in SEAMS)
     return (
         "<svg viewBox='%s' fill='none' aria-hidden='true'>"
-        "<g stroke='#ffffff' stroke-width='%s' stroke-linejoin='round'>%s</g>"
-        "<circle cx='%s' cy='%s' r='%s' fill='#ffffff'/>"
-        "<g transform='translate(%s %s) scale(%s)' stroke='#4f46e5' stroke-width='%s' stroke-linecap='round' fill='none'>"
-        "<path d='%s'/></g>"
+        "<g fill='#ffffff'>%s</g>"
+        "<path d='%s' fill='none' stroke='#4f46e5' stroke-width='%s' "
+        "stroke-linecap='round' stroke-linejoin='round'/>"
         "</svg>"
-    ) % (vb, fmt(CUBE_W), faces, fmt(bx), fmt(by), fmt(br),
-         fmt(tx), fmt(ty), fmt(s), fmt(YEN_W_LINE), YEN_PATH)
+    ) % (vb, faces, seams, fmt(SEAM_W))
 
 
 def sync_topbar_mark():
@@ -286,31 +306,23 @@ def sync_topbar_mark():
     return True
 
 
-def android_vector(safe_frac=0.3055, canvas=108):
+def android_vector(safe_frac=0.31, canvas=108):
     f, k = build_xf_radial(safe_frac, canvas)
+
     def c(p):
         q = f(p)
         return "%s,%s" % (fmt(q[0]), fmt(q[1]))
-    sw = fmt(CUBE_W * k)
+
     paths = []
     for fc in CUBE:
         d = "M" + "L".join(c(p) for p in fc) + "Z"
-        paths.append('  <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" '
-                     'android:strokeWidth="%s" android:strokeLineJoin="round" '
-                     'android:strokeLineCap="round" android:pathData="%s"/>' % (sw, d))
-    bx, by, br = BADGE
-    bc = f((bx, by))
-    paths.append('  <path android:fillColor="#FFFFFF" android:pathData="M%s a%s,%s 0 1,0 %s,0 '
-                 'a%s,%s 0 1,0 -%s,0Z"/>'
-                 % (c((bx - br, by)), fmt(br * k), fmt(br * k), fmt(2 * br * k),
-                    fmt(br * k), fmt(br * k), fmt(2 * br * k)))
+        paths.append('  <path android:fillColor="#FFFFFF" android:pathData="%s"/>' % d)
     segs = []
-    for (a, b) in YEN:
-        pa, pb = f(a), f(b)
+    for (a, b) in SEAMS:
         segs.append("M%sL%s" % (c(a), c(b)))
     paths.append('  <path android:fillColor="#00000000" android:strokeColor="#4F46E5" '
                  'android:strokeWidth="%s" android:strokeLineCap="round" '
-                 'android:pathData="%s"/>' % (fmt(YEN_W * k), "".join(segs)))
+                 'android:strokeLineJoin="round" android:pathData="%s"/>' % (fmt(SEAM_W * k), "".join(segs)))
     return (
         '<?xml version="1.0" encoding="utf-8"?>\n'
         '<!-- 由 _gen_icons.py 生成 · 自适应图标前景层 -->\n'
@@ -355,8 +367,8 @@ def make_preview():
 
 
 def main():
-    print("[1/6] 规范源 SVG")
-    svg = build_svg(STYLES["tile"], rounded=True)
+    print("[1/7] 规范源 SVG")
+    svg = build_svg(STYLES["tile"][0], rounded=True)
     for name in ("docs/brand/icon-tile.svg", "favicon.svg"):
         with open(os.path.join(ROOT, *name.split("/")), "w", encoding="utf-8", newline="\n") as f:
             f.write(svg)
@@ -366,28 +378,29 @@ def main():
     print("  docs/brand/logo-mark.svg")
     sync_favicon_uri()
     sync_topbar_mark()
+    sync_brand_svg()
 
-    print("[2/6] Web / PWA")
+    print("[2/7] Web / PWA")
     save_png(render(192, "tile"), os.path.join(ROOT, "icon-192.png"))
     save_png(render(512, "tile"), os.path.join(ROOT, "icon-512.png"))
     save_png(render(512, "maskable"), os.path.join(ROOT, "maskable-512.png"))
 
-    print("[3/6] iOS 桌面图标（满幅、无透明，iOS 自行圆角）")
+    print("[3/7] iOS 桌面图标（满幅、无透明，iOS 自行圆角）")
     save_png(render(180, "touch"), os.path.join(ROOT, "apple-touch-icon.png"))
     save_png(render(167, "touch"), os.path.join(ROOT, "apple-touch-icon-167.png"))
 
-    print("[4/6] favicon.ico")
+    print("[4/7] favicon.ico")
     p = os.path.join(ROOT, "favicon.ico")
     render(256, "tile").save(p, "ICO", sizes=ICO_SIZES)
     print("  %-56s %6d B" % ("favicon.ico", os.path.getsize(p)))
 
-    print("[5/6] Windows / Electron")
+    print("[5/7] Windows / Electron")
     save_png(render(512, "tile"), os.path.join(ROOT, "desktop", "build", "icon.png"))
     p = os.path.join(ROOT, "desktop", "build", "icon.ico")
     render(256, "tile").save(p, "ICO", sizes=ICO_SIZES)
     print("  %-56s %6d B" % (os.path.relpath(p, ROOT), os.path.getsize(p)))
 
-    print("[6/6] Android")
+    print("[6/7] Android")
     res = os.path.join(ROOT, "android", "app", "src", "main", "res")
     dens = {"mdpi": 48, "hdpi": 72, "xhdpi": 96, "xxhdpi": 144, "xxxhdpi": 192}
     for name, px in dens.items():

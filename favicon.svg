@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="3D 打印成本计算器">
   <title>3D 打印成本计算器 · 应用图标</title>
   <rect width="64" height="64" rx="14" fill="#4f46e5"/>
-  <g fill="none" stroke="#ffffff" stroke-width="3.523" stroke-linejoin="round"><path d="M25.248 6.4 41.101 15.56 25.248 24.719 9.394 15.56Z"/><path d="M9.394 15.56 25.248 24.719 25.248 43.039 9.394 33.879Z"/><path d="M41.101 15.56 25.248 24.719 25.248 43.039 41.101 33.879Z"/></g>
-  <circle cx="44.037" cy="47.031" r="10.569" fill="#ffffff"/>
-  <path d="M39.774 40.643 44.037 47.231M48.299 40.643 44.037 47.231M44.037 47.231 44.037 53.431M40.937 48.393 47.137 48.393M40.937 50.871 47.137 50.871" fill="none" stroke="#4f46e5" stroke-width="2.818" stroke-linecap="round"/>
+  <g fill="#ffffff"><path d="32 12.48 48.892 22.24 32 32 15.108 22.24"/><path d="15.108 22.24 32 32 32 51.52 15.108 41.76"/><path d="48.892 22.24 32 32 32 51.52 48.892 41.76"/></g>
+  <path d="M15.108 22.24 32 32M48.892 22.24 32 32M32 32 32 51.52" fill="none" stroke="#4f46e5" stroke-width="2.377" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

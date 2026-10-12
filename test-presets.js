@@ -1512,21 +1512,24 @@ setTimeout(function () {
     w8.HTMLAnchorElement.prototype.click = function () {};
     var E = w8.__DPC;
 
-    ok('v1.8 B5：品牌标识 SVG 已内嵌', /<svg/.test(E.BRAND_SVG || '') && /#fff/.test(E.BRAND_SVG || ''));
+    ok('v1.8 B5：品牌标识 SVG 已内嵌', /<svg/.test(E.BRAND_SVG || '') && /currentColor/.test(E.BRAND_SVG || ''));
 
-    /* --- 品牌一致性：顶栏 / favicon / 打印头必须共用同一套徽标几何（防「单面漏改」） --- */
+    /* --- 品牌一致性：顶栏 / favicon / 打印头必须共用同一套立方体几何（防「单面漏改」） ---
+       v1.8.0 修订：去掉 ¥ 成本徽标，改回纯立方体（顶/左/右三面）。 */
     var markSpan = d8.querySelector('.mark');
     var markSvg = markSpan ? markSpan.innerHTML : '';
-    ok('v1.8 品牌：顶栏标识已换为新徽标（立方体 + ¥ 成本徽标）',
-       /<circle/.test(markSvg) && /M6\.5 4 12 12\.5/.test(markSvg));
-    ok('v1.8 品牌：顶栏徽标几何 = 规范 (42.25, 44.8, r9)',
-       /cx=["']42\.25["']/.test(markSvg) && /cy=["']44\.8["']/.test(markSvg) && /r=["']9["']/.test(markSvg));
+    ok('v1.8 品牌：顶栏标识 = 纯立方体（3 面填白 + 靛蓝内棱缝，无 ¥ 徽标）',
+       !/<circle/.test(markSvg) && (markSvg.match(/<path/g) || []).length >= 4 &&
+       /#4f46e5/.test(markSvg) && /32 16\.4 45\.5 24\.2 32 32 18\.5 24\.2Z/.test(markSvg));
+    ok('v1.8 品牌：顶栏立方体几何 = 规范（右面 32 47.6 → 45.5 39.8）',
+       /32 47\.6 45\.5 39\.8Z/.test(markSvg) && /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(markSvg));
     var favEl = d8.querySelector('link[rel="icon"]');
     var favDec = favEl ? decodeURIComponent(favEl.getAttribute('href') || '') : '';
-    ok('v1.8 品牌：favicon 已含新成本徽标（立方体 3 面 + 白圆 + 靛蓝 ¥）',
-       /<circle/.test(favDec) && (favDec.match(/<path/g) || []).length >= 4 && /#4f46e5/.test(favDec));
-    ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何',
-       /cx="42\.25"/.test(E.BRAND_SVG || '') && /r="9"/.test(E.BRAND_SVG || ''));
+    ok('v1.8 品牌：favicon = 纯立方体（3 面 + 靛蓝缝，无 ¥ 徽标）',
+       !/<circle/.test(favDec) && (favDec.match(/<path/g) || []).length >= 4 && /#4f46e5/.test(favDec));
+    ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
+       /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
+       !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
     ok('v1.8：版本号已升到 1.8.0', d8.getElementById('footVer').textContent === '1.8.0',
        d8.getElementById('footVer').textContent);
 
