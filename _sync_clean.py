@@ -1,6 +1,6 @@
 import re, io, os, hashlib
 
-ROOT = r"H:\workbuddy\2026-10-11-01-15-23\3d-print-cost-calculator"
+ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "index.html")
 DESTS = [
     os.path.join(ROOT, "android", "app", "src", "main", "assets", "index.html"),

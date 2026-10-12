@@ -141,7 +141,10 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 
 | 位置 | 内容 | 说明 |
 |---|---|---|
-| `.secrets/github-token.txt` | GitHub PAT（classic，`ghp_…`） | 推仓库 / 建 Release 用。**建议尽快轮换为 fine-grained** |
+| `.secrets/github-token.txt` | GitHub PAT（classic，`ghp_…`） | 推仓库 / 建 Release 用。**待轮换为 fine-grained**（见 §9） |
+| `.secrets/_api_push.py` | 经 API 推送（保持 SHA 一致） | github.com 被墙时的推送手段，用法见 §12 |
+| `.secrets/_api_release.py` | 建 tag / Release / 传附件 | 同上 |
+| `.secrets/_rotate_token.py` | 校验并落盘新 token | 参数为新 PAT，校验用户与 push 权限 |
 | `android/keystore.properties` | APK 签名口令 | 与下面的 jks 配套 |
 | `android/app/dpc-release.jks` | APK 签名密钥库 | **丢了就无法给已安装用户升级**，务必备份 |
 
@@ -158,17 +161,21 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | — | 部署到子域 **3d.20050905.xyz**（GitHub Pages CNAME + Cloudflare CNAME 记录 + 橙云 + 强制 HTTPS），逐字节验证 200/140,097B 与本地一致 |
 | — | `myweb/project-dpc.html` 的「在线使用」链接由 github.io 改为 3d.20050905.xyz |
 | v1.5.0 | **深色模式**：浅色 / 深色 / 跟随系统三档。顶栏分段控件；`<head>` 内联防闪脚本；~30 处硬编码浅色提升为设计令牌；深色令牌包在 `@media screen` 内保证打印恒浅色 |
+| — | **推送**：github.com 被墙（SSH 也被 RST），改走 **GitHub Git Data API**。发现远端/本地曾分叉成两条内容等价平行链，按「以本地为准」把 12 个提交以**完全一致 SHA** 重建到远端 → 远端 main = 本地 HEAD = `7c1152292e`。CNAME 保留、8 个 tag/Release 完好 |
+| — | **打包 + 发版**：APK（vc9 / 1.5.0，签名证书 `O=DPC`）与 Electron portable exe 打包完成，发布 **v1.5.0 Release**（3 附件：exe/apk/web.html） |
 
 **验证证据**：v1.5.0 回归 **196/196 通过**；变异测试两次均被抓住（改错点击处理 → 5 条 FAIL；
 把 `@media screen` 改成 `@media screenX` → 打印保护断言 FAIL）。
 三份副本逐字节一致：147,578 B，md5 `980a7db2da78ecfa17c0ce29c13ec1ae`。
+APK 内 `assets/index.html` md5 同为此值；EXE 74,227,927 B / APK 1,057,560 B。
 
 ## 9. 未完成 / 待办
 
-- ⏳ **有 2 个本地提交未 push**：`b187dfe`（README 在线地址）、`1b62186`（v1.5.0 深色模式）。
-  用户放行后再推。
-- ⏳ **未重新打包** Android APK（versionCode 9）与 Electron EXE，`dist/` 也没带过来。
-- ⏳ 建议轮换 `.secrets/github-token.txt` 里的 classic PAT（权限偏大，且曾出现在多份本地日志/截图里）。
+- ⏳ **轮换 classic PAT**：`.secrets/github-token.txt` 里那份 classic PAT 权限极大
+  （含 `admin:enterprise` / `admin:org` / `delete_repo` / `workflow`…），应换为 fine-grained。
+  GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
+  再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
+- ✅ 已 push 完成（见下方 §8 末）；✅ 已重新打包 APK/EXE 并发布 v1.5.0 Release。
 - 💡 可选项：`http://` 已能 301 跳 `https://`；GitHub Pages 后台可能有域名 DNS 校验警告，不影响访问。
 
 ## 10. 关联项目
@@ -190,3 +197,24 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | git remote | `https://github.com/steveliuyan/3d-print-cost-cn.git` |
 
 > 国内网络：PC/Android 抓外网需 **VPN 全局模式**（规则模式不通）。
+
+---
+
+## 12. 被墙时如何推送 / 发版（重要）
+
+本机 `github.com:443` **直连超时**、`ssh.github.com:443` 被 **RST**，`git push/fetch` 全部不可用；
+只有 `api.github.com`（及 `codeload` / `raw`）可达。因此推送与发版一律走 **GitHub Git Data API**：
+
+```bash
+PY="C:/Users/steveliuyan/.workbuddy/binaries/python/versions/3.13.12/python.exe"
+$PY .secrets/_api_push.py       # 把本地提交推到远端，逐提交 SHA 与本地完全一致
+$PY .secrets/_api_release.py    # 建 tag/Release 并上传附件（改脚本内 TAG/HEAD_SHA/ASSETS）
+```
+
+要点：
+- **别信本地 `origin/main`**——直连不通时它不会更新，远端实际 HEAD 可能已领先/分叉。用
+  `curl -H "Authorization: Bearer $TOKEN" https://api.github.com/repos/steveliuyan/3d-print-cost-cn/git/ref/heads/main` 取真值。
+- 推送脚本对每个提交**逐字段复制** tree/parents/author/committer/message，保证远端 SHA == 本地 SHA；
+  SHA 不一致会**中止且不动远端 ref**。
+- 完整方法论已沉淀为技能：`github-api-push-blocked`（含 `api_push.py` / `create_release.py` / `rotate_token.py`）。
+- 正常 `git push` 恢复可用后（VPN 全局模式）仍优先用原生 git。
