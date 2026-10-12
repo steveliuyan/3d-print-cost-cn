@@ -1131,7 +1131,63 @@ setTimeout(function () {
                 var info6 = dS.getElementById('stlInfo').textContent;
                 ok('v1.6：无切片信息回退几何估算 3.97 克', /3\.97/.test(info6), info6);
                 ok('v1.6：无切片信息不显示"切片实测"', info6.indexOf('切片实测') < 0, info6);
-                done();
+
+                /* ===== v1.6：生产扩展（p:path 外部对象 + transform），拓竹真实 3MF 结构 ===== */
+                function componentMainXml(extra) {
+                  return '<?xml version="1.0" encoding="UTF-8"?>' +
+                    '<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" ' +
+                    'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" unit="millimeter" requiredextensions="p">' +
+                    '<resources><object id="2" type="model"><components>' +
+                    '<component p:path="/3D/Objects/obj.model" objectid="1" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>' +
+                    '</components></object></resources>' +
+                    '<build><item objectid="2"' + (extra || '') + '/></build></model>';
+                }
+                function objectFileXml(s) {
+                  var V = [[0,0,0],[s,0,0],[s,s,0],[0,s,0],[0,0,s],[s,0,s],[s,s,s],[0,s,s]];
+                  var T = [[4,7,6],[4,6,5],[0,1,2],[0,2,3],[3,2,6],[3,6,7],[1,0,4],[1,4,5],[0,3,7],[0,7,4],[2,1,5],[2,5,6]];
+                  var x = '<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources><object id="1" type="model"><mesh><vertices>';
+                  V.forEach(function (v) { x += '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>'; });
+                  x += '</vertices><triangles>';
+                  T.forEach(function (t) { x += '<triangle v1="' + t[0] + '" v2="' + t[1] + '" v3="' + t[2] + '"/>'; });
+                  return x + '</triangles></mesh></object></resources></model>';
+                }
+                var f7 = new wS.File([zipMulti([
+                  ['3D/3dmodel.model', strBytes(componentMainXml(''))],
+                  ['3D/Objects/obj.model', strBytes(objectFileXml(12))]
+                ])], 'bambu.3mf', { type: '' });
+                try { Object.defineProperty(inp, 'files', { value: [f7], configurable: true }); } catch (e) {}
+                inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+                setTimeout(function () {
+                  var info7 = dS.getElementById('stlInfo').textContent;
+                  ok('v1.6：外部对象(p:path)解析出体积 1.73 cm³', /1\.73/.test(info7) && /12\s*×\s*12/.test(info7), info7);
+                  ok('v1.6：外部对象不再报"无法解析"',
+                     dS.getElementById('stlInfo').textContent.indexOf('无法解析') < 0 && /1\.73/.test(info7), info7);
+                  /* transform：build item 缩放 ×2 → 体积 ×8 = 64.00 cm³ */
+                  var f8 = new wS.File([zipMulti([
+                    ['3D/3dmodel.model', strBytes(componentMainXml(' transform="2 0 0 0 2 0 0 0 2 0 0 0"'))],
+                    ['3D/Objects/obj.model', strBytes(objectFileXml(12))]
+                  ])], 'bambu2.3mf', { type: '' });
+                  try { Object.defineProperty(inp, 'files', { value: [f8], configurable: true }); } catch (e) {}
+                  inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+                  setTimeout(function () {
+                    ok('v1.6：build transform 缩放 ×2 → 体积 13.82 cm³',
+                       /13\.82/.test(dS.getElementById('stlInfo').textContent), dS.getElementById('stlInfo').textContent);
+                    /* 真实场景：slice_info 只有 <header>（无 weight/prediction）→ 导入成功且回退估算 */
+                    var f9 = new wS.File([zipMulti([
+                      ['3D/3dmodel.model', strBytes(componentMainXml(''))],
+                      ['3D/Objects/obj.model', strBytes(objectFileXml(12))],
+                      ['Metadata/slice_info.config', strBytes('<?xml version="1.0" encoding="UTF-8"?><config><header><header_item key="X-BBL-Client-Type" value="slicer"/></header></config>')]
+                    ])], 'bambu3.3mf', { type: '' });
+                    try { Object.defineProperty(inp, 'files', { value: [f9], configurable: true }); } catch (e) {}
+                    inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+                    setTimeout(function () {
+                      var info9 = dS.getElementById('stlInfo').textContent;
+                      ok('v1.6：空切片信息仍解析出体积 1.73 cm³', /1\.73/.test(info9), info9);
+                      ok('v1.6：空切片信息不误报"切片实测"', info9.indexOf('切片实测') < 0, info9);
+                      done();
+                    }, 400);
+                  }, 400);
+                }, 400);
               }, 400);
             }, 400);
           }, 400);

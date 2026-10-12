@@ -16,7 +16,7 @@
 | 本地 HEAD | `55846bace51e0fbc4455f17648be1b832336cd79`（v1.6.0 功能提交；其后 1 个文档提交见 `git log`） |
 | 功能提交 | `55846bace51e0fbc4455f17648be1b832336cd79` |
 | 回归测试 | **240/240 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `0c8564776ed34234fa931a23f3d05fae`（161,879 B，逐字节一致） |
+| 三副本 md5 | `f679cd72beb279c466f1e1e5cd43e1fc`（165,957 B，逐字节一致） |
 | 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
@@ -210,7 +210,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | — | **更新体验重做（TDD，回归 196 → 234）**：① 更新弹窗重做——发布说明改轻量 Markdown 渲染（小节/列表/二级缩进/粗体/行内代码/「下载：」弱化注脚），四态，头部版本徽标，平台产物行（按端切换 + 体积 KB/MB）；② 新增**更新日志面板**（页脚「更新日志」），拉 `/releases?per_page=30`，首条展开、可折叠；③ **Electron 统一为应用内弹窗**（新增 `desktop/preload.js` 暴露 `window.dpc.fetchJson`；主进程 `ipcMain.handle('dpc:fetchJson')` + `net` 代理规避 CORS，路径白名单；菜单「检查更新…」改 `webContents.send`）；④ **Android** `updateApp(url, version)` 增版本号参数用于下载通知 |
 | — | 修复 Electron 老 bug：「立即升级」在 Windows 上误打开 APK（现按平台挑 EXE） |
 | **v1.5.1** | **发版完成**：版本号四处联动升 1.5.1；APK `1,069,404 B`（vc10，证书 `O=DPC`，内部 assets/index.html md5 与源码一致）、EXE `3D打印成本计算器-1.5.1-便携版.exe` `74,231,176 B`（asar 内三文件 md5 全一致）；发布 **v1.5.1 Release**（3 附件 201，tag/release 各 9→10，latest=v1.5.1）；GitHub Pages 已构建（commit `dde8b9ca8b`） |
-| **v1.6.0** | **切片 3MF 实测用量读取**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 导出的 `Metadata/slice_info.config`（`weight` 克数、`prediction` 秒数，`filament used_g` 兜底）；`load3mf` 顺带读切片元数据，`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；**无切片数据或解析失败静默回退几何估算**，不打断导入。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **240**（+6 断言） |
+| **v1.6.0** | **切片 3MF 实测用量读取 + 生产扩展 3MF 支持**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 的 `Metadata/slice_info.config`（`weight` 克 / `prediction` 秒，`filament used_g` 兜底）；`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；无切片数据 / 解析失败**静默回退几何估算**。**关键修复**：支持 3MF **生产扩展**——主 model 用 `<component p:path>` 引用外部 object 文件、`build item`/`component` 的 4×3 仿射 `transform` 逐级复合（拓竹 Studio 导出即此结构，旧实现只读主文件 → 报"无法解析"）；`inflateRaw` 改为**按 ZIP 中央目录 usize 预分配**输出缓冲，显著加速大模型解压。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **245** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -229,10 +229,13 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 三副本逐字节一致 159,160 B，md5 `9f927e975490e518351078d05cfd3347`（v1.5.1）。
 APK/EXE 产物内部文件 md5 亦与源码一致（见 §9 v1.5.1 行）。
 
-**v1.6.0（切片用量读取）**：RED 3 条新断言先失败 → minimal GREEN → 全绿；变异测试 **2 组被捕获**
-（M1 去掉 `stlRender` 的「切片实测」拼接 → 重量/时长 3 条 FAIL；M2 `stlFill` 改用 `stlEstimate` → 填入断言 FAIL）
-→ 恢复 → 全量回归 **240/240**。三副本逐字节一致 161,879 B，md5 `0c8564776ed34234fa931a23f3d05fae`。
-测试用一个**内存构造的双条目 Stored ZIP**（`3D/3dmodel.model` + `Metadata/slice_info.config`）驱动，不依赖外部样本文件。
+**v1.6.0（切片用量读取 + 生产扩展 3MF）**：RED 断言先失败（237/240）→ minimal GREEN → 全绿；
+变异 **3 组被捕获**（M1 去掉 `stlRender` 的「切片实测」拼接 → 重量/时长 FAIL；M2 `stlFill` 改用 `stlEstimate` → 填入 FAIL；
+M3 `tfParse` 恒返回单位阵 → transform 缩放断言 FAIL；M4 跳过 `components` 遍历 → 4 条外部对象断言 FAIL）
+→ 恢复 → 全量回归 **245/245**。三副本逐字节一致 165,957 B，md5 `f679cd72beb279c466f1e1e5cd43e1fc`。
+**真实样本端到端核验**：用户提供的拓竹 3MF（`3D/Objects/object_3.model` 外部对象，96015 顶点 / 192170 三角形，
+build transform 缩放 1.1355412）→ 应用输出 **体积 131.71 cm³ · 包围盒 92.8 × 91.2 × 100 mm**，
+与**独立 Python 参考实现逐位一致**。测试用**内存构造的 ZIP**（含 Stored/多条目/生产扩展/transform 各种组合）驱动，不依赖外部样本文件。
 
 ## 11. 未完成 / 待办
 

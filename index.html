@@ -2273,8 +2273,9 @@
   }
   /* ---- 3MF：ZIP 容器 + XML mesh（Stored / Deflate 均支持，纯前端解析） ---- */
   /* ---- 纯 JS raw-DEFLATE 解压（puff 算法，不依赖浏览器 API，兼容所有 WebView） ---- */
-  function inflateRaw(u8){
-    var pos = 0, bitbuf = 0, bitcnt = 0, out = [];
+  function inflateRaw(u8, cap){
+    var pos = 0, bitbuf = 0, bitcnt = 0;
+    var out = new Uint8Array(cap > 0 ? cap : 1 << 16), oi = 0;
     function bits(need){
       var val = bitbuf;
       while(bitcnt < need){ val |= u8[pos++] << bitcnt; bitcnt += 8; }
@@ -2316,7 +2317,10 @@
         bitbuf = 0; bitcnt = 0;
         var len = u8[pos] | (u8[pos + 1] << 8);
         pos += 4;
-        for(var si = 0; si < len; si++) out.push(u8[pos++]);
+        for(var si = 0; si < len; si++){
+          if(oi >= out.length){ var g0 = new Uint8Array(out.length << 1); g0.set(out); out = g0; }
+          out[oi++] = u8[pos++];
+        }
       } else {
         if(type === 1){
           if(!fixedL){
@@ -2344,8 +2348,10 @@
         while(true){
           var sym2 = decode(lh);
           if(sym2 < 0) return null;
-          if(sym2 < 256) out.push(sym2);
-          else if(sym2 === 256) break;
+          if(sym2 < 256){
+            if(oi >= out.length){ var g1 = new Uint8Array(out.length << 1); g1.set(out); out = g1; }
+            out[oi++] = sym2;
+          } else if(sym2 === 256) break;
           else {
             sym2 -= 257;
             if(sym2 >= 29) return null;
@@ -2353,12 +2359,15 @@
             var dsym = decode(dh);
             if(dsym < 0) return null;
             var dist = DBASE[dsym] + bits(DEXT[dsym]);
-            for(var li = 0; li < l2; li++) out.push(out[out.length - dist]);
+            for(var li = 0; li < l2; li++){
+              if(oi >= out.length){ var g2 = new Uint8Array(out.length << 1); g2.set(out); out = g2; }
+              out[oi] = out[oi - dist]; oi++;
+            }
           }
         }
       }
     } while(!last);
-    return new Uint8Array(out);
+    return out.subarray(0, oi);
   }
   function zipList(buf){
     var dv = new DataView(buf);
@@ -2368,10 +2377,10 @@
     var n = dv.getUint16(i + 10, true), p = dv.getUint32(i + 16, true), files = {};
     for(var k = 0; k < n; k++){
       if(dv.getUint32(p, true) !== 0x02014b50) break;
-      var method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true);
+      var method = dv.getUint16(p + 10, true), csize = dv.getUint32(p + 20, true), usize = dv.getUint32(p + 24, true);
       var nl = dv.getUint16(p + 28, true), el = dv.getUint16(p + 30, true), cl = dv.getUint16(p + 32, true);
       var name = ""; for(var j = 0; j < nl; j++) name += String.fromCharCode(dv.getUint8(p + 46 + j));
-      files[name.toLowerCase()] = { method: method, csize: csize, lho: dv.getUint32(p + 42, true) };
+      files[name.toLowerCase()] = { method: method, csize: csize, usize: usize, lho: dv.getUint32(p + 42, true) };
       p += 46 + nl + el + cl;
     }
     return files;
@@ -2383,7 +2392,7 @@
     if(e.method === 0){ cb(raw); return true; }
     if(e.method === 8){
       try{
-        var out = inflateRaw(raw);
+        var out = inflateRaw(raw, e.usize);
         if(!out) { toast("3MF 解压失败（数据损坏）"); return true; }
         cb(out);
         return true;
@@ -2396,25 +2405,88 @@
     for(var i = 0; i < u8.length; i += 8192) s += String.fromCharCode.apply(null, u8.subarray(i, Math.min(i + 8192, u8.length)));
     return s;
   }
-  function parse3mfXml(text){
-    var doc = new DOMParser().parseFromString(text, "text/xml");
-    if(doc.getElementsByTagName("parsererror").length) return null;
-    var meshes = doc.getElementsByTagName("mesh");
-    if(!meshes.length) return null;
-    var tris = [];
-    for(var m = 0; m < meshes.length; m++){
-      var vs = meshes[m].getElementsByTagName("vertex");
-      var vv = [];
-      for(var i = 0; i < vs.length; i++)
-        vv.push([parseFloat(vs[i].getAttribute("x")), parseFloat(vs[i].getAttribute("y")), parseFloat(vs[i].getAttribute("z"))]);
-      var ts = meshes[m].getElementsByTagName("triangle");
-      for(var t = 0; t < ts.length; t++){
-        var a = +ts[t].getAttribute("v1"), b = +ts[t].getAttribute("v2"), c = +ts[t].getAttribute("v3");
-        if(!(vv[a] && vv[b] && vv[c])) return null;
-        tris.push(vv[a].concat(vv[b], vv[c]));
+  /* ---- 3MF 模型：支持「生产扩展」——主 model 用 <components p:path> 引用外部 object 文件，
+          并对 build item / component 的 transform（4×3 仿射）逐级复合。拓竹 Studio 导出的正是这种结构。 ---- */
+  var PROD_NS = "http://schemas.microsoft.com/3dmanufacturing/production/2015/06";
+  function tfIdent(){ return [1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1]; }
+  function tfParse(s){
+    if(!s) return tfIdent();
+    var n = s.trim().split(/\s+/).map(Number);
+    if(n.length !== 12) return tfIdent();
+    return [ n[0],n[1],n[2],n[9], n[3],n[4],n[5],n[10], n[6],n[7],n[8],n[11], 0,0,0,1 ];
+  }
+  function tfMul(a, b){
+    var o = new Array(16);
+    for(var r = 0; r < 4; r++) for(var c = 0; c < 4; c++){
+      var s = 0;
+      for(var k = 0; k < 4; k++) s += a[r * 4 + k] * b[k * 4 + c];
+      o[r * 4 + c] = s;
+    }
+    return o;
+  }
+  function tfApply(m, x, y, z){
+    return [ m[0]*x + m[1]*y + m[2]*z + m[3],
+             m[4]*x + m[5]*y + m[6]*z + m[7],
+             m[8]*x + m[9]*y + m[10]*z + m[11] ];
+  }
+  function normPath(p){ return (p || "").replace(/^\/+/, "").toLowerCase(); }
+  function parseModelDoc(text){
+    var doc;
+    try{ doc = new DOMParser().parseFromString(text, "text/xml"); }catch(e){ return null; }
+    if(!doc || doc.getElementsByTagName("parsererror").length) return null;
+    var objects = {}, els = doc.getElementsByTagName("object");
+    for(var i = 0; i < els.length; i++){
+      var oe = els[i], id = oe.getAttribute("id");
+      var entry = { vertices: null, triangles: null, components: [] };
+      var meshEl = oe.getElementsByTagName("mesh")[0] || null;
+      if(meshEl){
+        var vs = meshEl.getElementsByTagName("vertex"), vv = [];
+        for(var a = 0; a < vs.length; a++)
+          vv.push([parseFloat(vs[a].getAttribute("x")), parseFloat(vs[a].getAttribute("y")), parseFloat(vs[a].getAttribute("z"))]);
+        var ts = meshEl.getElementsByTagName("triangle"), tt = [];
+        for(var b = 0; b < ts.length; b++)
+          tt.push([+ts[b].getAttribute("v1"), +ts[b].getAttribute("v2"), +ts[b].getAttribute("v3")]);
+        entry.vertices = vv; entry.triangles = tt;
+      }
+      var cs = oe.getElementsByTagName("component");
+      for(var c = 0; c < cs.length; c++)
+        entry.components.push({
+          path: cs[c].getAttribute("p:path") || cs[c].getAttributeNS(PROD_NS, "path") || cs[c].getAttribute("path"),
+          objectid: cs[c].getAttribute("objectid"),
+          transform: cs[c].getAttribute("transform")
+        });
+      objects[id] = entry;
+    }
+    var build = [], its = doc.getElementsByTagName("item");
+    for(var e = 0; e < its.length; e++)
+      build.push({ objectid: its[e].getAttribute("objectid"), transform: its[e].getAttribute("transform") });
+    return { objects: objects, build: build };
+  }
+  function collectTris(models, path, objId, m, out, depth){
+    if(depth > 16) return;
+    var doc = models[path];
+    if(!doc) return;
+    var o = doc.objects[objId];
+    if(!o) return;
+    if(o.vertices && o.triangles){
+      for(var t = 0; t < o.triangles.length; t++){
+        var tr = o.triangles[t], A = o.vertices[tr[0]], B = o.vertices[tr[1]], C = o.vertices[tr[2]];
+        if(!A || !B || !C) continue;
+        out.push(tfApply(m, A[0], A[1], A[2]).concat(tfApply(m, B[0], B[1], B[2]), tfApply(m, C[0], C[1], C[2])));
       }
     }
-    return tris.length ? tris : null;
+    for(var i = 0; i < o.components.length; i++){
+      var cp = o.components[i];
+      collectTris(models, normPath(cp.path), cp.objectid, tfMul(m, tfParse(cp.transform)), out, depth + 1);
+    }
+  }
+  function trisFromModels(models, root){
+    var doc = models[root];
+    if(!doc) return null;
+    var out = [];
+    for(var i = 0; i < doc.build.length; i++)
+      collectTris(models, root, doc.build[i].objectid, tfParse(doc.build[i].transform), out, 0);
+    return out.length ? out : null;
   }
   function load3mf(file){
     var fr = new FileReader();
@@ -2422,31 +2494,42 @@
       var buf = fr.result, files = zipList(buf);
       if(!files){ toast("无法解析该 3MF 文件"); return; }
       stlReal = null;
-      var key = null, skey = null;
+      var skey = null, mkeys = [];
       for(var k in files){
-        if(!key && /\.model$/.test(k)) key = k;
         if(!skey && /slice_info\.config$/.test(k)) skey = k;
+        if(/\.model$/.test(k)) mkeys.push(k);
       }
-      if(!key){ toast("3MF 内未找到模型数据"); return; }
-      function readModel(){
-        if(!zipRead(buf, files[key], function(raw){
-          try{
-            var tris = parse3mfXml(u8ToText(raw));
-            if(!tris){ toast("无法解析 3MF 模型数据"); return; }
-            var st = stlMeshStats(tris);
-            stlVol = st.vol / 1000; stlBBox = st.bbox;
-            stlRender();
-            toast(stlReal && stlReal.grams > 0
-              ? "已解析切片 3MF：实测 " + stlReal.grams.toFixed(2) + " 克"
-              : "已解析 3MF 模型：体积 " + stlVol.toFixed(2) + " cm³");
-          }catch(e){ toast("3MF 解析失败"); }
-        })) toast("该 3MF 压缩方式暂不支持");
+      if(!mkeys.length){ toast("3MF 内未找到模型数据"); return; }
+      var root = null;
+      for(var i = 0; i < mkeys.length; i++) if(/(^|\/)3dmodel\.model$/.test(mkeys[i])){ root = mkeys[i]; break; }
+      if(!root){ mkeys.sort(function(a, b){ return a.split("/").length - b.split("/").length; }); root = mkeys[0]; }
+      var models = {};
+      function afterModels(){
+        var tris = trisFromModels(models, root);
+        if(!tris){ toast("无法解析 3MF 模型数据"); return; }
+        var st = stlMeshStats(tris);
+        stlVol = st.vol / 1000; stlBBox = st.bbox;
+        stlRender();
+        if(stlReal && stlReal.grams > 0) toast("已解析切片 3MF：实测 " + stlReal.grams.toFixed(2) + " 克");
+        else if(skey) toast("已解析 3MF 模型：体积 " + stlVol.toFixed(2) + " cm³（该文件无切片用量，已按几何估算）");
+        else toast("已解析 3MF 模型：体积 " + stlVol.toFixed(2) + " cm³");
+      }
+      function readModels(){
+        var pending = mkeys.length;
+        if(!pending){ afterModels(); return; }
+        mkeys.forEach(function(mk){
+          function one(){ if(--pending === 0) afterModels(); }
+          if(!zipRead(buf, files[mk], function(raw){
+            try{ var doc = parseModelDoc(u8ToText(raw)); if(doc) models[mk] = doc; }catch(e){}
+            one();
+          })) one();
+        });
       }
       if(skey && zipRead(buf, files[skey], function(raw){
         try{ stlReal = parseSliceInfo(u8ToText(raw)); }catch(e){ stlReal = null; }
-        readModel();
+        readModels();
       })) return;
-      readModel();
+      readModels();
     };
     fr.readAsArrayBuffer(file);
   }
