@@ -15,8 +15,8 @@
 | 当前版本 | **v1.8.0** |
 | 本地 HEAD | 以 `git log --oneline -1` 为准（v1.8.0 基线提交，本文档更新会再领先少量提交） |
 | 功能提交 | v1.8.0 交互增强（见 §9）；tag `v1.5.1` → `dde8b9ca8b`（最新已发布） |
-| 回归测试 | **342/342 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `4924a963c2a2a6fc0091d7fc5c627636`（222,712 B，逐字节一致） |
+| 回归测试 | **346/346 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `36149f9fdef386a3815a6afe2a1ee091`（223,724 B，逐字节一致） |
 | 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0 / v1.7.0 / v1.8.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
@@ -44,7 +44,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（310 项断言）
+├─ test-presets.js         ← jsdom 回归测试（346 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ AGENTS.md               ← 本文件
@@ -100,13 +100,15 @@ PY_ENV="C:/Users/steveliuyan/.workbuddy/binaries/python/envs/default/Scripts/pyt
 "$PY_ENV" _gen_icons.py        # 需要 Pillow（已装在托管 venv default 里）
 ```
 
-**图标唯一来源 = `_gen_icons.py`**（内含 64×64 品牌几何常量）。一次产出：
+**图标唯一来源 = `_gen_icons.py`**（内含 64×64 品牌几何常量，`CUBE`/`BADGE`/`YEN` 等）。一次产出：
 Web（`favicon.svg`/`favicon.ico`、`icon-192/512.png`、`maskable-512.png`）、
 iOS（`apple-touch-icon.png` 180 + 167，满幅无透明）、
 Android（`mipmap-*` 5 档 `ic_launcher{,_round}.png`、`drawable/ic_launcher_foreground.xml`、
 `values/ic_launcher_background.xml`、`mipmap-anydpi-v26/ic_launcher{,_round}.xml`）、
-Windows（`desktop/build/icon.{png,ico}`）、品牌资产（`docs/brand/icon-tile.svg` + `icon-preview.png`）。
-改完**必须再跑 `_sync_clean.py`**（`index.html` 里的内联 favicon data-URI 需同步三副本）。
+Windows（`desktop/build/icon.{png,ico}`）、品牌资产（`docs/brand/icon-tile.svg` + `logo-mark.svg` + `icon-preview.png`）。
+此外生成器会**自动把内联 favicon data-URI 与顶栏 `.mark` 内嵌 SVG 同步进 `index.html`**
+（`sync_favicon_uri()` / `sync_topbar_mark()`，正则容忍 IDE 预览回注属性）——改几何只改本脚本，勿手改 HTML。
+改完**必须再跑 `_sync_clean.py`**（三副本同步 + 剥离注入属性，含 `logo-preview.html`）。
 
 > 注意：`index.html` 的 favicon 用**内联 data-URI**（保证单文件自洽）；`_gen_icons.py` 会**自动把它同步进 head**
 > （正则容忍 IDE 预览回注的多余属性）。`desktop/build/icon.png` 被 `.gitignore` 忽略（Windows 打包只用 `icon.ico`）。
@@ -233,7 +235,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.5.1** | **发版完成**：版本号四处联动升 1.5.1；APK `1,069,404 B`（vc10，证书 `O=DPC`，内部 assets/index.html md5 与源码一致）、EXE `3D打印成本计算器-1.5.1-便携版.exe` `74,231,176 B`（asar 内三文件 md5 全一致）；发布 **v1.5.1 Release**（3 附件 201，tag/release 各 9→10，latest=v1.5.1）；GitHub Pages 已构建（commit `dde8b9ca8b`） |
 | **v1.6.0** | **切片 3MF 实测用量读取 + 生产扩展 3MF 支持**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 的 `Metadata/slice_info.config`（`weight` 克 / `prediction` 秒，`filament used_g` 兜底）；`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；无切片数据 / 解析失败**静默回退几何估算**。**关键修复**：支持 3MF **生产扩展**——主 model 用 `<component p:path>` 引用外部 object 文件、`build item`/`component` 的 4×3 仿射 `transform` 逐级复合（拓竹 Studio 导出即此结构，旧实现只读主文件 → 报"无法解析"）；`inflateRaw` 改为**按 ZIP 中央目录 usize 预分配**输出缓冲，显著加速大模型解压。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **245** |
 | **v1.7.0** | **订单化（多品项报价）**：① **引擎参数化**——把 `compute()` 里「从 DOM 读 18 个 `data-field`」剥出为**纯函数 `computeFrom(fields)`**，`compute()` 退化为 `computeFrom(fieldSnapshot())` 薄封装（v1.6 单件行为逐字节不变）；② 新增 `computeOrder(order)`（多行聚合，**订单级运费按件分摊进各行成本基础**以保持与单件口径一致）、`tierDisc/effDisc`（阶梯与整单折扣取大）、`dpc_orders_v1` 存储与 `migrateQuotes()`（旧 `dpc_quotes_v1` → 订单，幂等、旧键保留）；③ **订单视图 UI**（顶栏分段切换）+ 报价历史面板改造为订单列表；④ 订单级打印 / CSV / 分享长图；⑤ `buildBackup()` **补上订单**（v1.6 及以前备份不含报价历史，顺带修坑）。版本号四处联动 1.6.0 → 1.7.0（build.gradle vc11→12）。**纯前端，零新依赖**。回归 245 → **310** |
-| **v1.8.0** | **交互增强（A/B 档）+ 品牌标识**：**A 档**——A1 行项就地编辑（6 项表单，输入即写回 `ln.fields` 并 `refreshLineNumbers()` 只刷数字不重建 DOM）、A2 历史订单工具条（搜索 + 状态 chips + 排序 + 空态）、A3 草稿自动保存（`dpc_order_draft_v1`，800ms 防抖 / 恢复 / 保存即清 / 新建确认）、A4 客户库（`dpc_customers_v1`，去重置顶 + datalist + 带出联系方式）；**B 档**——B5 品牌标识（内嵌 `BRAND_SVG` 矢量 + Canvas `drawBrandMark()` 复刻，打印页/长图统一品牌头）、B6 翻单复制、B7 列表内状态流转、B8 按行覆盖「已调」标记。配套矢量 logo 源文件 `docs/brand/logo-mark.svg` + 预览页 `docs/brand/logo-preview.html`。版本号四处联动 1.7.0 → 1.8.0（build.gradle vc12→13）。**纯前端，零新依赖**。回归 310 → **342** |
+| **v1.8.0** | **交互增强（A/B 档）+ 品牌标识**：**A 档**——A1 行项就地编辑（6 项表单，输入即写回 `ln.fields` 并 `refreshLineNumbers()` 只刷数字不重建 DOM）、A2 历史订单工具条（搜索 + 状态 chips + 排序 + 空态）、A3 草稿自动保存（`dpc_order_draft_v1`，800ms 防抖 / 恢复 / 保存即清 / 新建确认）、A4 客户库（`dpc_customers_v1`，去重置顶 + datalist + 带出联系方式）；**B 档**——B5 品牌标识（内嵌 `BRAND_SVG` 矢量 + Canvas `drawBrandMark()` 复刻，打印页/长图统一品牌头）、B6 翻单复制、B7 列表内状态流转、B8 按行覆盖「已调」标记。配套矢量 logo 源文件 `docs/brand/logo-mark.svg` + 预览页 `docs/brand/logo-preview.html`。版本号四处联动 1.7.0 → 1.8.0（build.gradle vc12→13）。**纯前端，零新依赖**。回归 310 → **342**。**品牌图标**：由 `_gen_icons.py` 重绘三端全套（Web/iOS/Android 自适应/Windows），后续修正**顶栏漏改 + 徽标比例失衡**（几何收归单一来源、徽标内收居中），回归 → **346** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -274,6 +276,18 @@ M3 保存后 `clearDraft` 的 `localStorage.removeItem` 禁用 → `A3 保存订
 → 恢复 → 全量回归 **342/342**。三副本逐字节一致 222,712 B，md5 `4924a963c2a2a6fc0091d7fc5c627636`。
 源码在变异前后与备份 `diff` 逐字节一致（确认变异已完全还原）。
 
+**v1.8.0 品牌标识修正（顶栏漏改 + 比例失衡）**：用户反馈「网页顶栏图标没换」+「logo 比例失衡、右下角徽标压边」。
+根因：① 顶栏 `.mark` 仍是旧版「仅立方体」硬编码 SVG（从未随 v1.8.0 品牌重绘更新）；
+② `logo-mark.svg` 的 ¥ 徽标（`cx=48 cy=48 r=11.5`）右缘到 59.5，**越过外框描边内边（58）**，且整体包围盒中心 (38, 35.5) ≠ 画布中心 (32,32) → 视觉压边 + 重心偏右下；
+③ `logo-mark.svg`（徽标 48,48,r11.5）与应用图标几何（47,47,r10）**两套画法**，故「不像等比例缩小」。
+修正：几何收归 `_gen_icons.py` 单一来源常量（立方体平移 + 徽标 `r 11.5→9` 内收），令**包围盒中心 = (32,32)、四边留白对称 (L/R 6.75, T/B 4.2)、徽标离框 ≥4**；
+顶栏标识改由 `build_mark_inner_svg()` 生成并 `sync_topbar_mark()` 自动同步进 `index.html`；`_gen_icons.py` 同时负责生成 `logo-mark.svg`。
+新增 **4 条品牌一致性断言**（顶栏几何 / favicon 含新徽标 / 打印头 BRAND_SVG 几何），专门守「单面漏改」——
+这正是旧顶栏漏改溜过回归的**覆盖缺口**。变异 **3 组全部被捕获**（M1 顶栏 `cx 42.25→48` → 几何断言 FAIL；
+M2 删顶栏徽标圆 → 「已换新徽标」+ 几何 2 条 FAIL；M3 打印头徽标半径回退 `r=9→11.5` → BRAND_SVG 几何断言 FAIL）
+→ 恢复 → 全量回归 **346/346**。三副本逐字节一致 223,724 B，md5 `36149f9fdef386a3815a6afe2a1ee091`。
+另修 `_sync_clean.py`：一并剥离 `docs/brand/logo-preview.html` 的 IDE 注入属性（否则 pre-commit 拦截）。
+
 ## 11. 未完成 / 待办
 
 - ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
@@ -281,7 +295,7 @@ M3 保存后 `clearDraft` 的 `localStorage.removeItem` 禁用 → `A3 保存订
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ⏳ **v1.8.0 待打包 + 发版**（v1.6.0 / v1.7.0 尚未打包，可一次带出）：
-  代码已本地提交，回归 **342/342**；下一步 `_sync_clean.py` → Gradle APK（vc13）→ `npm run dist` 便携 exe → `_api_push.py` 推提交 → `_api_release.py` 发版（3 附件）。
+  代码已本地提交，回归 **346/346**；下一步 `_sync_clean.py` → Gradle APK（vc13）→ `npm run dist` 便携 exe → `_api_push.py` 推提交 → `_api_release.py` 发版（3 附件）。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
 - ✅ **v1.5.1 已发版**（提交 `dde8b9ca8b` 已推送；APK/EXE 已核验；Release 已发布；Pages 已构建）。
