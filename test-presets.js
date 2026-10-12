@@ -517,7 +517,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.5.1', dU.getElementById('footVer').textContent === '1.5.1',
+    ok('更新：footer 显示当前版本号 1.6.0', dU.getElementById('footVer').textContent === '1.6.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -633,7 +633,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.5\.1/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.6\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -683,7 +683,7 @@ setTimeout(function () {
           /* —— 已是最新态 —— */
           var domOk = new JSDOM(html, {
             runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
-            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.5.1'); }; }
+            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.6.0'); }; }
           });
           var wOk = domOk.window, dOk = wOk.document;
           dOk.getElementById('btnCheckUpd').dispatchEvent(new wOk.MouseEvent('click', { bubbles: true }));
@@ -691,7 +691,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.5\.1/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.6\.0/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -819,7 +819,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.5.1');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.6.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1059,7 +1059,81 @@ setTimeout(function () {
                html.includes('body.pp #pprev{position:static!important; display:block!important}'));
             ok('v1.4.2：iOS 检测 isIOS 存在', html.includes('function isIOS()'));
             ok('v1.4.2：iOS 打印给出分享菜单引导', /iP\(hone\|ad\|od\)/.test(html) && html.includes('分享按钮'));
-            done();
+
+            /* ===== v1.6.0：切片 3MF 真实用量读取（Bambu Studio / OrcaSlicer 的 Metadata/slice_info.config） ===== */
+            function zipMulti(pairs) {
+              var parts = pairs.map(function (pr) {
+                return { name: pr[0], bytes: pr[1], nl: pr[0].length };
+              });
+              var lfhTotal = 0, cdhTotal = 0, offs = [];
+              parts.forEach(function (p) { offs.push(lfhTotal); lfhTotal += 30 + p.nl + p.bytes.length; cdhTotal += 46 + p.nl; });
+              var buf = new ArrayBuffer(lfhTotal + cdhTotal + 22);
+              var dv = new DataView(buf), u8 = new Uint8Array(buf), o = 0;
+              parts.forEach(function (p) {
+                dv.setUint32(o, 0x04034b50, true); dv.setUint16(o + 4, 20, true); dv.setUint16(o + 8, 0, true);
+                dv.setUint16(o + 10, 0, true); dv.setUint32(o + 14, 0, true);
+                dv.setUint32(o + 18, p.bytes.length, true); dv.setUint32(o + 22, p.bytes.length, true);
+                dv.setUint16(o + 26, p.nl, true); dv.setUint16(o + 28, 0, true);
+                for (var i = 0; i < p.nl; i++) u8[o + 30 + i] = p.name.charCodeAt(i);
+                u8.set(p.bytes, o + 30 + p.nl);
+                o += 30 + p.nl + p.bytes.length;
+              });
+              var cdStart = o;
+              parts.forEach(function (p, idx) {
+                dv.setUint32(o, 0x02014b50, true); dv.setUint16(o + 4, 20, true); dv.setUint16(o + 6, 20, true);
+                dv.setUint16(o + 8, 0, true); dv.setUint16(o + 10, 0, true);
+                dv.setUint32(o + 16, p.bytes.length, true); dv.setUint32(o + 20, p.bytes.length, true);
+                dv.setUint32(o + 24, p.bytes.length, true); dv.setUint16(o + 28, p.nl, true);
+                dv.setUint32(o + 42, offs[idx], true);
+                for (var j = 0; j < p.nl; j++) u8[o + 46 + j] = p.name.charCodeAt(j);
+                o += 46 + p.nl;
+              });
+              dv.setUint32(o, 0x06054b50, true); dv.setUint16(o + 8, parts.length, true); dv.setUint16(o + 10, parts.length, true);
+              dv.setUint32(o + 12, cdhTotal, true); dv.setUint32(o + 16, cdStart, true);
+              return buf;
+            }
+            function strBytes(s) { var b = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) b[i] = s.charCodeAt(i); return b; }
+            function cubeXml(s) {
+              var V = [[0,0,0],[s,0,0],[s,s,0],[0,s,0],[0,0,s],[s,0,s],[s,s,s],[0,s,s]];
+              var T = [[4,7,6],[4,6,5],[0,1,2],[0,2,3],[3,2,6],[3,6,7],[1,0,4],[1,4,5],[0,3,7],[0,7,4],[2,1,5],[2,5,6]];
+              var x = '<?xml version="1.0" encoding="UTF-8"?><model unit="millimeter" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"><resources><object id="1" type="model"><mesh><vertices>';
+              V.forEach(function (v) { x += '<vertex x="' + v[0] + '" y="' + v[1] + '" z="' + v[2] + '"/>'; });
+              x += '</vertices><triangles>';
+              T.forEach(function (t) { x += '<triangle v1="' + t[0] + '" v2="' + t[1] + '" v3="' + t[2] + '"/>'; });
+              return x + '</triangles></mesh></object></resources><build><item objectid="1"/></build></model>';
+            }
+            var sliceXml = '<?xml version="1.0" encoding="UTF-8"?>\n<config><header><header_item key="X-BBL-Client-Type" value="slicer"/></header>' +
+              '<plate><metadata key="index" value="1"/><metadata key="weight" value="15.44"/>' +
+              '<metadata key="prediction" value="2735"/><metadata key="support_weight" value="0.00"/>' +
+              '<filament id="1" type="PLA" color="#FFFFFF" used_m="4.98" used_g="15.44"/></plate></config>';
+            var f5 = new wS.File([zipMulti([
+              ['3D/3dmodel.model', strBytes(cubeXml(20))],
+              ['Metadata/slice_info.config', strBytes(sliceXml)]
+            ])], 'sliced.3mf', { type: '' });
+            try { Object.defineProperty(inp, 'files', { value: [f5], configurable: true }); } catch (e) {}
+            inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+            setTimeout(function () {
+              var info5 = dS.getElementById('stlInfo').textContent;
+              ok('v1.6：切片 3MF 读出实测重量 15.44 克', /15\.44/.test(info5), info5);
+              ok('v1.6：切片 3MF 读出打印时长 46 分钟', /46\s*分钟/.test(info5), info5);
+              ok('v1.6：切片 3MF 仍解析出体积 8.00 cm³', /8\.00/.test(info5), info5);
+              dS.querySelector('[data-field="grams"]').value = '';
+              dS.getElementById('stlFill').dispatchEvent(new wS.MouseEvent('click', { bubbles: true }));
+              ok('v1.6：填入按钮写入实测 15.44（非估算 3.97）',
+                 dS.querySelector('[data-field="grams"]').value === '15.44',
+                 dS.querySelector('[data-field="grams"]').value);
+
+              /* 回退：无切片信息的普通 3MF 仍用几何估算，且不含"切片实测"字样 */
+              var f6 = new wS.File([zipMulti([['3D/3dmodel.model', strBytes(cubeXml(20))]])], 'plain.3mf', { type: '' });
+              try { Object.defineProperty(inp, 'files', { value: [f6], configurable: true }); } catch (e) {}
+              inp.dispatchEvent(new wS.Event('change', { bubbles: true }));
+              setTimeout(function () {
+                var info6 = dS.getElementById('stlInfo').textContent;
+                ok('v1.6：无切片信息回退几何估算 3.97 克', /3\.97/.test(info6), info6);
+                ok('v1.6：无切片信息不显示"切片实测"', info6.indexOf('切片实测') < 0, info6);
+                done();
+              }, 400);
+            }, 400);
           }, 400);
         }, 400);
       }, 120);

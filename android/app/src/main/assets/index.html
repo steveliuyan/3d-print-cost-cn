@@ -645,7 +645,7 @@
             <div class="in"><input data-field="waste" type="number" min="0" max="100" step="1" value="5"><em class="suf">%</em></div></label>
         </div>
         <div class="stlbox">
-          <button type="button" class="btn sm" id="stlBtn">导入 STL 估算</button>
+          <button type="button" class="btn sm" id="stlBtn">导入模型估算</button>
           <input type="file" id="stlFile" accept=".stl,.3mf" hidden>
           <select id="matDensity" title="材料密度">
             <option value="1.24">PLA 1.24</option>
@@ -654,7 +654,7 @@
           </select>
           <span class="pin stl-infill">填充<input data-field="infill" type="number" min="0" max="100" step="5" value="20"><em class="suf">%</em></span>
           <button type="button" class="btn sm" id="stlFill" hidden>填入用量</button>
-          <div class="stl-info" id="stlInfo">支持二进制 / ASCII STL（单位 mm），本地解析</div>
+          <div class="stl-info" id="stlInfo">支持 STL / 3MF（单位 mm），本地解析；切片 3MF 可读实测用量</div>
         </div>
       </section>
 
@@ -1942,7 +1942,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.5.1";
+  var APP_VERSION = "1.6.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -2167,6 +2167,7 @@
 
   /* ===== STL 导入估算（本地解析，不上传） ===== */
   var stlVol = 0, stlBBox = null; /* cm³ / [x,y,z] mm */
+  var stlReal = null; /* 切片实测（Bambu / Orca 的 slice_info.config）：{grams, seconds, filaments} */
   function stlParseBinary(buf){
     if(buf.byteLength < 84) return null;
     var dv = new DataView(buf);
@@ -2219,14 +2220,55 @@
     var infill = Math.min(100, Math.max(0, num("infill") || 0)) / 100;
     return stlVol * density * (0.25 + 0.75 * infill);
   }
+  /* 切片元数据解析（Bambu Studio / OrcaSlicer：Metadata/slice_info.config） */
+  function parseSliceInfo(text){
+    if(!text) return null;
+    var doc;
+    try{ doc = new DOMParser().parseFromString(text, "text/xml"); }catch(e){ return null; }
+    if(!doc || doc.getElementsByTagName("parsererror").length) return null;
+    var grams = null, seconds = null, fil = [];
+    var metas = doc.getElementsByTagName("metadata");
+    for(var i = 0; i < metas.length; i++){
+      var key = (metas[i].getAttribute("key") || "").toLowerCase();
+      var val = parseFloat(metas[i].getAttribute("value"));
+      if(isNaN(val)) continue;
+      if(grams === null && (key === "weight" || key === "filament_weight" || key === "total_weight")) grams = val;
+      else if(seconds === null && (key === "prediction" || key === "print_time" || key === "time")) seconds = val;
+    }
+    var fs = doc.getElementsByTagName("filament");
+    for(var j = 0; j < fs.length; j++){
+      var g = parseFloat(fs[j].getAttribute("used_g"));
+      if(isNaN(g)) continue;
+      var mtr = parseFloat(fs[j].getAttribute("used_m"));
+      fil.push({ grams: g, meters: isNaN(mtr) ? null : mtr, type: fs[j].getAttribute("type") || "" });
+    }
+    if(grams === null && fil.length) grams = fil.reduce(function(a, b){ return a + b.grams; }, 0);
+    if(grams === null && seconds === null && !fil.length) return null;
+    return { grams: grams, seconds: seconds, filaments: fil };
+  }
+  function fmtDur(sec){
+    if(!(sec > 0)) return "";
+    var m = Math.round(sec / 60), h = Math.floor(m / 60); m = m % 60;
+    return (h ? h + " 小时 " : "") + m + " 分钟";
+  }
+  function stlUseGrams(){
+    if(stlReal && stlReal.grams > 0) return stlReal.grams;
+    return stlEstimate();
+  }
   function stlRender(){
     var el = $("#stlInfo"), fill = $("#stlFill");
-    if(!(stlVol > 0)){ el.textContent = "支持二进制 / ASCII STL（单位 mm），本地解析"; fill.hidden = true; return; }
+    if(!(stlVol > 0)){ el.textContent = "支持 STL / 3MF（单位 mm），本地解析；切片 3MF 可读实测用量"; fill.hidden = true; return; }
     var est = stlEstimate();
     var dn = $("#matDensity"), dName = dn.options[dn.selectedIndex].text.split(" ")[0];
-    el.textContent = "体积 " + stlVol.toFixed(2) + " cm³ · 包围盒 " +
+    var txt = "体积 " + stlVol.toFixed(2) + " cm³ · 包围盒 " +
       stlBBox.map(function(v){ return +v.toFixed(1); }).join(" × ") +
       " mm · 估算用量 " + est.toFixed(2) + " 克（" + dName + " · 填充 " + num("infill") + "%）";
+    if(stlReal && stlReal.grams > 0){
+      txt += " · 切片实测 " + stlReal.grams.toFixed(2) + " 克";
+      var dur = fmtDur(stlReal.seconds);
+      if(dur) txt += " / " + dur;
+    }
+    el.textContent = txt;
     fill.hidden = false;
   }
   /* ---- 3MF：ZIP 容器 + XML mesh（Stored / Deflate 均支持，纯前端解析） ---- */
@@ -2379,19 +2421,32 @@
     fr.onload = function(){
       var buf = fr.result, files = zipList(buf);
       if(!files){ toast("无法解析该 3MF 文件"); return; }
-      var key = null;
-      for(var k in files) if(/\.model$/.test(k)){ key = k; break; }
+      stlReal = null;
+      var key = null, skey = null;
+      for(var k in files){
+        if(!key && /\.model$/.test(k)) key = k;
+        if(!skey && /slice_info\.config$/.test(k)) skey = k;
+      }
       if(!key){ toast("3MF 内未找到模型数据"); return; }
-      if(!zipRead(buf, files[key], function(raw){
-        try{
-          var tris = parse3mfXml(u8ToText(raw));
-          if(!tris){ toast("无法解析 3MF 模型数据"); return; }
-          var st = stlMeshStats(tris);
-          stlVol = st.vol / 1000; stlBBox = st.bbox;
-          stlRender();
-          toast("已解析 3MF 模型：体积 " + stlVol.toFixed(2) + " cm³");
-        }catch(e){ toast("3MF 解析失败"); }
-      })) toast("该 3MF 压缩方式暂不支持");
+      function readModel(){
+        if(!zipRead(buf, files[key], function(raw){
+          try{
+            var tris = parse3mfXml(u8ToText(raw));
+            if(!tris){ toast("无法解析 3MF 模型数据"); return; }
+            var st = stlMeshStats(tris);
+            stlVol = st.vol / 1000; stlBBox = st.bbox;
+            stlRender();
+            toast(stlReal && stlReal.grams > 0
+              ? "已解析切片 3MF：实测 " + stlReal.grams.toFixed(2) + " 克"
+              : "已解析 3MF 模型：体积 " + stlVol.toFixed(2) + " cm³");
+          }catch(e){ toast("3MF 解析失败"); }
+        })) toast("该 3MF 压缩方式暂不支持");
+      }
+      if(skey && zipRead(buf, files[skey], function(raw){
+        try{ stlReal = parseSliceInfo(u8ToText(raw)); }catch(e){ stlReal = null; }
+        readModel();
+      })) return;
+      readModel();
     };
     fr.readAsArrayBuffer(file);
   }
@@ -2399,6 +2454,7 @@
     if(!file) return;
     var fr = new FileReader();
     fr.onload = function(){
+      stlReal = null;
       var head = "";
       try{
         var b0 = new Uint8Array(fr.result, 0, Math.min(4, fr.result.byteLength));
@@ -2426,11 +2482,13 @@
   $("#matDensity").addEventListener("change", stlRender);
   $("#infill") && $("#infill").addEventListener("input", stlRender);
   $("#stlFill").addEventListener("click", function(){
-    var est = stlEstimate();
-    if(!(est > 0)) return;
-    $('[data-field="grams"]').value = est.toFixed(2);
+    var g = stlUseGrams();
+    if(!(g > 0)) return;
+    $('[data-field="grams"]').value = g.toFixed(2);
     update();
-    toast("已填入估算用量 " + est.toFixed(2) + " 克（建议按实际切片微调）");
+    toast(stlReal && stlReal.grams > 0
+      ? "已填入切片实测用量 " + g.toFixed(2) + " 克"
+      : "已填入估算用量 " + g.toFixed(2) + " 克（建议按实际切片微调）");
   });
 
   /* ===== 报价历史（仅本机 localStorage） ===== */

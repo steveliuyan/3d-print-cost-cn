@@ -7,6 +7,7 @@
 - **完整预设**：11 个设备 + 54 个材料预设（拓竹 / 大简 / 三慈 / 通用），可自行增删改
 - **实时计算**：成本构成环形图 + 明细表，参数改了立刻出结果
 - **数据自主**：全部存在本机，支持导出 CSV、打印 / 存 PDF、**全量备份与恢复**
+- **模型估算**：导入 STL / 3MF 自动估用量；若文件来自拓竹 Studio / OrcaSlicer 切片，直接读**切片实测耗材克数与打印时长**（无需手填）
 - **深浅色主题**：浅色 / 深色 / 跟随系统三档一键切换，偏好本地记忆（打印与分享长图恒为浅色，保证报价单观感）
 
 ## 功能
@@ -29,14 +30,14 @@
 
 | 平台 | 文件 | 说明 |
 |---|---|---|
-| 网页 | `3d-print-cost-cn-1.5.1-web.html` | 双击用浏览器打开即用，零依赖、离线 |
-| Windows | `3d-print-cost-cn-1.5.1-portable.exe` | 单文件绿色版（约 71 MB），双击运行，免安装 |
-| Android | `3d-print-cost-cn-1.5.1.apk` | 约 1 MB；需在系统里允许「安装未知来源应用」。应用内置「检查更新」，可在应用内直接在线升级 |
+| 网页 | `3d-print-cost-cn-1.6.0-web.html` | 双击用浏览器打开即用，零依赖、离线 |
+| Windows | `3d-print-cost-cn-1.6.0-portable.exe` | 单文件绿色版（约 71 MB），双击运行，免安装 |
+| Android | `3d-print-cost-cn-1.6.0.apk` | 约 1 MB；需在系统里允许「安装未知来源应用」。应用内置「检查更新」，可在应用内直接在线升级 |
 
 Android 也可以直接用 adb 安装：
 
 ```bash
-adb install -r -t 3d-print-cost-cn-1.5.1.apk
+adb install -r -t 3d-print-cost-cn-1.6.0.apk
 ```
 
 ---
@@ -87,7 +88,7 @@ npm run build:win          # 产物：../dist/desktop/3D打印成本计算器-wi
 
 | 形态 | 路径 | 特点 |
 |---|---|---|
-| **单文件便携版** | `dist/desktop-portable/3D打印成本计算器-1.5.1-便携版.exe` | 71 MB，双击即用；每次启动会自解压到临时目录，首次打开稍慢 |
+| **单文件便携版** | `dist/desktop-portable/3D打印成本计算器-1.6.0-便携版.exe` | 71 MB，双击即用；每次启动会自解压到临时目录，首次打开稍慢 |
 | **免安装目录版** | `dist/desktop/3D打印成本计算器-win32-x64/` | 269 MB，启动最快；整个文件夹拷到任意位置都可用 |
 
 无需安装、无需 Node。
@@ -116,7 +117,7 @@ cd android
 ### 安装
 
 ```bash
-adb install -r -t dist/android/3d-print-cost-cn-1.5.1.apk
+adb install -r -t dist/android/3d-print-cost-cn-1.6.0.apk
 ```
 
 ### 实现要点
@@ -172,9 +173,9 @@ keyPassword=你的口令
 
 | 产物 | 版本 | 说明 |
 |---|---|---|
-| `index.html` | 1.5.1 | 参数 / 预设 / 分类 / CSV / 打印报价单 / 备份恢复 / Android 原生导出与打印桥 / 窄屏预览自适应 / 浅色·深色·跟随系统三档主题 / **应用内更新弹窗（Markdown 发布说明 + 平台产物行 + 失败重试）与历史更新日志** |
-| Windows 桌面版 | 1.5.1 | Electron 33，win32-x64；启动时自动检查更新，「帮助 → 检查更新…」亦可手动触发；更新提示为**应用内弹窗**（与网页 / Android 一致，不再用系统原生对话框） |
-| Android APK | 1.5.1 (versionCode 10) | minSdk 24 / targetSdk 35，`com.dpc.printcost`；内置「检查更新」在线升级（下载通知带版本号）；报价长图可直接存入系统相册 |
+| `index.html` | 1.6.0 | 参数 / 预设 / 分类 / CSV / 打印报价单 / 备份恢复 / Android 原生导出与打印桥 / 窄屏预览自适应 / 浅色·深色·跟随系统三档主题 / 应用内更新弹窗与历史更新日志 / **STL·3MF 导入估算、切片 3MF 实测用量读取** |
+| Windows 桌面版 | 1.6.0 | Electron 33，win32-x64；启动时自动检查更新，「帮助 → 检查更新…」亦可手动触发；更新提示为**应用内弹窗**（与网页 / Android 一致，不再用系统原生对话框） |
+| Android APK | 1.6.0 (versionCode 11) | minSdk 24 / targetSdk 35，`com.dpc.printcost`；内置「检查更新」在线升级（下载通知带版本号）；报价长图可直接存入系统相册 |
 
 ## 5. 改完页面后怎么重新打包
 
