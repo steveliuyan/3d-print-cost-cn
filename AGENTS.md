@@ -165,6 +165,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | — | **打包 + 发版**：APK（vc9 / 1.5.0，签名证书 `O=DPC`）与 Electron portable exe 打包完成，发布 **v1.5.0 Release**（3 附件：exe/apk/web.html） |
 | — | **更新体验重做（TDD，回归 196 → 234）**：① 更新弹窗重做——发布说明改轻量 Markdown 渲染（小节/列表/二级缩进/粗体/行内代码/「下载：」弱化注脚），四态（检查中转圈 / 发现新版 / 已是最新 / 失败+重试），头部版本徽标 `v当前 → v新版`，平台产物行（web.html / .apk / .exe + 体积 KB/MB，按平台自动切换）；② 新增**更新日志面板**（页脚「更新日志」），拉 `/releases?per_page=30`，首条展开、点击条目折叠/展开；③ **Electron 统一为应用内弹窗**（新增 `desktop/preload.js` 暴露 `window.dpc.fetchJson`，主进程 `ipcMain.handle('dpc:fetchJson')` + `net` 代理规避 CORS；菜单「检查更新…」改为 `webContents.send('dpc:check-update')`）；④ **Android** `updateApp(url, version)` 增加版本号参数，用于下载通知文案 |
 | — | 修复 Electron 老 bug：「立即升级」在 Windows 上误打开 APK（现按平台挑 EXE） |
+| v1.5.1 | **发版完成**：版本号四处联动升到 1.5.1（`APP_VERSION` / gradle vc10 / desktop package.json / README）；APK `1,069,404 B`（versionCode 10，证书 `O=DPC`，内部 assets/index.html md5 与源码一致）、EXE `3D打印成本计算器-1.5.1-便携版.exe` `74,231,176 B`（asar 内 index.html/main.js/preload.js 三份 md5 全与源码一致）；发布 **v1.5.1 Release**（3 附件 201 OK，tag/release 各 9→10，latest=v1.5.1）；GitHub Pages 已构建（commit `dde8b9ca8b`，cname `3d.20050905.xyz`） |
 
 **验证证据**：v1.5.0 回归 **196/196 通过**；变异测试两次均被抓住（改错点击处理 → 5 条 FAIL；
 把 `@media screen` 改成 `@media screenX` → 打印保护断言 FAIL）。
@@ -185,10 +186,7 @@ M4 去掉 Electron `window.dpc` 分支 → 3 条 Electron 断言 FAIL。
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ 已 push 完成（见下方 §8 末）；✅ 已重新打包 APK/EXE 并发布 v1.5.0 Release。
-- ⏳ **更新体验重做（v1.5.1）尚未发版**：代码已落地、回归 234/234，版本号已四处联动升到 **1.5.1**
-  （`index.html` APP_VERSION / `android/app/build.gradle` versionCode 10 + versionName 1.5.1 /
-  `desktop/package.json` version + artifactName / `README.md`），`test-presets.js` 的版本断言也已同步。
-  **待办**：重新打包 APK/EXE → 发布 v1.5.1 Release。
+- ✅ **v1.5.1 已发版**：提交 `dde8b9ca8b` 已推送（远端 main == 本地 HEAD，逐提交 SHA 一致）；APK/EXE 已打包并核验；v1.5.1 Release 已发布（3 附件）；Pages 已构建。产物在 `dist/release/{web.html, 3d-print-cost-cn-1.5.1-portable.exe, 3d-print-cost-cn-1.5.1.apk}`。
 - 💡 Electron 打包新增 `desktop/preload.js`：`package.json` 的 `build.files` 与 `build-win.js`
   的 `stageApp()` 都已加进白名单，**别漏**，否则打包后 `window.dpc` 不存在、更新检查会静默失败。
 - 💡 可选项：`http://` 已能 301 跳 `https://`；GitHub Pages 后台可能有域名 DNS 校验警告，不影响访问。
