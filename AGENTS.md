@@ -16,7 +16,7 @@
 | 本地 HEAD | 以 `git log --oneline -1` 为准（v1.8.0 基线提交，本文档更新会再领先少量提交） |
 | 功能提交 | v1.8.0 交互增强（见 §9）；tag `v1.5.1` → `dde8b9ca8b`（最新已发布） |
 | 回归测试 | **346/346 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `36149f9fdef386a3815a6afe2a1ee091`（223,724 B，逐字节一致） |
+| 三副本 md5 | `bb849a876333d651fb344c6fd28131fb`（276,053 B，逐字节一致） |
 | 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0 / v1.7.0 / v1.8.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
@@ -100,18 +100,25 @@ PY_ENV="C:/Users/steveliuyan/.workbuddy/binaries/python/envs/default/Scripts/pyt
 "$PY_ENV" _gen_icons.py        # 需要 Pillow（已装在托管 venv default 里）
 ```
 
-**图标唯一来源 = `_gen_icons.py`**（内含 64×64 品牌几何常量，`CUBE`/`BADGE`/`YEN` 等）。一次产出：
-Web（`favicon.svg`/`favicon.ico`、`icon-192/512.png`、`maskable-512.png`）、
+**图标唯一来源（2026-10-12 起）= 两张 AI 位图母版 + `_gen_icons.py`**：
+`docs/brand/icon-master-rounded.png`（圆角、四角透明）与 `docs/brand/icon-master-bleed.png`（全出血方形）。
+**谁用哪张别搞反**——自带圆角处用 rounded（favicon / icon-192/512 / favicon.ico / 顶栏 `.mark` / 打印抬头 / Windows）；
+由系统遮罩处用 bleed（iOS `apple-touch` / `maskable-512` / Android `mipmap` + 自适应前景）。
+`_gen_icons.py` 一次产出：Web（`favicon.svg`/`favicon.ico`、`icon-192/512.png`、`maskable-512.png`）、
 iOS（`apple-touch-icon.png` 180 + 167，满幅无透明）、
-Android（`mipmap-*` 5 档 `ic_launcher{,_round}.png`、`drawable/ic_launcher_foreground.xml`、
+Android（`mipmap-*` 5 档 `ic_launcher{,_round}.png`、`drawable/ic_launcher_foreground.png`（位图，非 xml）、
 `values/ic_launcher_background.xml`、`mipmap-anydpi-v26/ic_launcher{,_round}.xml`）、
-Windows（`desktop/build/icon.{png,ico}`）、品牌资产（`docs/brand/icon-tile.svg` + `logo-mark.svg` + `icon-preview.png`）。
-此外生成器会**自动把内联 favicon data-URI 与顶栏 `.mark` 内嵌 SVG 同步进 `index.html`**
-（`sync_favicon_uri()` / `sync_topbar_mark()`，正则容忍 IDE 预览回注属性）——改几何只改本脚本，勿手改 HTML。
-改完**必须再跑 `_sync_clean.py`**（三副本同步 + 剥离注入属性，含 `logo-preview.html`）。
+Windows（`desktop/build/icon.{png,ico}`）、品牌资产（`docs/brand/icon-preview.png`）。
+`maskable` 与自适应前景走 `edge_extend()`：把内容缩入安全区（72% 占比）后，用内缩边颜色**向外拉伸 + 高斯柔化**填满，保证掩码裁到边缘也是干净渐变。
+此外生成器会**自动同步三处内联**：favicon data-URI、顶栏 `.mark` 的 `<img>`、打印抬头 JS（`var BRAND_ICON_URI` + `var BRAND_HTML`）
+——`sync_favicon_uri()` / `sync_topbar_mark()` / `sync_brand_html()`（正则幂等，容忍 IDE 回注属性）。**改图标只改母版 + 重跑本脚本，勿手改 HTML**。
+`index.html` 里的 canvas `drawBrandMark()` 优先画位图（`BRAND_IMAGE`），未就绪时回退同源矢量。
+改完**必须再跑 `_sync_clean.py`**（三副本同步 + 剥离注入属性）。
+预览：`_icon_preview.py` → `_icon_ai/final/apply-preview.html`（顶栏/打印/各尺寸/掩码安全区自检）。
 
-> 注意：`index.html` 的 favicon 用**内联 data-URI**（保证单文件自洽）；`_gen_icons.py` 会**自动把它同步进 head**
-> （正则容忍 IDE 预览回注的多余属性）。`desktop/build/icon.png` 被 `.gitignore` 忽略（Windows 打包只用 `icon.ico`）。
+> `docs/brand/logo-mark.svg` / `icon-tile.svg` / `logo-preview.html` 为**v1.8.0 旧矢量方案遗留**，已被上面位图母版取代，仅供参考、不再由脚本生成。
+> 注意：`index.html` 的内联 favicon / 顶栏 / 打印抬头均用 **data-URI**（保证单文件离线自洽）。
+> `desktop/build/icon.png` 被 `.gitignore` 忽略（Windows 打包只用 `icon.ico`）。
 > 生成器需 Pillow：托管 venv `python/envs/default` 内已装（`.../Scripts/python.exe`）。
 
 ### 4.5 发版（推送 + Release）
@@ -236,6 +243,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.6.0** | **切片 3MF 实测用量读取 + 生产扩展 3MF 支持**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 的 `Metadata/slice_info.config`（`weight` 克 / `prediction` 秒，`filament used_g` 兜底）；`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；无切片数据 / 解析失败**静默回退几何估算**。**关键修复**：支持 3MF **生产扩展**——主 model 用 `<component p:path>` 引用外部 object 文件、`build item`/`component` 的 4×3 仿射 `transform` 逐级复合（拓竹 Studio 导出即此结构，旧实现只读主文件 → 报"无法解析"）；`inflateRaw` 改为**按 ZIP 中央目录 usize 预分配**输出缓冲，显著加速大模型解压。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **245** |
 | **v1.7.0** | **订单化（多品项报价）**：① **引擎参数化**——把 `compute()` 里「从 DOM 读 18 个 `data-field`」剥出为**纯函数 `computeFrom(fields)`**，`compute()` 退化为 `computeFrom(fieldSnapshot())` 薄封装（v1.6 单件行为逐字节不变）；② 新增 `computeOrder(order)`（多行聚合，**订单级运费按件分摊进各行成本基础**以保持与单件口径一致）、`tierDisc/effDisc`（阶梯与整单折扣取大）、`dpc_orders_v1` 存储与 `migrateQuotes()`（旧 `dpc_quotes_v1` → 订单，幂等、旧键保留）；③ **订单视图 UI**（顶栏分段切换）+ 报价历史面板改造为订单列表；④ 订单级打印 / CSV / 分享长图；⑤ `buildBackup()` **补上订单**（v1.6 及以前备份不含报价历史，顺带修坑）。版本号四处联动 1.6.0 → 1.7.0（build.gradle vc11→12）。**纯前端，零新依赖**。回归 245 → **310** |
 | **v1.8.0** | **交互增强（A/B 档）+ 品牌标识**：**A 档**——A1 行项就地编辑（6 项表单，输入即写回 `ln.fields` 并 `refreshLineNumbers()` 只刷数字不重建 DOM）、A2 历史订单工具条（搜索 + 状态 chips + 排序 + 空态）、A3 草稿自动保存（`dpc_order_draft_v1`，800ms 防抖 / 恢复 / 保存即清 / 新建确认）、A4 客户库（`dpc_customers_v1`，去重置顶 + datalist + 带出联系方式）；**B 档**——B5 品牌标识（内嵌 `BRAND_SVG` 矢量 + Canvas `drawBrandMark()` 复刻，打印页/长图统一品牌头）、B6 翻单复制、B7 列表内状态流转、B8 按行覆盖「已调」标记。配套矢量 logo 源文件 `docs/brand/logo-mark.svg` + 预览页 `docs/brand/logo-preview.html`。版本号四处联动 1.7.0 → 1.8.0（build.gradle vc12→13）。**纯前端，零新依赖**。回归 310 → **342**。**品牌图标**：由 `_gen_icons.py` 重绘三端全套（Web/iOS/Android 自适应/Windows），后续修正**顶栏漏改 + 徽标比例失衡**（几何收归单一来源、徽标内收居中），回归 → **346** |
+| **品牌图标改 AI 位图** | 用户嫌矢量版丑 → 改用 AI 高清位图母版（`docs/brand/icon-master-{rounded,bleed}.png`，脚本 `_gen_icons.py` 由矢量改为**位图下采样**）。**顶栏 `.mark` / 打印抬头 / favicon 全部改内联位图 data-URI**（单文件离线）；canvas `drawBrandMark()` 改优先画位图、回退矢量；Android 自适应前景由 `ic_launcher_foreground.xml` 改为 `ic_launcher_foreground.png`。`maskable` / 自适应用 `edge_extend()` 把内容缩入安全区（72%）+ 边缘外扩柔化。`index.html` 223,724 → **276,053 B**（三副本 md5 `bb849a87…`）；回归仍 **346/346**（4 条品牌断言改写为位图版 + 专属 CSS/几何断言；3 组变异全捕获）。 |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 

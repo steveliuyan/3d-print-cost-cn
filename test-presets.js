@@ -1512,21 +1512,22 @@ setTimeout(function () {
     w8.HTMLAnchorElement.prototype.click = function () {};
     var E = w8.__DPC;
 
-    ok('v1.8 B5：品牌标识 SVG 已内嵌', /<svg/.test(E.BRAND_SVG || '') && /#fff/.test(E.BRAND_SVG || ''));
+    ok('v1.8 B5：品牌标识已内嵌为位图 data-URI（单文件离线）',
+       /^data:image\/png;base64,/.test(E.BRAND_ICON_URI || '') &&
+       /<img[^>]+class="pp-brand-mark"[^>]+src="data:image\/png;base64,/.test(E.BRAND_HTML || ''));
 
-    /* --- 品牌一致性：顶栏 / favicon / 打印头必须共用同一套徽标几何（防「单面漏改」） --- */
-    var markSpan = d8.querySelector('.mark');
-    var markSvg = markSpan ? markSpan.innerHTML : '';
-    ok('v1.8 品牌：顶栏标识已换为新徽标（立方体 + ¥ 成本徽标）',
-       /<circle/.test(markSvg) && /M6\.5 4 12 12\.5/.test(markSvg));
-    ok('v1.8 品牌：顶栏徽标几何 = 规范 (42.25, 44.8, r9)',
-       /cx=["']42\.25["']/.test(markSvg) && /cy=["']44\.8["']/.test(markSvg) && /r=["']9["']/.test(markSvg));
+    /* --- 品牌一致性：顶栏 / favicon / 打印抬头必须共用同一套位图母版（防「单面漏改」） --- */
+    var markImg = d8.querySelector('.mark img');
+    ok('v1.8 品牌：顶栏标识为位图母版 <img class="mark-img">',
+       !!markImg && markImg.className === 'mark-img' && /^data:image\/png;base64,/.test(markImg.getAttribute('src') || ''));
+    ok('v1.8 品牌：顶栏 <img> 尺寸 = 38×38（与 .mark 容器一致）',
+       !!markImg && markImg.getAttribute('width') === '38' && markImg.getAttribute('height') === '38');
     var favEl = d8.querySelector('link[rel="icon"]');
-    var favDec = favEl ? decodeURIComponent(favEl.getAttribute('href') || '') : '';
-    ok('v1.8 品牌：favicon 已含新成本徽标（立方体 3 面 + 白圆 + 靛蓝 ¥）',
-       /<circle/.test(favDec) && (favDec.match(/<path/g) || []).length >= 4 && /#4f46e5/.test(favDec));
-    ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何',
-       /cx="42\.25"/.test(E.BRAND_SVG || '') && /r="9"/.test(E.BRAND_SVG || ''));
+    var favHref = favEl ? (favEl.getAttribute('href') || '') : '';
+    ok('v1.8 品牌：favicon 为位图 data-URI（PNG base64）',
+       /^data:image\/png;base64,/.test(favHref));
+    ok('v1.8 品牌：打印抬头 BRAND_HTML 为位图 <img>（与顶栏/favicon 同源）',
+       /<img[^>]+pp-brand-mark/.test(E.BRAND_HTML || ''));
     ok('v1.8：版本号已升到 1.8.0', d8.getElementById('footVer').textContent === '1.8.0',
        d8.getElementById('footVer').textContent);
 
@@ -1632,7 +1633,7 @@ setTimeout(function () {
       click(d8.getElementById('ordPrint'));
       var php = d8.getElementById('ppPage').innerHTML;
       ok('v1.8 B5：订单打印页含品牌头（标识 + 名称 + 主色线）',
-         /pp-brand/.test(php) && /3D 打印成本计算器/.test(php) && /<svg/.test(php) && /pp-rule/.test(php));
+         /pp-brand/.test(php) && /3D 打印成本计算器/.test(php) && /<img[^>]+pp-brand-mark/.test(php) && /pp-rule/.test(php));
       d8.getElementById('pprev').classList.remove('open'); d8.body.classList.remove('pp');
 
       click(d8.querySelector('#viewSeg [data-view="single"]'));
