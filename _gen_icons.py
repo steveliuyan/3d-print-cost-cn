@@ -234,7 +234,7 @@ def main():
     print("[1/6] 规范源 SVG")
     svg = build_svg(STYLES["tile"], rounded=True)
     for name in ("docs/brand/icon-tile.svg", "favicon.svg"):
-        with open(os.path.join(ROOT, *name.split("/")), "w", encoding="utf-8") as f:
+        with open(os.path.join(ROOT, *name.split("/")), "w", encoding="utf-8", newline="\n") as f:
             f.write(svg)
     print("  docs/brand/icon-tile.svg + favicon.svg")
 
@@ -265,9 +265,9 @@ def main():
         save_png(render(px, "tile"),  os.path.join(res, "mipmap-" + name, "ic_launcher.png"))
         save_png(render(px, "round"), os.path.join(res, "mipmap-" + name, "ic_launcher_round.png"))
     fg = android_vector()
-    with open(os.path.join(res, "drawable", "ic_launcher_foreground.xml"), "w", encoding="utf-8") as f:
+    with open(os.path.join(res, "drawable", "ic_launcher_foreground.xml"), "w", encoding="utf-8", newline="\n") as f:
         f.write(fg)
-    with open(os.path.join(res, "values", "ic_launcher_background.xml"), "w", encoding="utf-8") as f:
+    with open(os.path.join(res, "values", "ic_launcher_background.xml"), "w", encoding="utf-8", newline="\n") as f:
         f.write('<?xml version="1.0" encoding="utf-8"?>\n<resources>\n'
                 '  <color name="ic_launcher_background">#4F46E5</color>\n</resources>\n')
     adaptive = (
@@ -279,7 +279,7 @@ def main():
     for n in ("ic_launcher", "ic_launcher_round"):
         pr = os.path.join(res, "mipmap-anydpi-v26", n + ".xml")
         os.makedirs(os.path.dirname(pr), exist_ok=True)
-        with open(pr, "w", encoding="utf-8") as f:
+        with open(pr, "w", encoding="utf-8", newline="\n") as f:
             f.write(adaptive)
     print("  mipmap-{mdpi..xxxhdpi}/ic_launcher{,_round}.png + 自适应前景 + anydpi-v26")
 
