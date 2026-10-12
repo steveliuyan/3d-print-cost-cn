@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 由 _gen_icons.py 生成 · 自适应图标前景层 -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+  <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="3.75" android:strokeLineJoin="round" android:strokeLineCap="round" android:pathData="M45.563,25.503L62.437,35.252L45.563,45.001L28.69,35.252Z"/>
+  <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="3.75" android:strokeLineJoin="round" android:strokeLineCap="round" android:pathData="M28.69,35.252L45.563,45.001L45.563,64.499L28.69,54.75Z"/>
+  <path android:fillColor="#00000000" android:strokeColor="#FFFFFF" android:strokeWidth="3.75" android:strokeLineJoin="round" android:strokeLineCap="round" android:pathData="M62.437,35.252L45.563,45.001L45.563,64.499L62.437,54.75Z"/>
+  <path android:fillColor="#FFFFFF" android:pathData="M54.312,69.998 a12.499,12.499 0 1,0 24.997,0 a12.499,12.499 0 1,0 -24.997,0Z"/>
+  <path android:fillColor="#00000000" android:strokeColor="#4F46E5" android:strokeWidth="3.25" android:strokeLineCap="round" android:pathData="M63.799,64.849L68.061,71.435M72.323,64.849L68.061,71.435M68.061,71.435L68.061,77.635M64.961,72.598L71.161,72.598M64.961,75.078L71.161,75.078"/>
+</vector>

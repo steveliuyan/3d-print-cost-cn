@@ -3,18 +3,21 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>3D 打印成本计算器 · 品牌标识预览</title>
+<meta name="theme-color" content="#4f46e5">
+<link rel="icon" href="../../favicon.svg">
+<link rel="apple-touch-icon" href="../../apple-touch-icon.png">
+<title>3D 打印成本计算器 · 品牌与图标预览</title>
 <style>
   :root{ --accent:#4f46e5; --ink:#14161a; --muted:#8b93a1; --line:#e5e7eb; --bg:#f4f5f8; }
   *{box-sizing:border-box}
-  body{margin:0;padding:40px 24px 64px;background:var(--bg);color:var(--ink);
+  body{margin:0;padding:40px 24px 72px;background:var(--bg);color:var(--ink);
        font:15px/1.6 system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif}
-  .wrap{max-width:920px;margin:0 auto}
+  .wrap{max-width:960px;margin:0 auto}
   h1{font-size:22px;margin:0 0 4px;letter-spacing:-.02em}
   .sub{color:var(--muted);font-size:13px;margin:0 0 32px}
   h2{font-size:13px;font-weight:650;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;
-     margin:36px 0 14px}
-  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:28px;
+     margin:38px 0 14px}
+  .card{background:#fff;border:1px solid var(--line);border-radius:16px;padding:26px;
         box-shadow:0 12px 32px -24px rgba(20,22,26,.3)}
   .hero{display:flex;align-items:center;gap:28px;flex-wrap:wrap}
   .scales{display:flex;align-items:flex-end;gap:22px;flex-wrap:wrap}
@@ -30,14 +33,27 @@
   .swatch{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--muted);margin-top:14px}
   .chip{width:16px;height:16px;border-radius:5px;background:var(--accent)}
   code{background:#eef0f4;border-radius:5px;padding:1px 6px;font-size:12.5px}
+
+  /* 图标网格 */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(196px,1fr));gap:14px}
+  .tile{background:#fff;border:1px solid var(--line);border-radius:14px;padding:18px;
+        display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+  .tile img[data-live]{image-rendering:auto}
+  .tile .lab{font-size:12px;color:var(--muted)}
+  .tile .who{font-size:11px;color:#aeb4bf;letter-spacing:.04em;text-transform:uppercase}
+  .browser{border-radius:8px 8px 0 0;background:#dee1e6;padding:8px 10px;display:flex;gap:6px;width:100%}
+  .browser i{width:9px;height:9px;border-radius:50%;background:#bfc5cd;display:block}
+  .browser span{flex:1;height:16px;background:#fff;border-radius:5px;margin-left:6px;
+                font-size:10px;color:#8b93a1;padding:0 8px;line-height:16px;text-align:left}
+  .sheet{width:100%;border-radius:12px;border:1px solid var(--line)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>3D 打印成本计算器 · 品牌标识</h1>
-  <p class="sub">矢量 SVG · 内嵌单文件 · 随主题换色 · 方形标识（mark）</p>
+  <h1>3D 打印成本计算器 · 品牌与图标</h1>
+  <p class="sub">矢量 SVG 标识（mark）+ 三端应用图标 —— 由 <code>_gen_icons.py</code> 统一生成，改标识只改这里</p>
 
-  <h2>主展示</h2>
+  <h2>主标识</h2>
   <div class="card hero">
     <img src="logo-mark.svg" alt="品牌标识" width="160" height="160">
     <div>
@@ -68,6 +84,48 @@
     <figure><img src="logo-mark.svg" alt="" width="32" height="32" style="color:#c7cbf5"><figcaption>32</figcaption></figure>
     <figure><img src="logo-mark.svg" alt="" width="24" height="24" style="color:#fff"><figcaption>24</figcaption></figure>
   </div>
+
+  <h2>应用图标 · 三端实际产物</h2>
+  <div class="card">
+    <div class="grid">
+      <div class="tile">
+        <div class="browser"><i></i><i></i><i></i><span>3d.20050905.xyz</span></div>
+        <img src="../../favicon.svg" alt="" width="48" height="48">
+        <div class="who">Web</div><div class="lab">favicon.svg（内联 data-URI）</div>
+      </div>
+      <div class="tile">
+        <img src="../../icon-192.png" alt="" width="96" height="96">
+        <div class="who">PWA / Android 主屏</div><div class="lab">icon-192 / 512.png</div>
+      </div>
+      <div class="tile">
+        <img src="../../maskable-512.png" alt="" width="96" height="96" style="border-radius:50%">
+        <div class="who">maskable（圆形裁切）</div><div class="lab">maskable-512.png</div>
+      </div>
+      <div class="tile">
+        <img src="../../apple-touch-icon.png" alt="" width="96" height="96" style="border-radius:22%">
+        <div class="who">iOS 桌面</div><div class="lab">apple-touch-icon.png 180²</div>
+      </div>
+      <div class="tile">
+        <img src="../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png" alt="" width="96" height="96">
+        <div class="who">Android launcher</div><div class="lab">mipmap 5 档 + 自适应</div>
+      </div>
+      <div class="tile">
+        <img src="../../android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_round.png" alt="" width="96" height="96">
+        <div class="who">Android round</div><div class="lab">ic_launcher_round</div>
+      </div>
+      <div class="tile">
+        <img src="../../desktop/build/icon.png" alt="" width="96" height="96">
+        <div class="who">Windows 桌面</div><div class="lab">icon.ico + icon.png</div>
+      </div>
+      <div class="tile">
+        <img src="icon-tile.svg" alt="" width="96" height="96">
+        <div class="who">规范源</div><div class="lab">docs/brand/icon-tile.svg</div>
+      </div>
+    </div>
+  </div>
+
+  <h2>尺寸 / 样式对照表</h2>
+  <div class="card"><img class="sheet" src="icon-preview.png" alt="图标对照表"></div>
 </div>
 </body>
 </html>
