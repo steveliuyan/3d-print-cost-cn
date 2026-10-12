@@ -162,6 +162,55 @@ def build_svg(target_frac, rounded):
     ) % (bg, sw, face, fmt(bc[0]), fmt(bc[1]), fmt(br * k), yen_path, yen_sw)
 
 
+def build_svg_compact(target_frac):
+    """favicon 用的单行内联版（单引号 + %23 编码，去 title/role）。"""
+    f, k = build_xf(target_frac, BORDER)
+
+    def c(p):
+        q = f(p)
+        return "%s %s" % (fmt(q[0]), fmt(q[1]))
+    face = "".join("<path d='M%sZ'/>" % " ".join(c(p) for p in fc) for fc in CUBE)
+    bx, by, br = BADGE
+    bc = f((bx, by))
+    segs = []
+    for (a, b) in YEN:
+        pa, pb = f(a), f(b)
+        segs.append("M%s %s %s %s" % (fmt(pa[0]), fmt(pa[1]), fmt(pb[0]), fmt(pb[1])))
+    raw = (
+        "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'>"
+        "<rect width='64' height='64' rx='14' fill='#4f46e5'/>"
+        "<g fill='none' stroke='#ffffff' stroke-width='%s' stroke-linejoin='round'>%s</g>"
+        "<circle cx='%s' cy='%s' r='%s' fill='#ffffff'/>"
+        "<path d='%s' fill='none' stroke='#4f46e5' stroke-width='%s' stroke-linecap='round'/>"
+        "</svg>"
+    ) % (fmt(CUBE_W * k), face, fmt(bc[0]), fmt(bc[1]), fmt(br * k), "".join(segs), fmt(YEN_W * k))
+    # data-URI 安全化：<> 与 # 必须编码（引号统一用单引号，避免与外层 href="…" 冲突）
+    return raw.replace("<", "%3C").replace(">", "%3E").replace("#", "%23")
+
+
+def sync_favicon_uri():
+    """把内联 favicon data-URI 同步进 index.html（唯一来源 = 本脚本的几何常量）。"""
+    import re
+    uri = build_svg_compact(STYLES["tile"])
+    p = os.path.join(ROOT, "index.html")
+    with open(p, encoding="utf-8", newline="") as f:
+        s = f.read()
+    # 容忍 IDE 预览回注的多余属性（data-page-node-id 等），替换为干净链接
+    pat = re.compile(r'<link rel="icon" href="data:image/svg\+xml,[^"]*"[^>]*>')
+    new = '<link rel="icon" href="data:image/svg+xml,%s">' % uri
+    if not pat.search(s):
+        print("  [warn] index.html 未找到内联 favicon link，跳过")
+        return False
+    s2 = pat.sub(lambda m: new, s, count=1)
+    if s2 != s:
+        with open(p, "w", encoding="utf-8", newline="\n") as f:
+            f.write(s2)
+        print("  index.html 内联 favicon 已更新")
+    else:
+        print("  index.html 内联 favicon 已是最新")
+    return True
+
+
 def android_vector(safe_frac=0.3055, canvas=108):
     f, k = build_xf_radial(safe_frac, canvas)
     def c(p):
@@ -237,6 +286,7 @@ def main():
         with open(os.path.join(ROOT, *name.split("/")), "w", encoding="utf-8", newline="\n") as f:
             f.write(svg)
     print("  docs/brand/icon-tile.svg + favicon.svg")
+    sync_favicon_uri()
 
     print("[2/6] Web / PWA")
     save_png(render(192, "tile"), os.path.join(ROOT, "icon-192.png"))

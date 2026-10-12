@@ -93,7 +93,26 @@ npm run dist                                    # ④ 便携版单文件 exe（�
 #   → ../dist/desktop/3D打印成本计算器-<ver>-便携版.exe
 ```
 
-### 4.4 发版（推送 + Release）
+### 4.4 重新生成图标（改品牌标识时）
+
+```bash
+PY_ENV="C:/Users/steveliuyan/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
+"$PY_ENV" _gen_icons.py        # 需要 Pillow（已装在托管 venv default 里）
+```
+
+**图标唯一来源 = `_gen_icons.py`**（内含 64×64 品牌几何常量）。一次产出：
+Web（`favicon.svg`/`favicon.ico`、`icon-192/512.png`、`maskable-512.png`）、
+iOS（`apple-touch-icon.png` 180 + 167，满幅无透明）、
+Android（`mipmap-*` 5 档 `ic_launcher{,_round}.png`、`drawable/ic_launcher_foreground.xml`、
+`values/ic_launcher_background.xml`、`mipmap-anydpi-v26/ic_launcher{,_round}.xml`）、
+Windows（`desktop/build/icon.{png,ico}`）、品牌资产（`docs/brand/icon-tile.svg` + `icon-preview.png`）。
+改完**必须再跑 `_sync_clean.py`**（`index.html` 里的内联 favicon data-URI 需同步三副本）。
+
+> 注意：`index.html` 的 favicon 用**内联 data-URI**（保证单文件自洽）；`_gen_icons.py` 会**自动把它同步进 head**
+> （正则容忍 IDE 预览回注的多余属性）。`desktop/build/icon.png` 被 `.gitignore` 忽略（Windows 打包只用 `icon.ico`）。
+> 生成器需 Pillow：托管 venv `python/envs/default` 内已装（`.../Scripts/python.exe`）。
+
+### 4.5 发版（推送 + Release）
 
 见 **§14**。一句话：`_api_push.py` 推提交 → 改 `_api_release.py` 的 TAG/HEAD_SHA/ASSETS → 跑它。
 
