@@ -12,15 +12,15 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.7.0** |
-| 本地 HEAD | 以 `git log --oneline -1` 为准（v1.7.0 基线提交，本文档更新会再领先少量提交） |
-| 功能提交 | v1.7.0 订单化（见 §9）；tag `v1.5.1` → `dde8b9ca8b`（最新已发布） |
-| 回归测试 | **310/310 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | 以 `_sync_clean.py` 输出为准（三份必须完全一致） |
-| 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0 / v1.7.0） |
+| 当前版本 | **v1.8.0** |
+| 本地 HEAD | 以 `git log --oneline -1` 为准（v1.8.0 基线提交，本文档更新会再领先少量提交） |
+| 功能提交 | v1.8.0 交互增强（见 §9）；tag `v1.5.1` → `dde8b9ca8b`（最新已发布） |
+| 回归测试 | **342/342 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `4924a963c2a2a6fc0091d7fc5c627636`（222,712 B，逐字节一致） |
+| 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0 / v1.7.0 / v1.8.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
-| 唯一待办 | 打包 + 发版 v1.6.0 / v1.7.0；PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
+| 唯一待办 | 打包 + 发版 v1.6.0 / v1.7.0 / v1.8.0；PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
 ---
 
@@ -196,6 +196,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | 模型估算 | STL（二进制 / ASCII）与 3MF（Stored / Deflate）导入，算体积、包围盒、按密度与填充率估用量；**切片 3MF（Bambu Studio / OrcaSlicer `Metadata/slice_info.config`）直接读实测耗材克数与打印时长**，无切片数据时回退几何估算 |
 | 主题 | 浅色 / 深色 / 跟随系统三档；**深色仅屏幕**，打印与长图恒浅色 |
 | **更新体验（v1.5.1）** | **应用内更新弹窗**（三端统一）：发布说明轻量 Markdown 渲染、四态（检查中 / 发现新版 / 已是最新 / 失败+重试）、头部版本徽标 `v当前 → v新版`、平台产物行（按端显示 web.html / .apk / .exe + 体积）；**历史更新日志面板**（页脚「更新日志」，可翻看所有版本） |
+| **交互增强（v1.8.0）** | **A 档**：① **行项就地编辑**（订单视图内点「编辑」展开 6 项快速表单：数量 / 打印时长 / 耗材用量 / 材料单价 / 损耗率 / 后处理，输入即写回该行 `fields` 并**只刷数字不重建 DOM** 保住焦点）；② **历史订单工具条**（关键词搜索 + 状态分档 chips + 金额/时间排序 + 空态）；③ **草稿自动保存**（编辑 800ms 防抖落盘 `dpc_order_draft_v1`，刷新/重启恢复，界面提示「草稿已保存」，保存后自动清除 + 新建时确认丢弃）；④ **客户库**（`dpc_customers_v1`，上限 50，去重置顶，datalist 复用，选中带出联系方式）。**B 档**：⑤ **品牌标识**（矢量 SVG 内嵌 + Canvas 同构复刻，打印页/分享长图头部统一品牌头，源文件 `docs/brand/logo-mark.svg`）；⑥ **翻单/复制**（订单历史一键复制为新单，新 id/编号/时间）；⑦ **状态流转**（列表内下拉直接改 草稿·已报价·已成交·已归档 并即时持久化）；⑧ **按行覆盖**（被单独调整的行标「已调」） |
 
 ## 9. 版本时间线（做了什么）
 
@@ -213,6 +214,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.5.1** | **发版完成**：版本号四处联动升 1.5.1；APK `1,069,404 B`（vc10，证书 `O=DPC`，内部 assets/index.html md5 与源码一致）、EXE `3D打印成本计算器-1.5.1-便携版.exe` `74,231,176 B`（asar 内三文件 md5 全一致）；发布 **v1.5.1 Release**（3 附件 201，tag/release 各 9→10，latest=v1.5.1）；GitHub Pages 已构建（commit `dde8b9ca8b`） |
 | **v1.6.0** | **切片 3MF 实测用量读取 + 生产扩展 3MF 支持**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 的 `Metadata/slice_info.config`（`weight` 克 / `prediction` 秒，`filament used_g` 兜底）；`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；无切片数据 / 解析失败**静默回退几何估算**。**关键修复**：支持 3MF **生产扩展**——主 model 用 `<component p:path>` 引用外部 object 文件、`build item`/`component` 的 4×3 仿射 `transform` 逐级复合（拓竹 Studio 导出即此结构，旧实现只读主文件 → 报"无法解析"）；`inflateRaw` 改为**按 ZIP 中央目录 usize 预分配**输出缓冲，显著加速大模型解压。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **245** |
 | **v1.7.0** | **订单化（多品项报价）**：① **引擎参数化**——把 `compute()` 里「从 DOM 读 18 个 `data-field`」剥出为**纯函数 `computeFrom(fields)`**，`compute()` 退化为 `computeFrom(fieldSnapshot())` 薄封装（v1.6 单件行为逐字节不变）；② 新增 `computeOrder(order)`（多行聚合，**订单级运费按件分摊进各行成本基础**以保持与单件口径一致）、`tierDisc/effDisc`（阶梯与整单折扣取大）、`dpc_orders_v1` 存储与 `migrateQuotes()`（旧 `dpc_quotes_v1` → 订单，幂等、旧键保留）；③ **订单视图 UI**（顶栏分段切换）+ 报价历史面板改造为订单列表；④ 订单级打印 / CSV / 分享长图；⑤ `buildBackup()` **补上订单**（v1.6 及以前备份不含报价历史，顺带修坑）。版本号四处联动 1.6.0 → 1.7.0（build.gradle vc11→12）。**纯前端，零新依赖**。回归 245 → **310** |
+| **v1.8.0** | **交互增强（A/B 档）+ 品牌标识**：**A 档**——A1 行项就地编辑（6 项表单，输入即写回 `ln.fields` 并 `refreshLineNumbers()` 只刷数字不重建 DOM）、A2 历史订单工具条（搜索 + 状态 chips + 排序 + 空态）、A3 草稿自动保存（`dpc_order_draft_v1`，800ms 防抖 / 恢复 / 保存即清 / 新建确认）、A4 客户库（`dpc_customers_v1`，去重置顶 + datalist + 带出联系方式）；**B 档**——B5 品牌标识（内嵌 `BRAND_SVG` 矢量 + Canvas `drawBrandMark()` 复刻，打印页/长图统一品牌头）、B6 翻单复制、B7 列表内状态流转、B8 按行覆盖「已调」标记。配套矢量 logo 源文件 `docs/brand/logo-mark.svg` + 预览页 `docs/brand/logo-preview.html`。版本号四处联动 1.7.0 → 1.8.0（build.gradle vc12→13）。**纯前端，零新依赖**。回归 310 → **342** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -246,16 +248,22 @@ M4 `effDisc` 忽略阶梯只看整单折扣 → A3 1 条 + 订单视图「阶梯
 → 恢复 → 全量回归 **310/310**。三副本逐字节一致（`_sync_clean.py` 输出 200,945 B，三份同 md5）。
 **等价性核验**：`computeOrder(单行订单) === compute()` 逐项（总成本 / 收入 / 利润 / 均件成本 / 毛利率）`toFixed(2)` 相等 —— 保证 v1.6 单件行为**零回归**。
 
+**v1.8.0（交互增强 A/B 档 + 品牌标识）**：RED 先失败（新增 v1.8 断言在实现前不成立）→ minimal GREEN → 全绿；
+变异 **3 组全部被捕获**（M1 客户库去重禁用 → `A4 重复客户去重` FAIL；M2 行项写回 `ln.fields[key]=inp.value` 禁用 →
+`A1 改值即触发该行重算` FAIL〔该断言为变异暴露的**覆盖缺口**后补强：原断言只查 DOM 结构，变异竟漏过，遂增设「成本/汇总文本必须变化」〕；
+M3 保存后 `clearDraft` 的 `localStorage.removeItem` 禁用 → `A3 保存订单后草稿被清除` FAIL）
+→ 恢复 → 全量回归 **342/342**。三副本逐字节一致 222,712 B，md5 `4924a963c2a2a6fc0091d7fc5c627636`。
+源码在变异前后与备份 `diff` 逐字节一致（确认变异已完全还原）。
+
 ## 11. 未完成 / 待办
 
 - ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
   但**仍是 classic 型且权限极大**（scopes 含 `admin:enterprise` / `admin:org` / `delete_repo` / `workflow`…），应换为 fine-grained。
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
-- ⏳ **v1.7.0 待打包 + 发版**（与 v1.6.0 合并一次发版即可，v1.6.0 尚未打包）：
-  代码已本地提交，回归 **310/310**；下一步 `_sync_clean.py` → Gradle APK（vc12）→ `npm run dist` 便携 exe → `_api_push.py` 推提交 → `_api_release.py` 发 v1.7.0（3 附件）。
-- ⏳ **v1.6.0 待打包 + 发版**：见上（若一次发 v1.7.0，v1.6.0 的改动会被一并带出）。
-- 💡 **订单视图已知取舍**：行项**不做就地编辑**——用「取回」（把该行参数填回单件页并移除该行）改完再「加入订单」重新加回。若后续觉得琐碎，可加"编辑行"入口。
+- ⏳ **v1.8.0 待打包 + 发版**（v1.6.0 / v1.7.0 尚未打包，可一次带出）：
+  代码已本地提交，回归 **342/342**；下一步 `_sync_clean.py` → Gradle APK（vc13）→ `npm run dist` 便携 exe → `_api_push.py` 推提交 → `_api_release.py` 发版（3 附件）。
+- 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
 - ✅ **v1.5.1 已发版**（提交 `dde8b9ca8b` 已推送；APK/EXE 已核验；Release 已发布；Pages 已构建）。
   产物在 `dist/release/{web.html, 3d-print-cost-cn-1.5.1-portable.exe, 3d-print-cost-cn-1.5.1.apk}`。
@@ -327,7 +335,7 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 **新对话接手时的推荐动作**：
 1. 读本文件 §0 速览与 §8 功能清单，建立全局印象；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 310/310；
+3. 跑一次 §4.1 的回归测试，确认基线是 342/342；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），

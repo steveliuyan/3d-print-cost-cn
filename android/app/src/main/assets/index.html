@@ -517,15 +517,53 @@
   .ord-tiers input{width:92px; border:1px solid var(--line2); background:var(--surface); border-radius:9px;
                    height:38px; padding:0 10px; font:inherit; color:var(--text)}
   .ord-tiers input:hover{border-color:var(--line3)}
+  /* v1.8.0 行项就地编辑（B8：损耗率 / 材料单价等可按行覆盖） */
+  .ord-line.editing{flex-direction:column; align-items:stretch; border-color:var(--accent-line);
+                    background:var(--surface); box-shadow:var(--sh-1)}
+  .ord-line .olf-grid{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;
+                      width:100%; margin-top:10px; padding-top:10px; border-top:1px dashed var(--line)}
+  .ord-line .olf{display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text2)}
+  .ord-line .olf > span{flex:none; min-width:52px}
+  .ord-line .olf input{flex:1 1 auto; min-width:0; height:34px; border:1px solid var(--line2);
+    background:var(--surface); border-radius:9px; padding:0 8px; font:inherit; font-size:12.5px; color:var(--text)}
+  .ord-line .olf input:hover{border-color:var(--line3)}
+  .ord-line .olf input:focus{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+  .ord-line .olf em{font-style:normal; color:var(--text3); font-size:11.5px; flex:none}
+  .ord-line .olf-acts{display:flex; gap:8px; margin-top:8px}
+  .lntag{display:inline-block; font-size:10.5px; font-weight:650; color:var(--accent);
+    background:var(--accent-soft); border:1px solid var(--accent-line); border-radius:6px;
+    padding:0 5px; margin-left:6px; vertical-align:1px}
+  @media (max-width:560px){ .ord-line .olf-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
   .ord-sum{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
   .ord-sum .kpi .v{font-size:17px}
   .ord-acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+  .ord-draft{margin:0 0 8px; font-size:11.5px; color:var(--text3); min-height:15px}
+  .ord-draft.warn{color:var(--warn, #b45309)}
   .stbadge{display:inline-block; font-size:11px; font-weight:650; padding:2px 8px; border-radius:20px;
            border:1px solid var(--line2); background:var(--card-2); color:var(--text2)}
   .stbadge.draft{color:var(--text3)}
   .stbadge.quoted{color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft)}
   .stbadge.accepted{color:var(--good); border-color:#bfe3cf; background:#eefaf3}
   .stbadge.archived{color:var(--text4); text-decoration:line-through}
+  /* v1.8.0 订单历史：工具条 / 搜索 / 状态筛选 / 排序 / 行内状态流转 */
+  .hist-tools{display:flex; flex-direction:column; gap:8px; margin:0 0 12px}
+  .hist-tools .ht-row{display:flex; gap:8px}
+  .hist-tools input[type=search]{flex:1 1 auto; min-width:0; height:36px; border:1px solid var(--line2);
+    background:var(--surface); border-radius:10px; padding:0 12px; font:inherit; font-size:13px; color:var(--text)}
+  .hist-tools input[type=search]:focus{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
+  .hist-tools select{height:36px; flex:none; border:1px solid var(--line2); background:var(--surface);
+    border-radius:10px; padding:0 8px; font:inherit; font-size:12.5px; color:var(--text)}
+  .ht-chips{display:flex; gap:6px; flex-wrap:wrap}
+  .hchip{border:1px solid var(--line2); background:var(--surface); color:var(--text2); font-size:12px;
+    font-weight:600; padding:5px 10px; border-radius:20px; cursor:pointer; transition:.16s var(--ease)}
+  .hchip:hover{color:var(--text); border-color:var(--line3)}
+  .hchip.on{background:var(--accent); border-color:var(--accent); color:#fff}
+  .hist-item .hi-ops{display:flex; gap:6px; align-items:center; flex:0 0 auto}
+  .stsel{height:30px; border:1px solid var(--line2); background:var(--surface); border-radius:9px;
+    padding:0 4px; font:inherit; font-size:12px; color:var(--text)}
+  @media (max-width:560px){
+    .hist-item .hi-ops{width:100%; flex-wrap:wrap}
+  }
   @media (max-width:1080px){ .ord-sum{grid-template-columns:1fr} }
   @media (max-width:560px){
     .ord-line .ol-num{width:100%; text-align:left; display:flex; gap:10px; align-items:baseline}
@@ -567,6 +605,14 @@
   .pp-page .kv td:first-child{color:#6b7280; width:52%}
   .pp-page .sum tr.big td{font-weight:700; color:#4f46e5; font-size:12.5px}
   .pp-page .pp-foot{margin-top:18px; padding-top:8px; border-top:1px solid #e5e7eb; color:#9ca3af; font-size:10.5px}
+  /* v1.8.0 报价单品牌头（打印/PDF 恒浅色，用固定主色，不跟随屏幕主题） */
+  .pp-brand{display:flex; align-items:center; gap:10px}
+  .pp-brand svg{width:40px; height:40px; flex:none; color:#4f46e5}
+  .pp-brand .bn{min-width:0}
+  .pp-brand .bn b{display:block; font-size:14.5px; font-weight:700; letter-spacing:-.015em; color:#14161c}
+  .pp-brand .bn span{display:block; font-size:10.5px; color:#6b7280; margin-top:1px}
+  .pp-brand .bn em{font-style:normal; color:#4f46e5; font-weight:650}
+  .pp-rule{height:3px; background:#4f46e5; border-radius:2px; margin:10px 0 12px}
   /* 窄屏（手机）：A4 固定 210mm 会横向溢出且留白过大 → 降级为流式宽度（仅影响屏幕，不影响打印） */
   @media screen and (max-width:900px){
     .ov-panel{margin:2vh auto; max-height:96vh; width:calc(100vw - 16px)}
@@ -830,7 +876,7 @@
               <option value="archived">已归档</option>
             </select></div></label>
           <label class="field"><span class="lb">客户名称</span>
-            <div class="in"><input id="ordCustomer" type="text" placeholder="可留空"></div></label>
+            <div class="in"><input id="ordCustomer" type="text" list="custList" placeholder="可留空；历史客户可下拉选取"></div></label>
           <label class="field"><span class="lb">联系方式</span>
             <div class="in"><input id="ordContact" type="text" placeholder="电话 / 微信 / 邮箱"></div></label>
           <label class="field"><span class="lb">报价有效期</span>
@@ -1006,7 +1052,7 @@
   <div class="ov-bg" data-hisclose></div>
   <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:10vh">
     <div class="ov-head">
-      <h3>报价历史</h3>
+      <h3>订单历史</h3>
       <button class="x" data-hisclose aria-label="关闭">×</button>
     </div>
     <div class="ov-body">
@@ -1967,7 +2013,7 @@
 
   function buildBackup(){
     var params = lsGet(SKEY), presets = lsGet(PKEY), catData = lsGet(CKEY);
-    var orders = lsGet(QKEY_NEW);
+    var orders = lsGet(QKEY_NEW), customers = lsGet(CUST_KEY);
     var cnt = function(o, k){ return o && Array.isArray(o[k]) ? o[k].length : 0; };
     return {
       type: BK_TYPE, version: BK_VERSION,
@@ -1976,9 +2022,11 @@
       counts: {
         presets: cnt(presets, "device") + cnt(presets, "material"),
         cats: cnt(catData, "device") + cnt(catData, "material"),
-        orders: Array.isArray(orders) ? orders.length : 0
+        orders: Array.isArray(orders) ? orders.length : 0,
+        customers: Array.isArray(customers) ? customers.length : 0
       },
-      data: { params: params, presets: presets, cats: catData, orders: orders, quotes: lsGet(QKEY) }
+      data: { params: params, presets: presets, cats: catData, orders: orders,
+              customers: customers, quotes: lsGet(QKEY) }
     };
   }
 
@@ -1988,7 +2036,7 @@
     var json = JSON.stringify(b, null, 2);
     download(new Blob([json], {type:"application/json"}),
              "3D打印成本_备份_" + stamp() + ".json", json);
-    toast("已生成备份：参数 / 预设 / 分类 / 订单");
+    toast("已生成备份：参数 / 预设 / 分类 / 订单 / 客户库");
   }
 
   function restoreBackup(file){
@@ -2010,15 +2058,16 @@
 
       var t = d.exportedAt ? new Date(d.exportedAt) : null;
       var when = (t && !isNaN(t.getTime())) ? t.toLocaleString() : "未知时间";
-      var msg = "恢复备份会【覆盖】当前的参数、自定义预设、分类与订单，且无法撤销。\n\n" +
+      var msg = "恢复备份会【覆盖】当前的参数、自定义预设、分类、订单与客户库，且无法撤销。\n\n" +
                 "备份时间：" + when + "\n" +
                 "包含：" + (d.counts ? (d.counts.presets + " 条自定义预设 / " + d.counts.cats + " 个分类" +
-                  (d.counts.orders != null ? " / " + d.counts.orders + " 张订单" : "")) : "—") +
+                  (d.counts.orders != null ? " / " + d.counts.orders + " 张订单" : "") +
+                  (d.counts.customers != null ? " / " + d.counts.customers + " 位客户" : "")) : "—") +
                 "\n\n确定继续？";
       if(!window.confirm(msg)) return;
 
       var pairs = [[SKEY, d.data.params], [PKEY, d.data.presets], [CKEY, d.data.cats],
-                   [QKEY_NEW, d.data.orders], [QKEY, d.data.quotes]];
+                   [QKEY_NEW, d.data.orders], [CUST_KEY, d.data.customers], [QKEY, d.data.quotes]];
       var wrote = 0;
       for(var i = 0; i < pairs.length; i++){
         var key = pairs[i][0], val = pairs[i][1];
@@ -2061,7 +2110,29 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.7.0";
+  /* ================= 品牌标识（矢量，内嵌；currentColor 随父级着色） =================
+     v1.8.0：由位图重绘为 SVG —— 圆角方框 + 等距立方体 + 右下角 ¥ 成本徽标。
+     报价单抬头 / 分享长图 / 空状态复用同一份路径，保证单文件离线与三端一致。 */
+  var BRAND_SVG =
+    '<svg viewBox="0 0 64 64" fill="none" aria-hidden="true">' +
+      '<rect x="4" y="4" width="56" height="56" rx="14" stroke="currentColor" stroke-width="4"/>' +
+      '<path d="M30 11.4 43.5 19.2 30 27 16.5 19.2Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
+      '<path d="M16.5 19.2 30 27 30 42.6 16.5 34.8Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
+      '<path d="M43.5 19.2 30 27 30 42.6 43.5 34.8Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>' +
+      '<circle cx="48" cy="48" r="11.5" fill="currentColor"/>' +
+      '<g transform="translate(40.56 40.4) scale(0.62)" stroke="#fff" stroke-width="4.2" stroke-linecap="round">' +
+        '<path d="M6.5 4 12 12.5M17.5 4 12 12.5M12 12.5V20.5M8 14h8M8 17.2h8"/>' +
+      "</g>" +
+    "</svg>";
+  var BRAND_NAME = "3D 打印成本计算器";
+  /* 报价单抬头：标识 + 名称 + 主色分隔线 */
+  function brandHeadHTML(sub){
+    return '<div class="pp-brand">' + BRAND_SVG +
+      '<div class="bn"><b>' + esc(BRAND_NAME) + '</b><span>' + sub + "</span></div></div>" +
+      '<div class="pp-rule"></div>';
+  }
+
+  var APP_VERSION = "1.8.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -2710,6 +2781,39 @@
   var QKEY_NEW = "dpc_orders_v1";
   var MIG_KEY  = "dpc_orders_migrated";
   var ORDER_LIMIT = 60;
+  /* ---- v1.8.0 客户库：保存订单时去重记忆，客户名输入框下拉复用（仅本机） ---- */
+  var CUST_KEY = "dpc_customers_v1", CUST_LIMIT = 50;
+  function loadCustomers(){
+    try{ var a = JSON.parse(localStorage.getItem(CUST_KEY) || "[]"); return Array.isArray(a) ? a : []; }
+    catch(e){ return []; }
+  }
+  function saveCustomers(list){
+    try{ localStorage.setItem(CUST_KEY, JSON.stringify(list.slice(0, CUST_LIMIT))); }catch(e){}
+  }
+  function rememberCustomer(name, contact){
+    name = (name || "").trim();
+    if(!name) return;
+    var list = loadCustomers(), hit = -1;
+    for(var i = 0; i < list.length; i++){ if(list[i] && list[i].name === name){ hit = i; break; } }
+    if(hit >= 0) list.splice(hit, 1);          /* 去重后置顶（最近使用优先） */
+    list.unshift({ name: name, contact: (contact || "").trim(), t: Date.now() });
+    saveCustomers(list);
+    renderCustList();
+  }
+  function custLookup(name){
+    var list = loadCustomers(), n = (name || "").trim();
+    for(var i = 0; i < list.length; i++) if(list[i] && list[i].name === n) return list[i];
+    return null;
+  }
+  /* datalist 由 JS 动态创建（避免在静态 HTML 里再插一段标签） */
+  function renderCustList(){
+    var dl = $("#custList");
+    if(!dl){ dl = document.createElement("datalist"); dl.id = "custList"; document.body.appendChild(dl); }
+    dl.innerHTML = loadCustomers().map(function(c){
+      return '<option value="' + esc(c.name) + '"' +
+        (c.contact ? ' label="' + esc(c.contact) + '"' : "") + "></option>";
+    }).join("");
+  }
   var STATUSES = ["draft","quoted","accepted","archived"];
   var STATUS_LABEL = { draft:"草稿", quoted:"已报价", accepted:"已成交", archived:"已归档" };
 
@@ -2894,19 +2998,91 @@
   }
 
   /* ================= 报价历史（现为订单列表） ================= */
+  /* ---- v1.8.0 订单历史：搜索 / 状态筛选 / 排序 / 复制 / 行内状态流转 ---- */
+  var histFilter = { q: "", status: "all", sort: "time" };
+  var HIST_STATS = ["all", "draft", "quoted", "accepted", "archived"];
+  function histStatus(o){ return (o && o.status) || "quoted"; }
+  /* 历史面板工具条按需注入（避免在静态 HTML 里再插一段标签，规避预览属性回注） */
+  function ensureHistUI(){
+    if($("#histTools")) return;
+    var list = $("#histList");
+    if(!list) return;
+    list.insertAdjacentHTML("beforebegin",
+      '<div class="hist-tools" id="histTools">' +
+        '<div class="ht-row">' +
+          '<input id="histQ" type="search" autocomplete="off" placeholder="搜索编号 / 客户 / 设备 / 材料">' +
+          '<select id="histSort" aria-label="排序方式">' +
+            '<option value="time">最新优先</option>' +
+            '<option value="amount">金额从高到低</option>' +
+            '<option value="customer">按客户名</option>' +
+          "</select>" +
+        "</div>" +
+        '<div class="ht-chips" id="histChips"></div>' +
+      "</div>");
+    $("#histQ").addEventListener("input", function(){ histFilter.q = this.value; renderQuotes(); });
+    $("#histSort").addEventListener("change", function(){ histFilter.sort = this.value; renderQuotes(); });
+    $("#histChips").addEventListener("click", function(e){
+      var b = e.target.closest ? e.target.closest("[data-hstat]") : null;
+      if(!b) return;
+      histFilter.status = b.getAttribute("data-hstat");
+      renderQuotes();
+    });
+  }
+  function histMatch(o, q){
+    if(!q) return true;
+    q = q.toLowerCase();
+    var parts = [o.no || "", (o.customer && o.customer.name) || "", (o.customer && o.customer.contact) || ""];
+    (o.lines || []).forEach(function(ln){ parts.push(ln.devName || "", ln.matName || ""); });
+    return parts.join(" ").toLowerCase().indexOf(q) >= 0;
+  }
   function renderQuotes(){
-    var list = loadOrders(), box = $("#histList");
-    $("#histClear").hidden = list.length === 0;
-    if(!list.length){
+    ensureHistUI();
+    var all = loadOrders(), box = $("#histList");
+    $("#histClear").hidden = all.length === 0;
+    /* 各状态计数（chips 上显示） */
+    var counts = { all: all.length };
+    HIST_STATS.forEach(function(s){ if(s !== "all") counts[s] = 0; });
+    all.forEach(function(o){ var s = histStatus(o); if(counts[s] != null) counts[s]++; });
+    var chips = $("#histChips");
+    if(chips){
+      chips.innerHTML = HIST_STATS.map(function(s){
+        return '<button type="button" class="hchip' + (histFilter.status === s ? " on" : "") +
+          '" data-hstat="' + s + '">' + esc(s === "all" ? "全部" : (STATUS_LABEL[s] || s)) +
+          " " + (counts[s] || 0) + "</button>";
+      }).join("");
+    }
+    if(!all.length){
       box.innerHTML = '<div class="hist-empty">还没有保存过订单。在单件页点「保存报价」，或在订单页点「保存订单」即可留档。</div>';
       return;
     }
+    /* 先筛选 */
+    var list = all.filter(function(o){
+      if(histFilter.status !== "all" && histStatus(o) !== histFilter.status) return false;
+      return histMatch(o, histFilter.q);
+    });
+    /* 再排序（金额排序需先算出合计，避免比较器里重复计算） */
+    var rows = list.map(function(o){ return { o: o, t: summarizeOrder(o) }; });
+    if(histFilter.sort === "amount"){
+      rows.sort(function(a, b){ return b.t.revenue - a.t.revenue; });
+    }else if(histFilter.sort === "customer"){
+      rows.sort(function(a, b){
+        var an = (a.o.customer && a.o.customer.name) || "\uffff";
+        var bn = (b.o.customer && b.o.customer.name) || "\uffff";
+        return an.localeCompare(bn, "zh-CN") || ((b.o.t || 0) - (a.o.t || 0));
+      });
+    }else{
+      rows.sort(function(a, b){ return (b.o.t || 0) - (a.o.t || 0); });
+    }
+    if(!rows.length){
+      box.innerHTML = '<div class="hist-empty">没有匹配的订单。换个关键词，或点「全部」清除筛选。</div>';
+      return;
+    }
+    /* 用订单 id 定位（加了筛选后列表序号不再等于存储下标） */
     var html = "";
-    list.forEach(function(o, i){
-      var t = summarizeOrder(o);
+    rows.forEach(function(row){
+      var o = row.o, t = row.t, st = histStatus(o);
       var ln0 = (o.lines && o.lines[0]) || {};
       var extra = (o.lines && o.lines.length > 1) ? (" 等 " + o.lines.length + " 项") : "";
-      var st = o.status || "quoted";
       html += '<div class="hist-item">' +
         '<div class="hi-main"><b>' + esc(o.no || "（未编号）") +
           (o.customer && o.customer.name ? " · " + esc(o.customer.name) : "") +
@@ -2914,30 +3090,67 @@
           "<small>" + fmtDT(o.t) + " · " + esc(ln0.devName || "") + " × " + esc(ln0.matName || "") + extra +
           " · 总成本 " + money(t.totalCost) + "</small></div>" +
         '<div class="hi-num"><b>' + money(t.revenue) + "</b><small>利润 " + money(t.profit) + "</small></div>" +
-        '<button class="btn sm" data-qload="' + i + '">载入</button>' +
-        '<button class="btn sm del" data-qdel="' + i + '">删除</button>' +
+        '<div class="hi-ops">' +
+          '<select class="stsel" data-qstat="' + esc(o.id) + '" aria-label="订单状态">' +
+            HIST_STATS.filter(function(s){ return s !== "all"; }).map(function(s){
+              return '<option value="' + s + '"' + (st === s ? " selected" : "") + ">" +
+                esc(STATUS_LABEL[s]) + "</option>";
+            }).join("") +
+          "</select>" +
+          '<button class="btn sm" data-qload="' + esc(o.id) + '">载入</button>' +
+          '<button class="btn sm" data-qcopy="' + esc(o.id) + '">复制</button>' +
+          '<button class="btn sm del" data-qdel="' + esc(o.id) + '">删除</button>' +
+        "</div>" +
         "</div>";
     });
     box.innerHTML = html;
   }
   function openHist(){ renderQuotes(); $("#histBox").classList.add("open"); }
   function histClick(e){
-    var el = e.target.closest ? e.target.closest("[data-qload],[data-qdel],[data-hisclose]") : null;
+    var el = e.target.closest ? e.target.closest("[data-qload],[data-qcopy],[data-qdel],[data-hisclose]") : null;
     if(!el) return;
     if(el.hasAttribute("data-hisclose")){ $("#histBox").classList.remove("open"); return; }
-    var i = +(el.getAttribute("data-qload") || el.getAttribute("data-qdel")), list = loadOrders();
-    if(!(i >= 0 && i < list.length)) return;
+    var list = loadOrders();
+    var id = el.getAttribute("data-qload") || el.getAttribute("data-qcopy") || el.getAttribute("data-qdel");
+    var idx = -1;
+    for(var i = 0; i < list.length; i++){ if(list[i] && list[i].id === id){ idx = i; break; } }
+    if(idx < 0) return;
+
     if(el.hasAttribute("data-qdel")){
-      list.splice(i, 1); saveOrders(list); renderQuotes(); toast("已删除该订单"); return;
+      list.splice(idx, 1); saveOrders(list); renderQuotes(); toast("已删除该订单"); return;
     }
-    var o = list[i];
+    if(el.hasAttribute("data-qcopy")){
+      var dup = cloneOrder(list[idx]);              /* 翻单：以原单为模板，新 id / 新编号 / 刷新时间 */
+      dup.id = rid("ord");
+      dup.no = assignNo(list);
+      dup.t = dup.updatedAt = Date.now();
+      list.unshift(dup);
+      saveOrders(list); renderQuotes();
+      toast("已复制为新订单 " + dup.no);
+      return;
+    }
+    if(!confirmDiscard()) return;      /* 载入会覆盖当前订单 → 有未存改动先确认 */
+    var o = list[idx];
     fillFieldsFrom((o.lines && o.lines[0] && o.lines[0].fields) || {});
     curOrder = cloneOrder(o);
+    clearDraft();
     $("#histBox").classList.remove("open");
     update();
     setView("order");
     renderOrder();
     toast("已载入订单 " + (o.no || ""));
+  }
+  /* 列表内直接改状态（B7） */
+  function histStatusChange(e){
+    var sel = e.target && e.target.closest ? e.target.closest("[data-qstat]") : null;
+    if(!sel) return;
+    var id = sel.getAttribute("data-qstat"), list = loadOrders(), done = false;
+    for(var i = 0; i < list.length; i++){
+      if(list[i] && list[i].id === id){ list[i].status = sel.value; list[i].updatedAt = Date.now(); done = true; break; }
+    }
+    if(!done) return;
+    saveOrders(list); renderQuotes();
+    toast("状态已更新为「" + (STATUS_LABEL[sel.value] || sel.value) + "」");
   }
 
   /* ================= 订单视图（多品项） ================= */
@@ -3013,28 +3226,27 @@
     }
     $("#ordTiers").innerHTML = th;
   }
-  function renderOrderBody(){
-    var o = ensureCurrentOrder();
-    var r = computeOrder(o);
-    var box = $("#ordLines");
-    $("#ordLineHint").textContent = o.lines.length ? (o.lines.length + " 项") : "";
-    if(!o.lines.length){
-      box.innerHTML = '<div class="ord-empty">还没有行项。切到「单件速算」调好参数后点「加入订单」即可把当前参数作为一行；不同设备 / 材料 / 数量可重复添加。</div>';
-    }else{
-      var h = "";
-      r.lines.forEach(function(x, i){
-        var ln = x.line, rr = x.r;
-        h += '<div class="ord-line">' +
-          '<div class="ol-main"><b>#' + (i + 1) + '　' + esc(ln.devName || "自定义设备") + " × " + esc(ln.matName || "自定义材料") + "</b>" +
-          "<small>" + rr.qty + " 件 · 单件成本 " + money(rr.unitCost) + " · 单件售价 " + money(rr.sellNet) +
-          (rr.disc > 0 ? " · 折扣 " + (rr.disc * 100).toFixed(1) + "%" : "") + "</small></div>" +
-          '<div class="ol-num"><b>' + money(rr.revenue) + '</b><small>成本 ' + money(rr.totalCost) + "</small></div>" +
-          '<button class="btn sm" data-oline-back="' + i + '">取回</button>' +
-          '<button class="btn sm del" data-oline-del="' + i + '">删除</button>' +
-          "</div>";
-      });
-      box.innerHTML = h;
-    }
+  var editingLine = -1;   /* 正在就地编辑的行下标，-1 = 无 */
+  /* 行项就地编辑表单（精简 6 项：覆盖多品项订单的常见微调；其余参数走「取回」） */
+  function lineFormHTML(i, ln){
+    var f = (ln && ln.fields) || {};
+    var row = function(k, label, unit, step){
+      var v = (f[k] === undefined || f[k] === null) ? "" : f[k];
+      return '<label class="olf"><span>' + label + '</span>' +
+        '<input type="number" min="0" step="' + step + '" data-olfield="' + k + '" value="' + esc(String(v)) + '">' +
+        '<em>' + unit + '</em></label>';
+    };
+    return '<div class="olf-grid" data-oline-form="' + i + '">' +
+        row("qty", "数量", "件", "1") +
+        row("printHours", "打印时长", "h", "0.1") +
+        row("grams", "耗材用量", "g", "1") +
+        row("spoolPrice", "材料单价", "¥/kg", "1") +
+        row("waste", "损耗率", "%", "1") +
+        row("postCost", "后处理", "¥", "0.5") +
+      "</div>" +
+      '<div class="olf-acts"><button class="btn sm primary" data-oline-done="' + i + '" type="button">完成</button></div>';
+  }
+  function renderOrderSummary(r){
     var k = function(t, v, cls){
       return '<div class="kpi"><div class="k">' + t + '</div><div class="v' + (cls ? " " + cls : "") + '">' + v + "</div></div>";
     };
@@ -3046,7 +3258,51 @@
       k("合计件数", r.qtyTotal + " 件") +
       k("平均单件成本", money(r.unitAvg));
   }
-  function renderOrder(){ renderOrderChrome(); renderOrderBody(); }
+  /* 就地编辑时只刷新数字、不重建 DOM —— 否则输入框会失焦 */
+  function refreshLineNumbers(){
+    var o = ensureCurrentOrder();
+    var r = computeOrder(o);
+    var items = $$("#ordLines .ord-line");
+    r.lines.forEach(function(x, i){
+      var el = items[i];
+      if(!el) return;
+      var num = el.querySelector(".ol-num b"), sub = el.querySelector(".ol-main small");
+      if(num) num.textContent = money(x.r.revenue);
+      if(sub) sub.textContent = x.r.qty + " 件 · 单件成本 " + money(x.r.unitCost) + " · 单件售价 " + money(x.r.sellNet) +
+        (x.r.disc > 0 ? " · 折扣 " + (x.r.disc * 100).toFixed(1) + "%" : "");
+    });
+    renderOrderSummary(r);
+    return r;
+  }
+  function renderOrderBody(){
+    var o = ensureCurrentOrder();
+    var r = computeOrder(o);
+    var box = $("#ordLines");
+    $("#ordLineHint").textContent = o.lines.length ? (o.lines.length + " 项") : "";
+    if(!o.lines.length){
+      box.innerHTML = '<div class="ord-empty">还没有行项。切到「单件速算」调好参数后点「加入订单」即可把当前参数作为一行；不同设备 / 材料 / 数量可重复添加。</div>';
+    }else{
+      var h = "";
+      r.lines.forEach(function(x, i){
+        var ln = x.line, rr = x.r, editing = (editingLine === i);
+        h += '<div class="ord-line' + (editing ? " editing" : "") + '">' +
+          '<div class="ol-main"><b>#' + (i + 1) + '　' + esc(ln.devName || "自定义设备") +
+            " × " + esc(ln.matName || "自定义材料") +
+            (ln.edited ? '<span class="lntag">已调</span>' : "") + "</b>" +
+          "<small>" + rr.qty + " 件 · 单件成本 " + money(rr.unitCost) + " · 单件售价 " + money(rr.sellNet) +
+          (rr.disc > 0 ? " · 折扣 " + (rr.disc * 100).toFixed(1) + "%" : "") + "</small></div>" +
+          '<div class="ol-num"><b>' + money(rr.revenue) + '</b><small>成本 ' + money(rr.totalCost) + "</small></div>" +
+          '<button class="btn sm" data-oline-back="' + i + '" type="button">取回</button>' +
+          '<button class="btn sm" data-oline-edit="' + i + '" type="button">' + (editing ? "收起" : "编辑") + "</button>" +
+          '<button class="btn sm del" data-oline-del="' + i + '" type="button">删除</button>' +
+          (editing ? lineFormHTML(i, ln) : "") +
+          "</div>";
+      });
+      box.innerHTML = h;
+    }
+    renderOrderSummary(r);
+  }
+  function renderOrder(){ renderOrderChrome(); renderOrderBody(); renderDraftHint(); }
   function setView(v){
     var isOrder = v === "order";
     document.body.classList.toggle("view-order", isOrder);
@@ -3056,8 +3312,55 @@
     if(isOrder){ ensureCurrentOrder(); renderOrder(); }
     try{ localStorage.setItem("dpc_view_v1", v); }catch(e){}
   }
+  /* ---- v1.8.0 订单草稿：编辑 800ms 防抖自动落盘，刷新/重启可恢复；离开前确认 ---- */
+  var DRAFT_KEY = "dpc_order_draft_v1";
+  var orderDirty = false, draftAt = 0, draftTimer = null;
+  function fmtHM(ts){ var d = new Date(ts), p2 = function(v){ return (v < 10 ? "0" : "") + v; }; return p2(d.getHours()) + ":" + p2(d.getMinutes()); }
+  function ensureOrdDraftUI(){
+    var sum = $("#ordSum");
+    if(!sum || $("#ordDraftHint")) return;
+    var p = document.createElement("p");
+    p.className = "ord-draft"; p.id = "ordDraftHint";
+    sum.parentNode.insertBefore(p, sum);
+  }
+  function renderDraftHint(){
+    ensureOrdDraftUI();
+    var el = $("#ordDraftHint");
+    if(!el) return;
+    el.textContent = draftAt
+      ? ("草稿已自动保存 " + fmtHM(draftAt) + (orderDirty ? " · 有改动未存回订单列表" : ""))
+      : "";
+    el.classList.toggle("warn", !!orderDirty);
+  }
+  function persistDraft(){
+    try{
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ o: ensureCurrentOrder(), at: Date.now() }));
+      draftAt = Date.now();
+      renderDraftHint();
+    }catch(e){}
+  }
+  function markOrderDirty(){
+    if(!curOrder) return;
+    orderDirty = true;
+    renderDraftHint();
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(persistDraft, 800);
+  }
+  function clearDraft(){
+    try{ localStorage.removeItem(DRAFT_KEY); }catch(e){}
+    orderDirty = false; draftAt = 0;
+    renderDraftHint();
+  }
+  function confirmDiscard(){
+    if(!orderDirty) return true;
+    return window.confirm("当前订单有未保存的改动，继续将丢弃这些改动。\n\n确定继续？");
+  }
   function newOrder(){
-    curOrder = null; ensureCurrentOrder(); renderOrder();
+    if(!confirmDiscard()) return;
+    curOrder = null;
+    ensureCurrentOrder();
+    clearDraft();
+    renderOrder();
     toast("已新建订单");
   }
   function saveCurrentOrder(){
@@ -3072,8 +3375,10 @@
     for(var i = 0; i < list.length; i++){ if(list[i].id === o.id){ idx = i; break; } }
     if(idx >= 0) list[idx] = cloneOrder(o); else list.unshift(cloneOrder(o));
     saveOrders(list);
+    rememberCustomer(o.customer && o.customer.name, o.customer && o.customer.contact);
     $("#ordNo").value = o.no;
     $("#ordNoHint").textContent = "";
+    clearDraft();                    /* 已存回订单列表 → 草稿使命完成 */
     renderQuotes();
     toast("已保存订单 " + o.no + "（共 " + list.length + " 单）");
   }
@@ -3082,6 +3387,7 @@
     if(!ln) return;
     fillFieldsFrom(ln.fields);
     o.lines.splice(i, 1);
+    markOrderDirty();
     update();
     setView("single");
     toast("已取回第 " + (i + 1) + " 行参数到单件页；改好后点「加入订单」重新加回");
@@ -3090,6 +3396,7 @@
     var o = pushCurrentLine();
     setView("order");
     renderOrder();
+    markOrderDirty();
     toast("已加入行项（共 " + o.lines.length + " 项）");
   }
 
@@ -3097,6 +3404,44 @@
   function isIOS(){
     try{ return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); }catch(e){ return false; }
+  }
+  /* 在 canvas 上手绘品牌标识（与内嵌 SVG 同构；canvas 不能直接画外部 SVG，故用路径复刻） */
+  function roundRectPath(ctx, x, y, w, h, r){
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y); ctx.arcTo(x + w, y, x + w, y + r, r);
+    ctx.lineTo(x + w, y + h - r); ctx.arcTo(x + w, y + h, x + w - r, y + h, r);
+    ctx.lineTo(x + r, y + h); ctx.arcTo(x, y + h, x, y + h - r, r);
+    ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
+    ctx.closePath();
+  }
+  function drawBrandMark(ctx, x, y, s, color){
+    var u = s / 64;
+    ctx.save();
+    ctx.translate(x, y); ctx.scale(u, u);
+    ctx.strokeStyle = color; ctx.lineJoin = "round"; ctx.lineCap = "round";
+    ctx.lineWidth = 4;  roundRectPath(ctx, 4, 4, 56, 56, 14); ctx.stroke();   /* 圆角外框 */
+    ctx.lineWidth = 3.4;                                                       /* 等距立方体三面 */
+    [[[30,11.4],[43.5,19.2],[30,27],[16.5,19.2]],
+     [[16.5,19.2],[30,27],[30,42.6],[16.5,34.8]],
+     [[43.5,19.2],[30,27],[30,42.6],[43.5,34.8]]].forEach(function(f){
+      ctx.beginPath(); ctx.moveTo(f[0][0], f[0][1]);
+      for(var i = 1; i < f.length; i++) ctx.lineTo(f[i][0], f[i][1]);
+      ctx.closePath(); ctx.stroke();
+    });
+    ctx.beginPath(); ctx.arc(48, 48, 11.5, 0, Math.PI * 2);                    /* ¥ 徽标 */
+    ctx.fillStyle = color; ctx.fill();
+    ctx.save();
+    ctx.translate(40.56, 40.4); ctx.scale(0.62, 0.62);
+    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4.2;
+    ctx.beginPath();
+    ctx.moveTo(6.5, 4); ctx.lineTo(12, 12.5);
+    ctx.moveTo(17.5, 4); ctx.lineTo(12, 12.5);
+    ctx.moveTo(12, 12.5); ctx.lineTo(12, 20.5);
+    ctx.moveTo(8, 14); ctx.lineTo(16, 14);
+    ctx.moveTo(8, 17.2); ctx.lineTo(16, 17.2);
+    ctx.stroke();
+    ctx.restore(); ctx.restore();
   }
   function drawShareImage(){
     var r = last || compute();
@@ -3114,10 +3459,11 @@
     ctx.fillStyle = "#f4f5f8"; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, 128);
     ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 125, W, 3);
-    ctx.fillStyle = "#14161a"; ctx.font = "700 34px system-ui, sans-serif";
-    ctx.fillText("3D 打印成本报价单", PAD, 62);
+    drawBrandMark(ctx, PAD, 26, 74, "#4f46e5");
+    ctx.fillStyle = "#14161a"; ctx.font = "700 32px system-ui, sans-serif";
+    ctx.fillText("3D 打印成本报价单", PAD + 92, 60);
     ctx.fillStyle = "#8b93a1"; ctx.font = "22px system-ui, sans-serif";
-    ctx.fillText(fmtDT(Date.now()) + " · 本地计算生成", PAD, 98);
+    ctx.fillText(fmtDT(Date.now()) + " · 本地计算生成", PAD + 92, 96);
     var y = 170;
     ctx.font = "24px system-ui, sans-serif";
     var info = [
@@ -3261,10 +3607,11 @@
     ctx.fillStyle = "#f4f5f8"; ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, 128);
     ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 125, W, 3);
-    ctx.fillStyle = "#14161a"; ctx.font = "700 34px system-ui, sans-serif";
-    ctx.fillText("3D 打印成本报价单", PAD, 62);
+    drawBrandMark(ctx, PAD, 26, 74, "#4f46e5");
+    ctx.fillStyle = "#14161a"; ctx.font = "700 32px system-ui, sans-serif";
+    ctx.fillText("3D 打印成本报价单", PAD + 92, 60);
     ctx.fillStyle = "#8b93a1"; ctx.font = "22px system-ui, sans-serif";
-    ctx.fillText((o.no || "（未编号）") + " · " + fmtDT(Date.now()) + " · 本地计算生成", PAD, 98);
+    ctx.fillText((o.no || "（未编号）") + " · " + fmtDT(Date.now()) + " · 本地计算生成", PAD + 92, 96);
     var y = 170;
     ctx.font = "24px system-ui, sans-serif";
     [["状态", STATUS_LABEL[o.status] || "已报价"],
@@ -3554,6 +3901,7 @@
     var now = new Date();
     var y = function(v){ return "¥" + Number(v).toFixed(2); };
     var h = "";
+    h += brandHeadHTML("订单报价单　·　本地计算生成，参数与订单仅存本机");
     h += '<h2>3D 打印成本报价单</h2>';
     h += '<p class="pp-meta">编号 ' + esc(o.no || "（未编号）") +
          '　·　状态：' + esc(STATUS_LABEL[o.status] || "已报价") +
@@ -3603,6 +3951,7 @@
     var now = new Date();
     var y = function(v){ return "¥" + Number(v).toFixed(2); };
     var h = "";
+    h += brandHeadHTML("单件速算报价　·　本地计算生成，参数仅存本机");
     h += '<h2>3D 打印成本报价单</h2>';
     h += '<p class="pp-meta">生成时间 ' + now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()) +
          ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) +
@@ -3720,9 +4069,19 @@
   });
 
   /* ===== 报价历史 / 分享长图事件 ===== */
+  /* v1.8.0：订单视图也要能直接打开历史（此前只有单件页有入口） */
+  (function(){
+    var anchor = $("#ordNew");
+    if(!anchor || !anchor.parentNode) return;
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "btn sm ghost"; b.id = "ordHist"; b.textContent = "历史订单";
+    anchor.parentNode.insertBefore(b, anchor);
+    b.addEventListener("click", openHist);
+  })();
   $("#btnQuoteSave").addEventListener("click", saveQuote);
   $("#btnQuoteList").addEventListener("click", openHist);
   $("#histBox").addEventListener("click", histClick);
+  $("#histList").addEventListener("change", histStatusChange);
   $("#histClear").addEventListener("click", function(){
     if(!loadOrders().length) return;
     if(!window.confirm("确定清空全部订单？此操作不可撤销。")) return;
@@ -3739,6 +4098,7 @@
   $("#ordAddBtn").addEventListener("click", function(){
     var o = pushCurrentLine();
     renderOrder();
+    markOrderDirty();
     toast("已加入行项（共 " + o.lines.length + " 项）");
   });
   $("#ordSave").addEventListener("click", saveCurrentOrder);
@@ -3747,25 +4107,55 @@
   $("#ordCsv").addEventListener("click", exportOrderCsv);
   $("#ordShare").addEventListener("click", openOrderShare);
   $("#ordLines").addEventListener("click", function(e){
-    var el = e.target.closest ? e.target.closest("[data-oline-back],[data-oline-del]") : null;
+    var el = e.target.closest ? e.target.closest("[data-oline-back],[data-oline-del],[data-oline-edit],[data-oline-done]") : null;
     if(!el) return;
-    var i = +(el.getAttribute("data-oline-back") || el.getAttribute("data-oline-del"));
+    var kind = el.hasAttribute("data-oline-back") ? "back"
+             : el.hasAttribute("data-oline-del") ? "del"
+             : el.hasAttribute("data-oline-edit") ? "edit" : "done";
+    var i = +el.getAttribute("data-oline-" + kind);
     var o = ensureCurrentOrder();
     if(!(i >= 0 && i < o.lines.length)) return;
-    if(el.hasAttribute("data-oline-del")){
-      o.lines.splice(i, 1); renderOrderBody(); toast("已删除该行项"); return;
+    if(kind === "del"){
+      o.lines.splice(i, 1);
+      if(editingLine === i) editingLine = -1;
+      else if(editingLine > i) editingLine--;
+      renderOrderBody(); markOrderDirty(); toast("已删除该行项"); return;
     }
-    takeLineBack(i);
+    if(kind === "back"){ editingLine = -1; takeLineBack(i); return; }
+    if(kind === "edit"){ editingLine = (editingLine === i ? -1 : i); renderOrderBody(); return; }
+    editingLine = -1; renderOrderBody(); toast("行项已更新");
+  });
+  /* 行项就地编辑：输入即写回该行字段并重算（只刷数字、不重建 DOM，保住输入焦点） */
+  $("#ordLines").addEventListener("input", function(e){
+    var inp = e.target;
+    var key = inp && inp.getAttribute ? inp.getAttribute("data-olfield") : null;
+    if(!key) return;
+    var form = inp.closest ? inp.closest("[data-oline-form]") : null;
+    var i = form ? parseInt(form.getAttribute("data-oline-form"), 10) : NaN;
+    var o = ensureCurrentOrder(), ln = o.lines[i];
+    if(!ln || isNaN(i)) return;
+    ln.fields = ln.fields || {};
+    ln.fields[key] = inp.value;
+    if(key === "qty") ln.qty = Math.max(1, Math.round(parseFloat(inp.value) || 1));
+    ln.edited = true;                 /* 标记：该行已被单独调整（B8 按行覆盖） */
+    refreshLineNumbers();
+    markOrderDirty();
   });
   ["ordNo", "ordStatus", "ordCustomer", "ordContact", "ordValid"].forEach(function(id){
-    $("#" + id).addEventListener("input", syncOrderModelFromInputs);
-    $("#" + id).addEventListener("change", syncOrderModelFromInputs);
+    $("#" + id).addEventListener("input", function(){ syncOrderModelFromInputs(); markOrderDirty(); });
+    $("#" + id).addEventListener("change", function(){ syncOrderModelFromInputs(); markOrderDirty(); });
+  });
+  /* 从历史客户下拉选中后，若联系方式为空则自动带出 */
+  $("#ordCustomer").addEventListener("change", function(){
+    var hit = custLookup(this.value);
+    if(hit && hit.contact && !$("#ordContact").value.trim()) $("#ordContact").value = hit.contact;
+    syncOrderModelFromInputs(); markOrderDirty();
   });
   ["ordShipping", "ordCommission", "ordMarkup", "ordBulk"].forEach(function(id){
-    $("#" + id).addEventListener("input", function(){ syncOrderModelFromInputs(); renderOrderBody(); });
+    $("#" + id).addEventListener("input", function(){ syncOrderModelFromInputs(); renderOrderBody(); markOrderDirty(); });
   });
-  $("#ordTiers").addEventListener("input", function(){ syncTiersFromInputs(); renderOrderBody(); });
-  $("#ordTiers").addEventListener("change", function(){ syncTiersFromInputs(); renderOrderBody(); });
+  $("#ordTiers").addEventListener("input", function(){ syncTiersFromInputs(); renderOrderBody(); markOrderDirty(); });
+  $("#ordTiers").addEventListener("change", function(){ syncTiersFromInputs(); renderOrderBody(); markOrderDirty(); });
   $("#shareSave").addEventListener("click", saveShareImage);
   $("#shareBox").addEventListener("click", function(e){
     if(e.target.closest && e.target.closest("[data-shclose]")) $("#shareBox").classList.remove("open");
@@ -3837,6 +4227,18 @@
 
   /* v1.7.0：报价历史 → 订单 的一次性幂等迁移（旧键 dpc_quotes_v1 保留作回滚兜底） */
   migrateQuotes();
+  renderCustList();               /* v1.8.0：填充客户库下拉数据 */
+  ensureOrdDraftUI();
+  /* v1.8.0：恢复上次未提交的订单草稿（仅当上次停留在订单视图） */
+  try{
+    if(localStorage.getItem("dpc_view_v1") === "order"){
+      var _draft = JSON.parse(localStorage.getItem(DRAFT_KEY) || "null");
+      if(_draft && _draft.o && Array.isArray(_draft.o.lines) && _draft.o.lines.length){
+        curOrder = _draft.o;
+        draftAt = _draft.at || 0;
+      }
+    }
+  }catch(e){}
   /* 恢复上次所在视图 */
   try{ if(localStorage.getItem("dpc_view_v1") === "order") setView("order"); }catch(e){}
 
@@ -3848,7 +4250,9 @@
       loadOrders: loadOrders, saveOrders: saveOrders, migrateQuotes: migrateQuotes,
       loadQuotes: loadQuotes, saveQuotes: saveQuotes,
       assignNo: assignNo, summarizeOrder: summarizeOrder, buildOrderFromCurrent: buildOrderFromCurrent,
-      setView: setView, saveQuote: saveQuote, renderQuotes: renderQuotes, buildBackup: buildBackup
+      setView: setView, saveQuote: saveQuote, renderQuotes: renderQuotes, buildBackup: buildBackup,
+      loadCustomers: loadCustomers, rememberCustomer: rememberCustomer, custLookup: custLookup,
+      BRAND_SVG: BRAND_SVG, drawBrandMark: drawBrandMark
     };
   }catch(e){}
 })();

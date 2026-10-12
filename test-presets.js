@@ -517,7 +517,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.7.0', dU.getElementById('footVer').textContent === '1.7.0',
+    ok('更新：footer 显示当前版本号 1.8.0', dU.getElementById('footVer').textContent === '1.8.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -633,7 +633,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.7\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.8\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -683,7 +683,7 @@ setTimeout(function () {
           /* —— 已是最新态 —— */
           var domOk = new JSDOM(html, {
             runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
-            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.7.0'); }; }
+            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.8.0'); }; }
           });
           var wOk = domOk.window, dOk = wOk.document;
           dOk.getElementById('btnCheckUpd').dispatchEvent(new wOk.MouseEvent('click', { bubbles: true }));
@@ -691,7 +691,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.7\.0/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.8\.0/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -819,7 +819,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.7.0');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.8.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1486,6 +1486,151 @@ setTimeout(function () {
     done();
   }
 
+  /* ===== v1.8.0：客户库 / 订单历史工具条 / 行项就地编辑 / 草稿 / 报价单品牌 ===== */
+  function runV18Tests(done) {
+    var dom8 = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            }, set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:o'; };
+        win.URL.revokeObjectURL = function () {};
+        win.print = function () {};
+      }
+    });
+    var w8 = dom8.window, d8 = w8.document;
+    w8.HTMLAnchorElement.prototype.click = function () {};
+    var E = w8.__DPC;
+
+    ok('v1.8 B5：品牌标识 SVG 已内嵌', /<svg/.test(E.BRAND_SVG || '') && /#fff/.test(E.BRAND_SVG || ''));
+    ok('v1.8：版本号已升到 1.8.0', d8.getElementById('footVer').textContent === '1.8.0',
+       d8.getElementById('footVer').textContent);
+
+    /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
+    click(d8.querySelector('#viewSeg [data-view="order"]'));
+    click(d8.getElementById('ordAddBtn'));
+    var c1 = d8.getElementById('ordCustomer'); c1.value = '王小明'; input(c1);
+    var k1 = d8.getElementById('ordContact'); k1.value = '13800000000'; input(k1);
+    click(d8.getElementById('ordSave'));
+
+    click(d8.getElementById('ordNew'));
+    click(d8.getElementById('ordAddBtn'));
+    var c2 = d8.getElementById('ordCustomer'); c2.value = '李四'; input(c2);
+    click(d8.getElementById('ordSave'));
+    ok('v1.8：已写入 2 张订单',
+       (JSON.parse(w8.localStorage.getItem('dpc_orders_v1') || '[]')).length === 2);
+
+    /* --- A4 客户库 --- */
+    var custs = E.loadCustomers();
+    ok('v1.8 A4：客户库记住 2 位客户', custs.length === 2,
+       JSON.stringify(custs.map(function (c) { return c.name; })));
+    ok('v1.8 A4：客户库带出联系方式', (E.custLookup('王小明') || {}).contact === '13800000000');
+    ok('v1.8 A4：客户名输入框挂了 datalist',
+       d8.getElementById('ordCustomer').getAttribute('list') === 'custList' && !!d8.getElementById('custList'));
+    click(d8.getElementById('ordSave'));   /* 重复保存同一客户 */
+    ok('v1.8 A4：重复客户去重（仍 2 位）', E.loadCustomers().length === 2);
+
+    /* --- A2 历史工具条 / 搜索 / 筛选 / 排序 --- */
+    click(d8.getElementById('ordHist'));
+    ok('v1.8 A2：订单视图内可直接打开历史（新增入口）',
+       d8.getElementById('histBox').classList.contains('open'));
+    ok('v1.8 A2：历史工具条已注入（5 个状态分档）',
+       !!d8.getElementById('histTools') && d8.querySelectorAll('#histChips .hchip').length === 5);
+    ok('v1.8 A2：列表渲染 2 条', d8.querySelectorAll('#histList .hist-item').length === 2);
+
+    var q = d8.getElementById('histQ'); q.value = '李四'; input(q);
+    ok('v1.8 A2：搜索「李四」命中 1 条', d8.querySelectorAll('#histList .hist-item').length === 1);
+    q.value = '不存在的人'; input(q);
+    ok('v1.8 A2：无匹配显示空态', /没有匹配的订单/.test(d8.getElementById('histList').textContent));
+    q.value = ''; input(q);
+    ok('v1.8 A2：清空搜索恢复 2 条', d8.querySelectorAll('#histList .hist-item').length === 2);
+
+    click(d8.querySelectorAll('#histChips .hchip')[1]);   /* 草稿 */
+    ok('v1.8 A2：筛选「草稿」→ 无结果', /没有匹配的订单/.test(d8.getElementById('histList').textContent));
+    click(d8.querySelectorAll('#histChips .hchip')[2]);   /* 已报价 */
+    ok('v1.8 A2：筛选「已报价」→ 2 条', d8.querySelectorAll('#histList .hist-item').length === 2);
+    click(d8.querySelectorAll('#histChips .hchip')[0]);   /* 全部 */
+    var srt = d8.getElementById('histSort'); srt.value = 'amount'; change(srt);
+    ok('v1.8 A2：按金额排序仍为 2 条', d8.querySelectorAll('#histList .hist-item').length === 2);
+    srt.value = 'time'; change(srt);
+
+    /* --- B7 列表内状态流转 --- */
+    var stSel = d8.querySelector('#histList .stsel');
+    stSel.value = 'accepted'; change(stSel);
+    ok('v1.8 B7：改状态即时持久化',
+       (JSON.parse(w8.localStorage.getItem('dpc_orders_v1') || '[]'))
+         .some(function (o) { return o.status === 'accepted'; }));
+
+    /* --- B6 复制（翻单） --- */
+    var before = (JSON.parse(w8.localStorage.getItem('dpc_orders_v1') || '[]')).length;
+    click(d8.querySelector('#histList [data-qcopy]'));
+    var duped = JSON.parse(w8.localStorage.getItem('dpc_orders_v1') || '[]');
+    ok('v1.8 B6：复制新增一单', duped.length === before + 1, before + '→' + duped.length);
+    ok('v1.8 B6：副本 id / 编号与源单不同',
+       duped[0].id !== duped[1].id && duped[0].no !== duped[1].no);
+
+    /* --- A1 / B8 行项就地编辑与按行覆盖 --- */
+    click(d8.querySelector('#histList [data-qload]'));
+    ok('v1.8 A1：载入订单进入订单视图', d8.body.classList.contains('view-order'));
+    ok('v1.8 A1：行项有「编辑」按钮', !!d8.querySelector('#ordLines [data-oline-edit]'));
+    click(d8.querySelector('#ordLines [data-oline-edit]'));
+    ok('v1.8 A1：展开就地编辑表单（6 项）', d8.querySelectorAll('#ordLines .olf-grid .olf').length === 6);
+    var wasteEl = d8.querySelector('#ordLines [data-olfield="waste"]');
+    var curW = String(wasteEl.value);
+    var newW = (curW === '12') ? '88' : '12';
+    var beforeCostTxt = d8.querySelector('#ordLines .ol-main small').textContent;
+    var beforeSumTxt = d8.getElementById('ordSum').textContent;
+    wasteEl.value = newW; input(wasteEl);
+    ok('v1.8 A1：编辑输入即时生效且不重建 DOM（表单仍在）',
+       d8.querySelectorAll('#ordLines .olf-grid').length === 1);
+    ok('v1.8 A1：改值即触发该行重算（成本/汇总刷新）',
+       d8.querySelector('#ordLines .ol-main small').textContent !== beforeCostTxt &&
+       d8.getElementById('ordSum').textContent !== beforeSumTxt,
+       beforeCostTxt + ' -> ' + d8.querySelector('#ordLines .ol-main small').textContent);
+    click(d8.querySelector('#ordLines [data-oline-done]'));
+    ok('v1.8 A1：点「完成」收起表单', d8.querySelectorAll('#ordLines .olf-grid').length === 0);
+    ok('v1.8 B8：被单独调整的行显示「已调」标记',
+       /已调/.test(d8.getElementById('ordLines').textContent));
+
+    /* --- A3 草稿自动保存（防抖 800ms） --- */
+    setTimeout(function () {
+      var dk = w8.localStorage.getItem('dpc_order_draft_v1');
+      var doo = null; try { doo = JSON.parse(dk); } catch (e) {}
+      ok('v1.8 A3：草稿已自动落盘', !!dk);
+      ok('v1.8 A3：草稿含订单与行项', !!(doo && doo.o && Array.isArray(doo.o.lines)));
+      ok('v1.8 A3：界面显示草稿已保存',
+         /草稿已自动保存/.test(d8.getElementById('ordDraftHint').textContent));
+
+      click(d8.getElementById('ordSave'));
+      ok('v1.8 A3：保存订单后草稿被清除', !w8.localStorage.getItem('dpc_order_draft_v1'));
+
+      /* --- B5 报价单品牌头 --- */
+      click(d8.getElementById('ordPrint'));
+      var php = d8.getElementById('ppPage').innerHTML;
+      ok('v1.8 B5：订单打印页含品牌头（标识 + 名称 + 主色线）',
+         /pp-brand/.test(php) && /3D 打印成本计算器/.test(php) && /<svg/.test(php) && /pp-rule/.test(php));
+      d8.getElementById('pprev').classList.remove('open'); d8.body.classList.remove('pp');
+
+      click(d8.querySelector('#viewSeg [data-view="single"]'));
+      click(d8.getElementById('btnPrint'));
+      ok('v1.8 B5：单件打印页同样含品牌头',
+         /pp-brand/.test(d8.getElementById('ppPage').innerHTML));
+      d8.getElementById('pprev').classList.remove('open'); d8.body.classList.remove('pp');
+
+      done();
+    }, 900);
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -1524,7 +1669,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(finish); }); }); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(finish); }); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);

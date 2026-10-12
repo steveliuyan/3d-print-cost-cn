@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="3D 打印成本计算器" color="#4f46e5" fill="none">
+  <title>3D 打印成本计算器 · 品牌标识</title>
+  <!-- 外框：圆角方框 -->
+  <rect x="4" y="4" width="56" height="56" rx="14" stroke="currentColor" stroke-width="4"/>
+  <!-- 等距立方体：顶面 / 左面 / 右面 -->
+  <path d="M30 11.4 43.5 19.2 30 27 16.5 19.2Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+  <path d="M16.5 19.2 30 27 30 42.6 16.5 34.8Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+  <path d="M43.5 19.2 30 27 30 42.6 43.5 34.8Z" stroke="currentColor" stroke-width="3.4" stroke-linejoin="round"/>
+  <!-- 右下角成本徽标：实心圆 + ¥（路径绘制，不依赖字体） -->
+  <circle cx="48" cy="48" r="11.5" fill="currentColor"/>
+  <g transform="translate(40.56 40.4) scale(0.62)" stroke="#ffffff" stroke-width="4.2" stroke-linecap="round" fill="none">
+    <path d="M6.5 4 12 12.5M17.5 4 12 12.5M12 12.5V20.5M8 14h8M8 17.2h8"/>
+  </g>
+</svg>
