@@ -28,22 +28,30 @@ WHITE = (255, 255, 255, 255)
 SS    = 4                     # 超采样倍率（抗锯齿）
 BORDER = 64                   # 逻辑画布
 
-# —— 64×64 坐标系中的几何（源自 docs/brand/logo-mark.svg）——
+# —— 64×64 坐标系中的几何（唯一来源：docs/brand/logo-mark.svg 亦由本文件生成）——
+# v1.8.0 修订：徽标整体按包围盒居中（bbox 中心 = 画布中心 32,32），
+# 并收小 ¥ 徽标（r 11.5→9）、内收至离外框描边留白 ≥4，消除「右下角压边 / 比例失衡」。
 CUBE = [
-    [(30, 11.4), (43.5, 19.2), (30, 27.0), (16.5, 19.2)],          # 顶面
-    [(16.5, 19.2), (30, 27.0), (30, 42.6), (16.5, 34.8)],          # 左面
-    [(43.5, 19.2), (30, 27.0), (30, 42.6), (43.5, 34.8)],          # 右面
+    [(26.25, 10.2), (39.75, 18.0), (26.25, 25.8), (12.75, 18.0)],  # 顶面
+    [(12.75, 18.0), (26.25, 25.8), (26.25, 41.4), (12.75, 33.6)],  # 左面
+    [(39.75, 18.0), (26.25, 25.8), (26.25, 41.4), (39.75, 33.6)],  # 右面
 ]
 CUBE_W = 3.0
-BADGE = (47.0, 47.0, 10.0)                     # cx, cy, r
-YEN_W = 2.6
+BADGE = (42.25, 44.8, 9.0)                     # cx, cy, r（内收 + 收小）
+YEN_W = 2.4
 YEN = [
-    ((44.59, 42.880), (48.00, 48.150)),
-    ((51.41, 42.880), (48.00, 48.150)),
-    ((48.00, 48.150), (48.00, 53.110)),
-    ((45.52, 49.080), (50.48, 49.080)),
-    ((45.52, 51.064), (50.48, 51.064)),
+    ((38.62, 39.36), (42.25, 44.97)),
+    ((45.88, 39.36), (42.25, 44.97)),
+    ((42.25, 44.97), (42.25, 50.25)),
+    ((39.61, 45.96), (44.89, 45.96)),
+    ((39.61, 48.07), (44.89, 48.07)),
 ]
+# 描边版（logo-mark.svg / 打印抬头）使用：外框 + 立方体线宽 + ¥ 圆变换参数
+FRAME_W = 4.0
+CUBE_W_LINE = 3.4
+YEN_XF = (34.33, 36.72, 0.66)                  # translate(tx ty) scale(s)
+YEN_W_LINE = 3.6                               # 变换后视觉线宽 ≈ 3.6*0.66 = 2.376
+YEN_PATH = "M6.5 4 12 12.5M17.5 4 12 12.5M12 12.5V20.5M8 14h8M8 17.2h8"
 
 
 def mark_bbox():
@@ -211,6 +219,73 @@ def sync_favicon_uri():
     return True
 
 
+def build_mark_svg():
+    """描边版品牌标识（docs/brand/logo-mark.svg）：外框 + 立方体 + ¥ 徽标，currentColor 着色。"""
+    def cp(p):
+        return "%s %s" % (fmt(p[0]), fmt(p[1]))
+    faces = "".join(
+        '  <path d="M%sZ" stroke="currentColor" stroke-width="%s" stroke-linejoin="round"/>\n'
+        % (" ".join(cp(p) for p in fc), fmt(CUBE_W_LINE)) for fc in CUBE)
+    bx, by, br = BADGE
+    tx, ty, s = YEN_XF
+    return (
+        '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" '
+        'role="img" aria-label="3D 打印成本计算器" color="#4f46e5" fill="none">\n'
+        '  <title>3D 打印成本计算器 · 品牌标识</title>\n'
+        '  <rect x="4" y="4" width="56" height="56" rx="14" stroke="currentColor" stroke-width="%s"/>\n'
+        '%s'
+        '  <circle cx="%s" cy="%s" r="%s" fill="currentColor"/>\n'
+        '  <g transform="translate(%s %s) scale(%s)" stroke="#ffffff" stroke-width="%s" stroke-linecap="round" fill="none">\n'
+        '    <path d="%s"/>\n'
+        '  </g>\n'
+        '</svg>\n'
+    ) % (fmt(FRAME_W), faces, fmt(bx), fmt(by), fmt(br),
+         fmt(tx), fmt(ty), fmt(s), fmt(YEN_W_LINE), YEN_PATH)
+
+
+def build_mark_inner_svg():
+    """顶栏用实心白版标识（无外框，viewBox 紧贴包围盒）：白立方体 + 白徽标圆 + 靛蓝 ¥。"""
+    x0, y0, x1, y1 = mark_bbox()
+    pad = 2.0
+    vb = "%s %s %s %s" % (fmt(x0 - pad), fmt(y0 - pad),
+                          fmt((x1 - x0) + 2 * pad), fmt((y1 - y0) + 2 * pad))
+    faces = "".join("<path d='M%sZ'/>" % " ".join(
+        "%s %s" % (fmt(p[0]), fmt(p[1])) for p in fc) for fc in CUBE)
+    bx, by, br = BADGE
+    tx, ty, s = YEN_XF
+    return (
+        "<svg viewBox='%s' fill='none' aria-hidden='true'>"
+        "<g stroke='#ffffff' stroke-width='%s' stroke-linejoin='round'>%s</g>"
+        "<circle cx='%s' cy='%s' r='%s' fill='#ffffff'/>"
+        "<g transform='translate(%s %s) scale(%s)' stroke='#4f46e5' stroke-width='%s' stroke-linecap='round' fill='none'>"
+        "<path d='%s'/></g>"
+        "</svg>"
+    ) % (vb, fmt(CUBE_W), faces, fmt(bx), fmt(by), fmt(br),
+         fmt(tx), fmt(ty), fmt(s), fmt(YEN_W_LINE), YEN_PATH)
+
+
+def sync_topbar_mark():
+    """把顶栏 .mark 的内联 svg 替换为最新的实心白版标识（唯一来源 = 本脚本几何）。"""
+    import re
+    svg = build_mark_inner_svg()
+    p = os.path.join(ROOT, "index.html")
+    with open(p, encoding="utf-8", newline="") as f:
+        s = f.read()
+    # 容忍 IDE 预览回注属性；非贪婪匹配 span 内第一个 <svg>…</svg>
+    pat = re.compile(r'(<span class="mark"[^>]*>)\s*<svg\b[\s\S]*?</svg>(\s*</span>)')
+    if not pat.search(s):
+        print("  [warn] index.html 未找到顶栏 .mark 内联 svg，跳过")
+        return False
+    s2 = pat.sub(lambda m: m.group(1) + svg + m.group(2), s, count=1)
+    if s2 != s:
+        with open(p, "w", encoding="utf-8", newline="\n") as f:
+            f.write(s2)
+        print("  index.html 顶栏标识已更新")
+    else:
+        print("  index.html 顶栏标识已是最新")
+    return True
+
+
 def android_vector(safe_frac=0.3055, canvas=108):
     f, k = build_xf_radial(safe_frac, canvas)
     def c(p):
@@ -286,7 +361,11 @@ def main():
         with open(os.path.join(ROOT, *name.split("/")), "w", encoding="utf-8", newline="\n") as f:
             f.write(svg)
     print("  docs/brand/icon-tile.svg + favicon.svg")
+    with open(os.path.join(ROOT, "docs", "brand", "logo-mark.svg"), "w", encoding="utf-8", newline="\n") as f:
+        f.write(build_mark_svg())
+    print("  docs/brand/logo-mark.svg")
     sync_favicon_uri()
+    sync_topbar_mark()
 
     print("[2/6] Web / PWA")
     save_png(render(192, "tile"), os.path.join(ROOT, "icon-192.png"))
