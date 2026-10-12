@@ -2,7 +2,7 @@
 
 > **新对话请先读完这一篇再动手。** 本文档面向「没有上下文的新 AI / 新协作者」，
 > 目标是让接手者在不翻聊天记录的情况下，也能知道**做了什么、在哪、怎么改、怎么验证、怎么发版**。
-> 最后更新：2026-10-12（v1.5.1 发版后）
+> 最后更新：2026-10-12（v1.6.0 切片实测用量开发完成，待打包发版）
 
 ---
 
@@ -12,15 +12,15 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.5.1** |
-| 本地 HEAD | `bc59e7c3ec41aaef51b5ed9d98daf561ee9193a0`（= 远端 main；为 AGENTS.md 交接文档重写提交） |
-| 功能提交 | `dde8b9ca8bfa2f9089000be42942145236dc68ae`（tag `v1.5.1` 指向它） |
-| 回归测试 | **234/234 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `9f927e975490e518351078d05cfd3347`（159,160 B，逐字节一致） |
-| 最新 Release | **v1.5.1 更新体验重做**（3 附件：web.html / portable.exe / .apk） |
+| 当前版本 | **v1.6.0** |
+| 本地 HEAD | `55846bace51e0fbc4455f17648be1b832336cd79`（v1.6.0 功能提交；其后 1 个文档提交见 `git log`） |
+| 功能提交 | `55846bace51e0fbc4455f17648be1b832336cd79` |
+| 回归测试 | **240/240 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `0c8564776ed34234fa931a23f3d05fae`（161,879 B，逐字节一致） |
+| 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
-| 唯一待办 | 轮换 GitHub PAT（见 §11） |
+| 唯一待办 | 打包 + 发版 v1.6.0；PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
 ---
 
@@ -192,7 +192,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | 预设管理 | 设备预设、材料预设、自定义分类；增删改 + 导入导出 |
 | 报价操作 | 批量件数 + 批量优惠；保存报价、报价历史（载入 / 删除）、分享长图（Canvas） |
 | 三端导出 | 打印报价单（A4 预览）/ 导出 CSV / 导出兜底；Android 端长图可直接存相册、原生打印桥 |
-| 模型估算 | STL（二进制 / ASCII）与 3MF（Stored / Deflate）导入，算体积、包围盒、按密度与填充率估用量 |
+| 模型估算 | STL（二进制 / ASCII）与 3MF（Stored / Deflate）导入，算体积、包围盒、按密度与填充率估用量；**切片 3MF（Bambu Studio / OrcaSlicer `Metadata/slice_info.config`）直接读实测耗材克数与打印时长**，无切片数据时回退几何估算 |
 | 主题 | 浅色 / 深色 / 跟随系统三档；**深色仅屏幕**，打印与长图恒浅色 |
 | **更新体验（v1.5.1）** | **应用内更新弹窗**（三端统一）：发布说明轻量 Markdown 渲染、四态（检查中 / 发现新版 / 已是最新 / 失败+重试）、头部版本徽标 `v当前 → v新版`、平台产物行（按端显示 web.html / .apk / .exe + 体积）；**历史更新日志面板**（页脚「更新日志」，可翻看所有版本） |
 
@@ -210,6 +210,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | — | **更新体验重做（TDD，回归 196 → 234）**：① 更新弹窗重做——发布说明改轻量 Markdown 渲染（小节/列表/二级缩进/粗体/行内代码/「下载：」弱化注脚），四态，头部版本徽标，平台产物行（按端切换 + 体积 KB/MB）；② 新增**更新日志面板**（页脚「更新日志」），拉 `/releases?per_page=30`，首条展开、可折叠；③ **Electron 统一为应用内弹窗**（新增 `desktop/preload.js` 暴露 `window.dpc.fetchJson`；主进程 `ipcMain.handle('dpc:fetchJson')` + `net` 代理规避 CORS，路径白名单；菜单「检查更新…」改 `webContents.send`）；④ **Android** `updateApp(url, version)` 增版本号参数用于下载通知 |
 | — | 修复 Electron 老 bug：「立即升级」在 Windows 上误打开 APK（现按平台挑 EXE） |
 | **v1.5.1** | **发版完成**：版本号四处联动升 1.5.1；APK `1,069,404 B`（vc10，证书 `O=DPC`，内部 assets/index.html md5 与源码一致）、EXE `3D打印成本计算器-1.5.1-便携版.exe` `74,231,176 B`（asar 内三文件 md5 全一致）；发布 **v1.5.1 Release**（3 附件 201，tag/release 各 9→10，latest=v1.5.1）；GitHub Pages 已构建（commit `dde8b9ca8b`） |
+| **v1.6.0** | **切片 3MF 实测用量读取**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 导出的 `Metadata/slice_info.config`（`weight` 克数、`prediction` 秒数，`filament used_g` 兜底）；`load3mf` 顺带读切片元数据，`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；**无切片数据或解析失败静默回退几何估算**，不打断导入。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **240**（+6 断言） |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -228,12 +229,19 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 三副本逐字节一致 159,160 B，md5 `9f927e975490e518351078d05cfd3347`（v1.5.1）。
 APK/EXE 产物内部文件 md5 亦与源码一致（见 §9 v1.5.1 行）。
 
+**v1.6.0（切片用量读取）**：RED 3 条新断言先失败 → minimal GREEN → 全绿；变异测试 **2 组被捕获**
+（M1 去掉 `stlRender` 的「切片实测」拼接 → 重量/时长 3 条 FAIL；M2 `stlFill` 改用 `stlEstimate` → 填入断言 FAIL）
+→ 恢复 → 全量回归 **240/240**。三副本逐字节一致 161,879 B，md5 `0c8564776ed34234fa931a23f3d05fae`。
+测试用一个**内存构造的双条目 Stored ZIP**（`3D/3dmodel.model` + `Metadata/slice_info.config`）驱动，不依赖外部样本文件。
+
 ## 11. 未完成 / 待办
 
-- ⏳ **轮换 classic PAT**：`.secrets/github-token.txt` 里那份 classic PAT 权限极大
-  （含 `admin:enterprise` / `admin:org` / `delete_repo` / `workflow`…），应换为 fine-grained。
+- ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
+  但**仍是 classic 型且权限极大**（scopes 含 `admin:enterprise` / `admin:org` / `delete_repo` / `workflow`…），应换为 fine-grained。
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
+- ⏳ **v1.6.0 待打包 + 发版**：代码已提交（`55846ba`），回归 240/240，三副本 md5 `0c856477…`；
+  下一步 `_sync_clean.py` → Gradle APK（vc11）→ `npm run dist` 便携 exe → `_api_push.py` 推提交 → `_api_release.py` 发 v1.6.0（3 附件）。
 - ✅ **v1.5.1 已发版**（提交 `dde8b9ca8b` 已推送；APK/EXE 已核验；Release 已发布；Pages 已构建）。
   产物在 `dist/release/{web.html, 3d-print-cost-cn-1.5.1-portable.exe, 3d-print-cost-cn-1.5.1.apk}`。
 - 💡 可选项：`http://` 已能 301 跳 `https://`；GitHub Pages 后台可能有域名 DNS 校验警告，不影响访问。
