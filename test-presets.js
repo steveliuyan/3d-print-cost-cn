@@ -481,7 +481,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.4.2', dU.getElementById('footVer').textContent === '1.4.2',
+    ok('更新：footer 显示当前版本号 1.5.0', dU.getElementById('footVer').textContent === '1.5.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -585,7 +585,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.4.2');
+    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.5.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -832,6 +832,68 @@ setTimeout(function () {
     }, 120);
   }
 
+  /* ===== 主题（浅色 / 深色 / 自动） ===== */
+  function runThemeTests(next) {
+    /* --- 静态结构 --- */
+    ok('v1.5.0：主题偏好键 dpc_theme_v1 存在', html.includes('dpc_theme_v1'));
+    ok('v1.5.0：深色令牌块 html[data-theme="dark"] 存在', html.includes('html[data-theme="dark"]'));
+    ok('v1.5.0：深色令牌包在 @media screen 内（打印恒浅色）',
+       /@media screen\{\s*html\[data-theme="dark"\]\{/.test(html));
+    ok('v1.5.0：三档选项 light/dark/auto 齐全',
+       /data-theme-opt="light"/.test(html) && /data-theme-opt="dark"/.test(html) && /data-theme-opt="auto"/.test(html));
+    ok('v1.5.0：防闪屏脚本在 <body> 之前应用主题',
+       html.indexOf('setAttribute("data-theme"') > -1 &&
+       html.indexOf('setAttribute("data-theme"') < html.indexOf('<body'));
+    ok('v1.5.0：meta theme-color 带 id 供切换',
+       html.includes('id="metaThemeColor"'));
+    /* 分享长图 / 打印仍为固定浅色（不受主题影响） */
+    ok('v1.5.0：分享长图仍固定浅色底', html.includes('ctx.fillStyle = "#f4f5f8"'));
+    ok('v1.5.0：打印仍强制白底', /@media print\{\s*body\{background:#fff\}/.test(html));
+
+    /* --- 行为 --- */
+    var root = d.documentElement;
+    var seg = d.getElementById('themeSeg');
+    ok('v1.5.0：顶栏存在主题分段控件', !!seg);
+    var opts = d.querySelectorAll('#themeSeg [data-theme-opt]');
+    ok('v1.5.0：分段控件有 3 个按钮', opts.length === 3, 'n=' + opts.length);
+
+    /* 默认（无存储）= 自动；jsdom 无深浅系统偏好 → 解析为浅色 */
+    ok('v1.5.0：默认偏好为 auto', root.getAttribute('data-theme-pref') === 'auto',
+       root.getAttribute('data-theme-pref'));
+    ok('v1.5.0：auto 在无系统偏好时解析为 light', root.getAttribute('data-theme') === 'light',
+       root.getAttribute('data-theme'));
+
+    var sellBefore = d.getElementById('sellPrice').textContent;
+
+    click(d.querySelector('#themeSeg [data-theme-opt="dark"]'));
+    ok('v1.5.0：切深色 → data-theme=dark', root.getAttribute('data-theme') === 'dark', root.getAttribute('data-theme'));
+    ok('v1.5.0：切深色 → 偏好写回 localStorage',
+       w.localStorage.getItem('dpc_theme_v1') === 'dark', w.localStorage.getItem('dpc_theme_v1'));
+    ok('v1.5.0：切深色 → theme-color 变深色',
+       d.getElementById('metaThemeColor').getAttribute('content') === '#0f1116',
+       d.getElementById('metaThemeColor').getAttribute('content'));
+    ok('v1.5.0：深色按钮高亮 active',
+       d.querySelector('#themeSeg [data-theme-opt="dark"]').classList.contains('active'));
+
+    click(d.querySelector('#themeSeg [data-theme-opt="light"]'));
+    ok('v1.5.0：切浅色 → data-theme=light', root.getAttribute('data-theme') === 'light', root.getAttribute('data-theme'));
+    ok('v1.5.0：切浅色 → 偏好写回 localStorage',
+       w.localStorage.getItem('dpc_theme_v1') === 'light', w.localStorage.getItem('dpc_theme_v1'));
+    ok('v1.5.0：切浅色 → theme-color 复原',
+       d.getElementById('metaThemeColor').getAttribute('content') === '#4f46e5');
+
+    click(d.querySelector('#themeSeg [data-theme-opt="auto"]'));
+    ok('v1.5.0：切自动 → 偏好写回 localStorage',
+       w.localStorage.getItem('dpc_theme_v1') === 'auto', w.localStorage.getItem('dpc_theme_v1'));
+    ok('v1.5.0：切自动 → 解析回浅色（无系统偏好）', root.getAttribute('data-theme') === 'light');
+
+    ok('v1.5.0：切换主题不影响计算结果',
+       d.getElementById('sellPrice').textContent === sellBefore,
+       sellBefore + ' -> ' + d.getElementById('sellPrice').textContent);
+
+    next();
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -870,7 +932,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runV120Tests(function () { runStlTests(finish); }); });
+      runUpdateTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(finish); }); }); });
     }, 900);
   });
 }, 300);

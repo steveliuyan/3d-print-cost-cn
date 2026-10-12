@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润。支持设备与耗材预设、自定义分类。">
-<meta name="theme-color" content="#4f46e5">
+<meta name="theme-color" content="#4f46e5" id="metaThemeColor">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%234f46e5'/%3E%3Cg fill='none' stroke='%23fff' stroke-width='2' stroke-linejoin='round' stroke-linecap='round'%3E%3Cpath d='M16 5 7 10v11l9 5 9-5V10l-9-5Z'/%3E%3Cpath d='M7 10l9 5 9-5M16 15v11'/%3E%3C/g%3E%3C/svg%3E">
 <title>3D 打印成本计算器</title>
 <style>
@@ -24,6 +24,39 @@
     --sh-accent:0 10px 26px -12px rgba(79,70,229,.55);
     --z-pop:30; --z-modal:80; --z-picker:90; --z-toast:100;
     --ease:cubic-bezier(.22,.68,.35,1);
+    /* ---- 主题扩展令牌（深色模式用同名变量覆盖） ---- */
+    --surface:#fff; --surface-hover:#fbfbfd; --accent-hover:#fcfcff; --row-hover:#fafbfd;
+    --filter-hover:#f4f5f8; --line-soft:#f2f3f6; --chip:#f1f2f6; --tabs-bg:#f3f4f7;
+    --list-hover:#f5f6fb; --accent-wash:#fafaff; --track:#edeff3; --overlay-bg:#eef0f5;
+    --bg2:#f6f7f9; --bg3:#f8f9fb; --danger-line:#e9b6ac;
+    --toast-bg:#15171c; --toast-fg:#fff;
+    --glow1:rgba(79,70,229,.12); --glow2:rgba(99,102,241,.08); --glow3:rgba(18,21,27,.06);
+    --topbar-a:rgba(245,246,248,.94); --topbar-b:rgba(245,246,248,.72); --topbar-line:rgba(231,233,238,.85);
+  }
+
+  /* ================= 深色主题 =================
+     仅作用于屏幕：包在 @media screen 内，打印时深色令牌不生效，
+     打印/PDF 恒走 :root 的浅色令牌（白底报价单）。 */
+  @media screen{
+    html[data-theme="dark"]{
+      --bg:#0f1116; --card:#171a21; --card-2:#1c2028;
+      --line:#282d38; --line2:#333947; --line3:#454c5c;
+      --text:#e7eaf1; --text2:#a7b0c0; --text3:#7c8797; --text4:#5d6674;
+      --accent:#8f88f3; --accent-2:#a8a3f7; --accent-soft:#242146; --accent-line:#3a3668;
+      --ring:rgba(143,136,243,.26);
+      --good:#43d597; --warn:#e0a45c; --warn-soft:#3a2c15; --danger:#f0796a; --danger-soft:#3b1f1c;
+      --surface:#1f232b; --surface-hover:#252a33; --accent-hover:#262a35; --row-hover:#1f232b;
+      --filter-hover:#22262f; --line-soft:#262b34; --chip:#262b34; --tabs-bg:#1b1f26;
+      --list-hover:#22262f; --accent-wash:#20233a; --track:#2c313c; --overlay-bg:#14171d;
+      --bg2:#1b1f26; --bg3:#1b1f26; --danger-line:#6b3a33;
+      --toast-bg:#e7eaf1; --toast-fg:#0f1116;
+      --glow1:rgba(99,102,241,.22); --glow2:rgba(99,102,241,.12); --glow3:rgba(0,0,0,.5);
+      --topbar-a:rgba(15,17,22,.94); --topbar-b:rgba(15,17,22,.72); --topbar-line:rgba(40,45,56,.9);
+      --sh-1:0 1px 2px rgba(0,0,0,.5);
+      --sh-2:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -16px rgba(0,0,0,.75);
+      --sh-3:0 20px 46px -16px rgba(0,0,0,.72), 0 2px 6px rgba(0,0,0,.5);
+      --sh-accent:0 10px 26px -12px rgba(143,136,243,.5);
+    }
   }
   *{box-sizing:border-box}
   html{scroll-behavior:smooth}
@@ -38,9 +71,9 @@
   body::before{
     content:""; position:fixed; inset:0; z-index:0; pointer-events:none;
     background:
-      radial-gradient(880px 460px at 10% -10%, rgba(79,70,229,.12), transparent 62%),
-      radial-gradient(760px 420px at 102% -4%, rgba(99,102,241,.08), transparent 58%),
-      radial-gradient(900px 620px at 50% 118%, rgba(18,21,27,.06), transparent 62%);
+      radial-gradient(880px 460px at 10% -10%, var(--glow1), transparent 62%),
+      radial-gradient(760px 420px at 102% -4%, var(--glow2), transparent 58%),
+      radial-gradient(900px 620px at 50% 118%, var(--glow3), transparent 62%);
   }
   body::after{
     content:""; position:fixed; inset:0; z-index:0; pointer-events:none; opacity:.035;
@@ -51,9 +84,9 @@
   /* ================= 顶栏 ================= */
   .topbar{position:sticky; top:0; z-index:40; display:flex; flex-wrap:wrap; gap:14px; align-items:center;
           justify-content:space-between; padding:14px 0; margin:0 0 22px;
-          background:linear-gradient(180deg,rgba(245,246,248,.94),rgba(245,246,248,.72));
+          background:linear-gradient(180deg,var(--topbar-a),var(--topbar-b));
           backdrop-filter:blur(14px) saturate(1.5); -webkit-backdrop-filter:blur(14px) saturate(1.5);
-          border-bottom:1px solid rgba(231,233,238,.85)}
+          border-bottom:1px solid var(--topbar-line)}
   .brand{display:flex; align-items:center; gap:12px; min-width:0}
   .mark{width:38px; height:38px; border-radius:11px; flex:none; display:grid; place-items:center; color:#fff;
         background:linear-gradient(160deg,#5f56f0,#4338ca);
@@ -62,22 +95,31 @@
   .brand h1{margin:0; font-size:16.5px; font-weight:650; letter-spacing:-.015em; line-height:1.2}
   .brand p{margin:2px 0 0; font-size:12px; color:var(--text3);
            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw}
-  .hd-r{display:flex; gap:8px; flex-wrap:wrap}
+  .hd-r{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+  /* 主题切换：三档分段控件（浅色 / 深色 / 自动） */
+  .themebox{display:inline-flex; gap:2px; padding:3px; border:1px solid var(--line2); background:var(--surface);
+            border-radius:10px; box-shadow:var(--sh-1)}
+  .themebox .topt{border:0; background:transparent; color:var(--text3); width:32px; height:32px; border-radius:8px;
+                  display:grid; place-items:center; cursor:pointer; padding:0; transition:.16s}
+  .themebox .topt svg{width:16px; height:16px; display:block}
+  .themebox .topt:hover{color:var(--text); background:var(--filter-hover)}
+  .themebox .topt.active{color:var(--accent); background:var(--accent-soft)}
+  .themebox .topt:focus-visible{outline:0; box-shadow:0 0 0 3px var(--ring)}
 
   /* ================= 按钮 ================= */
-  .btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line2); background:#fff; color:var(--text);
+  .btn{display:inline-flex; align-items:center; gap:7px; border:1px solid var(--line2); background:var(--surface); color:var(--text);
        padding:8px 13px; border-radius:10px; font-size:13px; font-weight:500; cursor:pointer; font-family:inherit;
        line-height:1.2; box-shadow:var(--sh-1); text-decoration:none;
        transition:transform .12s var(--ease), background .16s, border-color .16s, box-shadow .16s, color .16s}
   .btn svg{width:15px; height:15px; flex:none; opacity:.7}
-  .btn:hover{border-color:var(--line3); background:#fbfbfd; transform:translateY(-1px); box-shadow:var(--sh-2)}
+  .btn:hover{border-color:var(--line3); background:var(--surface-hover); transform:translateY(-1px); box-shadow:var(--sh-2)}
   .btn:active{transform:translateY(0) scale(.985)}
   .btn:focus-visible{outline:0; box-shadow:0 0 0 3px var(--ring); border-color:var(--accent)}
   .btn.primary{background:linear-gradient(160deg,#5f56f0,#4f46e5); border-color:transparent; color:#fff; box-shadow:var(--sh-accent)}
   .btn.primary:hover{background:linear-gradient(160deg,#554beb,#4338ca); color:#fff}
   .btn.primary svg{opacity:.92}
   .btn.ghost{background:transparent; box-shadow:none; border-color:transparent}
-  .btn.ghost:hover{background:#fff; border-color:var(--line2)}
+  .btn.ghost:hover{background:var(--surface); border-color:var(--line2)}
   .btn.sm{padding:0 12px; height:40px; font-size:12.5px; white-space:nowrap}
 
   /* ================= 布局 ================= */
@@ -96,24 +138,24 @@
   .card > h2 .stitle{color:var(--text)}
   .card > h2 small{margin-left:auto; font-weight:500; color:var(--text3); font-size:11.5px; max-width:58%;
                    overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
-                   background:#f2f3f6; border-radius:20px; padding:3px 10px; transition:.22s var(--ease)}
+                   background:var(--line-soft); border-radius:20px; padding:3px 10px; transition:.22s var(--ease)}
   .card > h2 small:empty{display:none}
   .card > h2 small.dirty{color:var(--warn); background:var(--warn-soft)}
 
   /* ================= 预设选择 ================= */
   .preset-row{display:flex; gap:9px; margin-bottom:12px; align-items:center}
-  .preset-row > select{flex:1; min-width:0; border:1px solid var(--line2); background:#fff; border-radius:10px;
+  .preset-row > select{flex:1; min-width:0; border:1px solid var(--line2); background:var(--surface); border-radius:10px;
     padding:9px 11px; font-size:13px; font-family:inherit; color:var(--text); cursor:pointer; height:40px}
-  .pickbtn{flex:1; min-width:0; text-align:left; background:#fff; border:1px solid var(--line2); border-radius:10px;
+  .pickbtn{flex:1; min-width:0; text-align:left; background:var(--surface); border:1px solid var(--line2); border-radius:10px;
     padding:0 13px; height:40px; font-size:13px; font-weight:500; font-family:inherit; color:var(--text);
     cursor:pointer; box-shadow:var(--sh-1); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
     transition:transform .12s var(--ease), border-color .16s, box-shadow .16s, background .16s}
-  .pickbtn:hover{border-color:var(--accent-line); background:#fcfcff; box-shadow:0 0 0 3px var(--ring)}
+  .pickbtn:hover{border-color:var(--accent-line); background:var(--accent-hover); box-shadow:0 0 0 3px var(--ring)}
   .pickbtn:active{transform:scale(.99)}
   .pickbtn:focus-visible{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
 
   .savewrap{position:relative; flex:none}
-  .pop{position:absolute; right:0; top:calc(100% + 7px); background:#fff; border:1px solid var(--line2);
+  .pop{position:absolute; right:0; top:calc(100% + 7px); background:var(--surface); border:1px solid var(--line2);
        border-radius:var(--r); box-shadow:var(--sh-3); padding:5px; display:none; z-index:var(--z-pop);
        min-width:200px; transform-origin:top right}
   .pop.open{display:block; animation:popIn .16s var(--ease)}
@@ -132,7 +174,7 @@
   .pdetail .k{color:var(--text4); font-size:11.5px}
   .pdetail .sep{color:var(--line3)}
   .pdetail .catname{color:var(--text); font-weight:600}
-  .pdetail .pin{display:inline-flex; align-items:center; gap:3px; background:#fff; border:1px solid var(--line2);
+  .pdetail .pin{display:inline-flex; align-items:center; gap:3px; background:var(--surface); border:1px solid var(--line2);
                 border-radius:8px; padding:0 8px; height:28px; transition:.16s}
   .pdetail .pin:hover{border-color:var(--line3)}
   .pdetail .pin:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
@@ -140,7 +182,7 @@
                       color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; text-align:right; padding:0}
   .pdetail .pin em{font-style:normal; font-size:11px; color:var(--text4); white-space:nowrap}
   .pdetail .tag{font-size:10.5px; font-weight:500; border-radius:20px; padding:2.5px 9px;
-                background:#f1f2f6; color:var(--text2); white-space:nowrap}
+                background:var(--chip); color:var(--text2); white-space:nowrap}
   .pdetail .tag.mine{background:var(--accent-soft); color:var(--accent)}
   .pdetail .tag.edit{background:var(--warn-soft); color:var(--warn)}
   .pdetail .tail{margin-left:auto; font-size:11px; color:var(--text4); white-space:nowrap;
@@ -154,7 +196,7 @@
   .fields{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px 16px}
   .field{display:block; margin:0}
   .field .lb{display:block; font-size:11.5px; font-weight:500; color:var(--text2); margin-bottom:6px; letter-spacing:.01em}
-  .field .in{display:flex; align-items:center; gap:6px; background:#fff; border:1px solid var(--line2);
+  .field .in{display:flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line2);
              border-radius:10px; padding:0 11px; height:40px; transition:border-color .16s, box-shadow .16s}
   .field .in:hover{border-color:var(--line3)}
   .field .in:focus-within{border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
@@ -191,6 +233,9 @@
 
   .donut-box{display:flex; align-items:center; gap:18px}
   .donut-box svg{width:140px; height:140px; flex:none; animation:spinIn .7s var(--ease) backwards}
+  .donut-track{stroke:var(--track)}
+  .donut-num{fill:var(--text)}
+  .donut-cap{fill:var(--text3)}
   @keyframes spinIn{ from{opacity:0; transform:scale(.86) rotate(-14deg)} to{opacity:1; transform:none} }
   .legend{display:flex; flex-direction:column; gap:6px; flex:1; min-width:0}
   .lg{display:flex; align-items:center; gap:8px; font-size:12px; padding:2px 0}
@@ -203,12 +248,12 @@
   th:first-child,td:first-child{text-align:left}
   thead th{font-weight:500; color:var(--text3); font-size:11px; letter-spacing:.04em; text-transform:uppercase;
            border-bottom:1px solid var(--line)}
-  tbody tr + tr td{border-top:1px solid #f2f3f6}
+  tbody tr + tr td{border-top:1px solid var(--line-soft)}
   tbody tr{transition:background .14s}
-  tbody tr:hover{background:#fafbfd}
+  tbody tr:hover{background:var(--row-hover)}
   td.pct{color:var(--text2); width:96px; white-space:nowrap}
   td.pct .bar{display:inline-block; vertical-align:middle; width:38px; height:5px; border-radius:3px;
-              background:#edeff3; margin-right:8px; overflow:hidden; position:relative}
+              background:var(--track); margin-right:8px; overflow:hidden; position:relative}
   td.pct .bar i{position:absolute; top:0; bottom:0; left:0; width:var(--w,0%); border-radius:3px;
                 background:linear-gradient(90deg,#7b73f2,#4f46e5); animation:grow .6s var(--ease) backwards}
   @keyframes grow{ from{width:0} }
@@ -226,7 +271,7 @@
   .tip > summary::after{content:"\203A"; margin-left:auto; color:var(--text4); font-size:15px;
                         transition:transform .2s var(--ease)}
   .tip[open] > summary::after{transform:rotate(90deg)}
-  .tip > summary:hover{background:#f4f5f8}
+  .tip > summary:hover{background:var(--filter-hover)}
   .tip p{margin:0; padding:0 12px 12px; animation:fadeIn .25s var(--ease)}
   .tip b{color:var(--text); font-weight:600}
 
@@ -234,7 +279,7 @@
         border-top:1px solid var(--line); font-size:11.5px; color:var(--text4)}
 
   /* ================= 提示 ================= */
-  .toast{position:fixed; left:50%; bottom:28px; transform:translate(-50%,16px) scale(.98); background:var(--ink); color:#fff;
+  .toast{position:fixed; left:50%; bottom:28px; transform:translate(-50%,16px) scale(.98); background:var(--toast-bg); color:var(--toast-fg);
          padding:10px 16px; border-radius:11px; font-size:13px; font-weight:500; opacity:0; pointer-events:none;
          transition:opacity .24s var(--ease), transform .24s var(--ease); box-shadow:var(--sh-3); z-index:var(--z-toast)}
   .toast.show{opacity:1; transform:translate(-50%,0) scale(1)}
@@ -245,7 +290,7 @@
   .modal-bg{position:absolute; inset:0; background:rgba(14,16,21,.46); animation:fadeIn .2s var(--ease);
             backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
   @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
-  .modal-panel{position:relative; margin:5vh auto; width:min(800px,calc(100vw - 28px)); max-height:88vh; background:#fff;
+  .modal-panel{position:relative; margin:5vh auto; width:min(800px,calc(100vw - 28px)); max-height:88vh; background:var(--surface);
                border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
                box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:sheetUp .28s var(--ease)}
   @keyframes sheetUp{ from{opacity:0; transform:translateY(14px) scale(.985)} to{opacity:1; transform:none} }
@@ -254,33 +299,33 @@
   .modal-head h3{margin:0; font-size:15.5px; font-weight:650; letter-spacing:-.01em}
   .modal-head .x{margin-left:auto; border:0; background:transparent; font-size:19px; line-height:1; color:var(--text3);
                  cursor:pointer; width:30px; height:30px; border-radius:9px; transition:.16s}
-  .modal-head .x:hover{color:var(--text); background:#f2f3f6}
-  .tabs{display:flex; gap:3px; padding:3px; margin:0 20px 12px; background:#f3f4f7; border-radius:11px}
+  .modal-head .x:hover{color:var(--text); background:var(--line-soft)}
+  .tabs{display:flex; gap:3px; padding:3px; margin:0 20px 12px; background:var(--tabs-bg); border-radius:11px}
   .tab{flex:1; border:0; background:transparent; font-family:inherit; font-size:13px; font-weight:500; color:var(--text2);
        padding:8px 10px; border-radius:9px; cursor:pointer; transition:.16s}
   .tab:hover{color:var(--text)}
-  .tab.active{color:var(--accent); background:#fff; font-weight:600; box-shadow:var(--sh-1)}
+  .tab.active{color:var(--accent); background:var(--surface); font-weight:600; box-shadow:var(--sh-1)}
   .modal-body{overflow:auto; padding:4px 20px 8px; flex:1}
   .pane{display:none} .pane.active{display:block; animation:fadeIn .18s var(--ease)}
   .plist{display:flex; flex-direction:column; gap:8px; margin-bottom:14px}
   .pitem{display:flex; align-items:center; gap:12px; border:1px solid var(--line); border-radius:var(--r);
          padding:10px 12px; background:var(--card-2); transition:.16s}
-  .pitem:hover{border-color:var(--line3); background:#fff; box-shadow:var(--sh-1)}
-  .pitem.mine{border-color:var(--accent-line); background:#fafaff}
+  .pitem:hover{border-color:var(--line3); background:var(--surface); box-shadow:var(--sh-1)}
+  .pitem.mine{border-color:var(--accent-line); background:var(--accent-wash)}
   .pitem .pinfo{flex:1; min-width:0}
   .pitem .pinfo b{display:block; font-size:13.5px; font-weight:600}
   .pitem .pinfo span{font-size:11.5px; color:var(--text3)}
-  .badge{font-size:10.5px; font-weight:500; color:var(--text2); background:#f1f2f6; border-radius:20px;
+  .badge{font-size:10.5px; font-weight:500; color:var(--text2); background:var(--chip); border-radius:20px;
          padding:3px 9px; flex:none; white-space:nowrap}
   .badge.mine{color:var(--accent); background:var(--accent-soft)}
   .badge.edit{color:var(--warn); background:var(--warn-soft)}
   .pact{display:flex; gap:6px; flex:none}
-  .pact button{border:1px solid var(--line2); background:#fff; border-radius:8px; font-size:12px; font-weight:500;
+  .pact button{border:1px solid var(--line2); background:var(--surface); border-radius:8px; font-size:12px; font-weight:500;
                padding:5px 10px; cursor:pointer; font-family:inherit; color:var(--text2); white-space:nowrap; transition:.16s}
-  .pact button:hover{border-color:var(--accent); color:var(--accent); background:#fcfcff}
+  .pact button:hover{border-color:var(--accent); color:var(--accent); background:var(--accent-hover)}
   .pact button:active{transform:scale(.97)}
-  .pact button.del:hover{border-color:#e9b6ac; color:var(--danger); background:var(--danger-soft)}
-  .pform{display:none; border:1px solid var(--accent-line); background:#fafaff; border-radius:var(--r);
+  .pact button.del:hover{border-color:var(--danger-line); color:var(--danger); background:var(--danger-soft)}
+  .pform{display:none; border:1px solid var(--accent-line); background:var(--accent-wash); border-radius:var(--r);
          padding:15px; margin-bottom:14px}
   .pform.open{display:block; animation:fadeIn .2s var(--ease)}
   .pform .fields{grid-template-columns:repeat(auto-fit,minmax(160px,1fr))}
@@ -295,17 +340,17 @@
   /* ================= 分类管理 ================= */
   .catblock{margin-bottom:22px}
   .catblock h4{margin:0 0 10px; font-size:13px; font-weight:600; display:flex; align-items:center; gap:8px}
-  .catblock h4 span{font-weight:500; font-size:11.5px; color:var(--text3); background:#f1f2f6; border-radius:20px; padding:2px 9px}
+  .catblock h4 span{font-weight:500; font-size:11.5px; color:var(--text3); background:var(--chip); border-radius:20px; padding:2px 9px}
   .catlist{display:flex; flex-direction:column; gap:7px; margin-bottom:10px}
   .catitem{display:flex; align-items:center; gap:10px; border:1px solid var(--line); border-radius:var(--r);
            padding:9px 12px; background:var(--card-2); transition:.16s}
-  .catitem[data-catrename]:hover{border-color:var(--accent-line); background:#fafaff}
+  .catitem[data-catrename]:hover{border-color:var(--accent-line); background:var(--accent-wash)}
   .catitem .cn{flex:1; font-size:13px; font-weight:500; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .catitem .cc{font-size:11.5px; color:var(--text3); white-space:nowrap}
   .catitem .hint2{font-size:11px; color:var(--text4); white-space:nowrap}
   .catadd{display:flex; gap:8px}
   .catadd input{flex:1; min-width:0; border:1px solid var(--line2); border-radius:10px; padding:0 11px; height:40px;
-                font-size:13px; font-family:inherit; outline:0; color:var(--text); background:#fff; transition:.16s}
+                font-size:13px; font-family:inherit; outline:0; color:var(--text); background:var(--surface); transition:.16s}
   .catadd input:focus{border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
   .catrename{display:flex; gap:6px; align-items:center; flex:1}
   .catrename input{flex:1; min-width:0; border:1px solid var(--accent); border-radius:9px; padding:0 10px; height:32px;
@@ -317,22 +362,22 @@
   .pk-mask{position:absolute; inset:0; background:rgba(14,16,21,.44); animation:fadeIn .18s var(--ease);
            backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
   .pk-sheet{position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:min(540px,92vw); max-height:80vh;
-            background:#fff; border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
-            box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:pkIn .26s var(--ease)}
+           background:var(--surface); border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
+           box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:pkIn .26s var(--ease)}
   .pk-head{display:flex; align-items:center; gap:8px; padding:13px 15px; border-bottom:1px solid var(--line); flex:none}
   .pk-head b{flex:1; font-size:14px; font-weight:650; text-align:center; letter-spacing:-.01em}
   .pk-back,.pk-x{border:0; background:transparent; font-size:16px; cursor:pointer; color:var(--text3);
                  width:32px; height:32px; border-radius:9px; line-height:1; transition:.16s}
-  .pk-back:hover,.pk-x:hover{background:#f2f3f6; color:var(--text)}
+  .pk-back:hover,.pk-x:hover{background:var(--line-soft); color:var(--text)}
   .pk-body{overflow:auto; padding:8px}
   .pkbrand{display:flex; align-items:center; gap:10px; padding:12px; border-radius:var(--r); cursor:pointer; transition:.14s}
-  .pkbrand:hover{background:#f5f6fb}
+  .pkbrand:hover{background:var(--list-hover)}
   .pkbrand .pn{flex:1; font-size:13.5px; font-weight:600}
-  .pkbrand .pc{font-size:11.5px; color:var(--text3); background:#f1f2f6; border-radius:20px; padding:2px 9px}
+  .pkbrand .pc{font-size:11.5px; color:var(--text3); background:var(--chip); border-radius:20px; padding:2px 9px}
   .pkbrand .pa{color:var(--text4); font-size:16px; transition:transform .16s var(--ease)}
   .pkbrand:hover .pa{transform:translateX(2px); color:var(--accent)}
   .pkmodel{display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:var(--r); cursor:pointer; transition:.14s}
-  .pkmodel:hover{background:#f5f6fb}
+  .pkmodel:hover{background:var(--list-hover)}
   .pkmodel .mi{flex:1; min-width:0}
   .pkmodel .mi b{display:block; font-size:13.5px; font-weight:500}
   .pkmodel .mi span{font-size:11.5px; color:var(--text3)}
@@ -350,7 +395,7 @@
   .upd-wrap p{margin:0 0 10px; font-size:13px; color:var(--text); line-height:1.7}
   .upd-notes{margin:0; max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word;
              font-family:inherit; font-size:12px; line-height:1.7; color:var(--text2);
-             background:var(--bg2, #f6f7f9); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
+             background:var(--bg2); border:1px solid var(--line); border-radius:10px; padding:10px 12px}
   .foot .lnk{background:none; border:0; padding:0; font:inherit; color:var(--accent); cursor:pointer;
              text-decoration:underline; text-underline-offset:3px}
   .foot .lnk:disabled{color:var(--text4); cursor:not-allowed; text-decoration:none}
@@ -371,7 +416,7 @@
   .qact{display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; padding-top:12px; border-top:1px dashed var(--line)}
   .hist-list{display:flex; flex-direction:column; gap:8px}
   .hist-item{border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex;
-             align-items:center; gap:10px; flex-wrap:wrap; background:var(--bg2,#f8f9fb)}
+             align-items:center; gap:10px; flex-wrap:wrap; background:var(--bg3)}
   .hist-item .hi-main{flex:1 1 200px; min-width:0}
   .hist-item .hi-main b{display:block; font-size:13px; letter-spacing:-.005em}
   .hist-item .hi-main small{color:var(--text3); font-size:11.5px; word-break:break-all}
@@ -390,22 +435,22 @@
   .ov.open{display:block}
   .ov-bg{position:absolute; inset:0; background:rgba(14,16,21,.5); animation:fadeIn .18s var(--ease);
          backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
-  .ov-panel{position:relative; margin:4vh auto; width:min(880px,calc(100vw - 28px)); max-height:92vh; background:#fff;
+  .ov-panel{position:relative; margin:4vh auto; width:min(880px,calc(100vw - 28px)); max-height:92vh; background:var(--surface);
             border-radius:var(--r-xl); display:flex; flex-direction:column; overflow:hidden;
             box-shadow:0 40px 80px -20px rgba(14,16,21,.45); animation:sheetUp .28s var(--ease)}
   .ov-head{display:flex; align-items:center; gap:10px; padding:14px 18px; border-bottom:1px solid var(--line); flex:none}
   .ov-head h3{margin:0; font-size:15px; font-weight:650; letter-spacing:-.01em}
   .ov-head .x{margin-left:auto; border:0; background:transparent; font-size:19px; line-height:1; color:var(--text3);
               cursor:pointer; width:30px; height:30px; border-radius:9px; transition:.16s}
-  .ov-head .x:hover{color:var(--text); background:#f2f3f6}
-  .ov-body{overflow:auto; flex:1; background:#eef0f5}
+  .ov-head .x:hover{color:var(--text); background:var(--line-soft)}
+  .ov-body{overflow:auto; flex:1; background:var(--overlay-bg)}
   .ov-foot{display:flex; align-items:center; gap:8px; justify-content:flex-end; padding:12px 18px;
-           border-top:1px solid var(--line); flex:none; background:#fff}
+           border-top:1px solid var(--line); flex:none; background:var(--surface)}
   .ov-foot .pp-hint{margin-right:auto; font-size:12px; color:var(--text3); line-height:1.45; max-width:52%}
-  .ex-wrap{padding:14px 18px; background:#fff}
+  .ex-wrap{padding:14px 18px; background:var(--surface)}
   .ex-note{margin:0 0 10px; font-size:12.5px; color:var(--text2); line-height:1.6}
   .ex-ta{width:100%; min-height:240px; box-sizing:border-box; font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;
-         color:var(--text); background:#fbfbfd; border:1px solid var(--line2); border-radius:10px; padding:10px 12px; resize:vertical}
+         color:var(--text); background:var(--surface-hover); border:1px solid var(--line2); border-radius:10px; padding:10px 12px; resize:vertical}
   .ex-ta:focus{outline:0; border-color:var(--accent); box-shadow:0 0 0 3px var(--ring)}
   /* A4 打印预览页 */
   .pp-page{width:210mm; min-height:297mm; box-sizing:border-box; margin:16px auto; background:#fff;
@@ -462,6 +507,25 @@
     html{scroll-behavior:auto}
   }
 </style>
+<script>
+/* 主题：尽早应用，避免刷新瞬间闪白（FOUC）。
+   偏好 pref ∈ {light,dark,auto} 存于 dpc_theme_v1；解析结果写到 html[data-theme]，
+   偏好原值写到 html[data-theme-pref]（供分段控件高亮）。 */
+(function(){
+  try{
+    var KEY = "dpc_theme_v1";
+    var pref = localStorage.getItem(KEY) || "auto";
+    if(pref !== "light" && pref !== "dark" && pref !== "auto") pref = "auto";
+    var sysDark = false;
+    try{ sysDark = !!(window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches); }catch(e){}
+    var resolved = pref === "auto" ? (sysDark ? "dark" : "light") : pref;
+    document.documentElement.setAttribute("data-theme", resolved);
+    document.documentElement.setAttribute("data-theme-pref", pref);
+    var m = document.getElementById("metaThemeColor");
+    if(m) m.setAttribute("content", resolved === "dark" ? "#0f1116" : "#4f46e5");
+  }catch(e){}
+})();
+</script>
 </head>
 <body>
 <div class="wrap">
@@ -475,6 +539,11 @@
       </div>
     </div>
     <div class="hd-r">
+      <div class="themebox" id="themeSeg" role="group" aria-label="主题">
+        <button type="button" class="topt" data-theme-opt="light" title="浅色" aria-label="浅色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M5.6 5.6 4 4M20 20l-1.6-1.6M18.4 5.6 20 4M4 20l1.6-1.6"/></svg></button>
+        <button type="button" class="topt" data-theme-opt="dark" title="深色" aria-label="深色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg></button>
+        <button type="button" class="topt" data-theme-opt="auto" title="跟随系统" aria-label="跟随系统"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6v16.8"/><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" stroke="none" opacity=".85"/></svg></button>
+      </div>
       <button class="btn" id="btnPreset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16.5 12 21l9-4.5"/></svg>预设管理</button>
       <button class="btn" id="btnCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>导出 CSV</button>
       <button class="btn" id="btnPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V4h10v4"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 16h10v4H7z"/></svg>打印 / PDF</button>
@@ -615,10 +684,10 @@
         <h2><span class="snum">05</span><span class="stitle">成本构成</span></h2>
         <div class="donut-box">
           <svg viewBox="0 0 42 42" aria-hidden="true">
-            <circle cx="21" cy="21" r="15.9155" fill="none" stroke="#edeff3" stroke-width="5.5"/>
+            <circle cx="21" cy="21" r="15.9155" fill="none" class="donut-track" stroke-width="5.5"/>
             <g id="donutSeg" transform="rotate(-90 21 21)"></g>
-            <text id="donutTxt" x="21" y="20.2" text-anchor="middle" font-size="5.6" font-weight="700" fill="#14161a">0</text>
-            <text x="21" y="25.4" text-anchor="middle" font-size="2.9" fill="#8b93a1">总成本</text>
+            <text id="donutTxt" x="21" y="20.2" text-anchor="middle" font-size="5.6" font-weight="700" class="donut-num">0</text>
+            <text x="21" y="25.4" text-anchor="middle" font-size="2.9" class="donut-cap">总成本</text>
           </svg>
           <div class="legend" id="legend"></div>
         </div>
@@ -1796,7 +1865,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.4.2";
+  var APP_VERSION = "1.5.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -2694,6 +2763,44 @@
   $("#shareBox").addEventListener("click", function(e){
     if(e.target.closest && e.target.closest("[data-shclose]")) $("#shareBox").classList.remove("open");
   });
+
+  /* ================= 主题切换 =================
+     三档：light / dark / auto(跟随系统)。偏好存 dpc_theme_v1；
+     html[data-theme] 存解析结果（供 CSS），html[data-theme-pref] 存偏好原值（供控件高亮）。 */
+  var TKEY = "dpc_theme_v1";
+  var themeMql = null;
+  try{ themeMql = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null; }catch(e){ themeMql = null; }
+  function themeGetPref(){
+    try{ var v = localStorage.getItem(TKEY); return (v === "light" || v === "dark" || v === "auto") ? v : "auto"; }
+    catch(e){ return "auto"; }
+  }
+  function themeSysDark(){ try{ return !!(themeMql && themeMql.matches); }catch(e){ return false; } }
+  function themeApply(pref, persist){
+    if(pref !== "light" && pref !== "dark" && pref !== "auto") pref = "auto";
+    var res = pref === "auto" ? (themeSysDark() ? "dark" : "light") : pref;
+    var el = document.documentElement;
+    el.setAttribute("data-theme", res);
+    el.setAttribute("data-theme-pref", pref);
+    var m = document.getElementById("metaThemeColor");
+    if(m) m.setAttribute("content", res === "dark" ? "#0f1116" : "#4f46e5");
+    $$("#themeSeg [data-theme-opt]").forEach(function(b){
+      b.classList.toggle("active", b.getAttribute("data-theme-opt") === pref);
+    });
+    if(persist){ try{ localStorage.setItem(TKEY, pref); }catch(e){} }
+  }
+  var themeSeg = $("#themeSeg");
+  if(themeSeg){
+    themeSeg.addEventListener("click", function(e){
+      var b = e.target && e.target.closest ? e.target.closest("[data-theme-opt]") : null;
+      if(b) themeApply(b.getAttribute("data-theme-opt"), true);
+    });
+  }
+  if(themeMql){
+    var themeOnSys = function(){ if(themeGetPref() === "auto") themeApply("auto", false); };
+    if(themeMql.addEventListener) themeMql.addEventListener("change", themeOnSys);
+    else if(themeMql.addListener) themeMql.addListener(themeOnSys);
+  }
+  themeApply(themeGetPref(), false);
 
   /* ================= 初始化 ================= */
   var restored = loadState();

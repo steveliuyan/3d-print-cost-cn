@@ -7,6 +7,7 @@
 - **完整预设**：11 个设备 + 54 个材料预设（拓竹 / 大简 / 三慈 / 通用），可自行增删改
 - **实时计算**：成本构成环形图 + 明细表，参数改了立刻出结果
 - **数据自主**：全部存在本机，支持导出 CSV、打印 / 存 PDF、**全量备份与恢复**
+- **深浅色主题**：浅色 / 深色 / 跟随系统三档一键切换，偏好本地记忆（打印与分享长图恒为浅色，保证报价单观感）
 
 ## 功能
 
@@ -28,14 +29,14 @@
 
 | 平台 | 文件 | 说明 |
 |---|---|---|
-| 网页 | `3d-print-cost-cn-1.4.2-web.html` | 双击用浏览器打开即用，零依赖、离线 |
-| Windows | `3d-print-cost-cn-1.4.2-portable.exe` | 单文件绿色版（约 71 MB），双击运行，免安装 |
-| Android | `3d-print-cost-cn-1.4.2.apk` | 约 1 MB；需在系统里允许「安装未知来源应用」。应用内置「检查更新」，可在应用内直接在线升级 |
+| 网页 | `3d-print-cost-cn-1.5.0-web.html` | 双击用浏览器打开即用，零依赖、离线 |
+| Windows | `3d-print-cost-cn-1.5.0-portable.exe` | 单文件绿色版（约 71 MB），双击运行，免安装 |
+| Android | `3d-print-cost-cn-1.5.0.apk` | 约 1 MB；需在系统里允许「安装未知来源应用」。应用内置「检查更新」，可在应用内直接在线升级 |
 
 Android 也可以直接用 adb 安装：
 
 ```bash
-adb install -r -t 3d-print-cost-cn-1.4.2.apk
+adb install -r -t 3d-print-cost-cn-1.5.0.apk
 ```
 
 ---
@@ -45,7 +46,7 @@ adb install -r -t 3d-print-cost-cn-1.4.2.apk
 ```
 3d-print-cost-calculator/
 ├─ index.html              ← 唯一来源（改只改这个）
-├─ test-presets.js         ← jsdom 回归测试（174 项断言）
+├─ test-presets.js         ← jsdom 回归测试（196 项断言）
 ├─ _sync_clean.py          ← 剥离预览注入并同步三份副本
 ├─ desktop/                ← Electron 桌面工程
 │  ├─ main.js              ← 主进程（窗口 / 菜单 / Ctrl+P 打印 / 外链走系统浏览器）
@@ -86,7 +87,7 @@ npm run build:win          # 产物：../dist/desktop/3D打印成本计算器-wi
 
 | 形态 | 路径 | 特点 |
 |---|---|---|
-| **单文件便携版** | `dist/desktop-portable/3D打印成本计算器-1.4.2-便携版.exe` | 71 MB，双击即用；每次启动会自解压到临时目录，首次打开稍慢 |
+| **单文件便携版** | `dist/desktop-portable/3D打印成本计算器-1.5.0-便携版.exe` | 71 MB，双击即用；每次启动会自解压到临时目录，首次打开稍慢 |
 | **免安装目录版** | `dist/desktop/3D打印成本计算器-win32-x64/` | 269 MB，启动最快；整个文件夹拷到任意位置都可用 |
 
 无需安装、无需 Node。
@@ -115,7 +116,7 @@ cd android
 ### 安装
 
 ```bash
-adb install -r -t dist/android/3d-print-cost-cn-1.4.2.apk
+adb install -r -t dist/android/3d-print-cost-cn-1.5.0.apk
 ```
 
 ### 实现要点
@@ -171,9 +172,9 @@ keyPassword=你的口令
 
 | 产物 | 版本 | 说明 |
 |---|---|---|
-| `index.html` | 迭代 13 | 参数 / 预设 / 分类 / CSV / 打印报价单 / 备份恢复 / Android 原生导出与打印桥 / 窄屏预览自适应 |
-| Windows 桌面版 | 1.4.2 | Electron 33，win32-x64；启动时自动检查更新（帮助菜单亦可手动检查） |
-| Android APK | 1.4.2 (versionCode 8) | minSdk 24 / targetSdk 35，`com.dpc.printcost`；内置「检查更新」在线升级；报价长图可直接存入系统相册 |
+| `index.html` | 1.5.0 | 参数 / 预设 / 分类 / CSV / 打印报价单 / 备份恢复 / Android 原生导出与打印桥 / 窄屏预览自适应 / **浅色·深色·跟随系统三档主题** |
+| Windows 桌面版 | 1.5.0 | Electron 33，win32-x64；启动时自动检查更新（帮助菜单亦可手动检查） |
+| Android APK | 1.5.0 (versionCode 8) | minSdk 24 / targetSdk 35，`com.dpc.printcost`；内置「检查更新」在线升级；报价长图可直接存入系统相册 |
 
 ## 5. 改完页面后怎么重新打包
 
@@ -187,7 +188,7 @@ npm run dist                                       # 便携版单文件 exe
 打包前建议先跑一遍回归：
 
 ```bash
-node test-presets.js     # 期望 174/174 通过
+node test-presets.js     # 期望 196/196 通过
 ```
 
 > **为什么要有 `_sync_clean.py`**：`index.html` 是唯一来源，但 Android 需要一份在
