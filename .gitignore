@@ -19,6 +19,16 @@ desktop/build/icon.png
 android/app/dpc-release.jks
 android/keystore.properties
 
+# ===== 凭据：绝不入库 =====
+# .secrets/ 存放本机用的 token / 口令等，只在本机保留，永远不要提交或外发。
+.secrets/
+*.token
+.env
+.env.*
+
+# ===== 本机 Agent 状态（工作日志等，不建议公开） =====
+.workbuddy/
+
 # 操作系统 / 编辑器
 .DS_Store
 Thumbs.db
