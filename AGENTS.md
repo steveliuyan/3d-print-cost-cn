@@ -13,7 +13,7 @@
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
 | 当前版本 | **v1.5.1** |
-| 本地 HEAD | `32871df936baab2dec063b2c0afebdbcfcda1baa`（远端 main 同值） |
+| 本地 HEAD | `bc59e7c3ec41aaef51b5ed9d98daf561ee9193a0`（= 远端 main；为 AGENTS.md 交接文档重写提交） |
 | 功能提交 | `dde8b9ca8bfa2f9089000be42942145236dc68ae`（tag `v1.5.1` 指向它） |
 | 回归测试 | **234/234 通过**（`test-presets.js`，jsdom） |
 | 三副本 md5 | `9f927e975490e518351078d05cfd3347`（159,160 B，逐字节一致） |
