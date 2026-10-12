@@ -517,7 +517,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.6.0', dU.getElementById('footVer').textContent === '1.6.0',
+    ok('更新：footer 显示当前版本号 1.7.0', dU.getElementById('footVer').textContent === '1.7.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -633,7 +633,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.6\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.7\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -683,7 +683,7 @@ setTimeout(function () {
           /* —— 已是最新态 —— */
           var domOk = new JSDOM(html, {
             runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
-            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.6.0'); }; }
+            beforeParse: function (win) { win.fetch = function () { return fakeRelease('1.7.0'); }; }
           });
           var wOk = domOk.window, dOk = wOk.document;
           dOk.getElementById('btnCheckUpd').dispatchEvent(new wOk.MouseEvent('click', { bubbles: true }));
@@ -691,7 +691,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.6\.0/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.7\.0/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -819,7 +819,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 版本号为 1.2.0', dV.getElementById('footVer').textContent === '1.6.0');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.7.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -834,27 +834,32 @@ setTimeout(function () {
       ok('v1.2：批量优惠 10% 后订单收入降为九折', /批量优惠 10%/.test(dV.getElementById('tbody').innerHTML) &&
          Math.abs(revNum / sellNum - 9) < 0.02, 'rev=' + revNum + ' sell=' + sellNum + ' 比=' + (revNum / sellNum).toFixed(3));
 
-      /* 报价历史：保存 -> 列表 -> 载入 -> 删除 */
+      /* 报价历史（v1.7 起为订单列表）：保存 -> 列表 -> 载入 -> 删除 */
       click(dV.getElementById('btnQuoteSave'));
-      var qs = JSON.parse(wV.localStorage.getItem('dpc_quotes_v1') || '[]');
-      ok('v1.2：保存报价写入 dpc_quotes_v1', qs.length === 1 && qs[0].qty === 10 && qs[0].disc === 0.1,
-         JSON.stringify(qs[0] || {}).slice(0, 80));
-      ok('v1.2：报价快照包含参数字段', !!(qs[0] && qs[0].fields && qs[0].fields.spoolPrice));
+      var os = JSON.parse(wV.localStorage.getItem('dpc_orders_v1') || '[]');
+      ok('v1.7：保存报价写入 dpc_orders_v1（单行订单）',
+         os.length === 1 && os[0].lines.length === 1 && os[0].lines[0].qty === 10 &&
+         os[0].orderLevel.bulkDisc === 10,
+         JSON.stringify(os[0] ? { q: os[0].lines[0].qty, d: os[0].orderLevel.bulkDisc } : {}));
+      ok('v1.7：订单行保留参数快照', !!(os[0] && os[0].lines[0].fields && os[0].lines[0].fields.spoolPrice));
+      ok('v1.7：订单自动编号 DPC-日期-流水', /^DPC-\d{8}-\d{3}$/.test(os[0].no || ''), os[0].no);
+      ok('v1.7：订单状态默认「已报价」', os[0].status === 'quoted', os[0].status);
       click(dV.getElementById('btnQuoteList'));
-      ok('v1.2：历史列表打开并渲染 1 条', dV.getElementById('histBox').classList.contains('open') &&
+      ok('v1.7：历史列表打开并渲染 1 单', dV.getElementById('histBox').classList.contains('open') &&
          dV.querySelectorAll('#histList .hist-item').length === 1);
-      ok('v1.2：历史行含设备材料与金额', /件/.test(dV.getElementById('histList').textContent) &&
+      ok('v1.7：历史行含编号与金额', /DPC-/.test(dV.getElementById('histList').textContent) &&
          /¥/.test(dV.getElementById('histList').textContent));
       dV.querySelector('[data-field="spoolPrice"]').value = '999';
       input(dV.querySelector('[data-field="spoolPrice"]'));
       click(dV.querySelector('#histList [data-qload]'));
-      ok('v1.2：载入历史把参数填回（单价恢复快照值 65）',
+      ok('v1.7：载入订单把首行参数填回（单价恢复快照值 65）',
          dV.querySelector('[data-field="spoolPrice"]').value === '65' &&
          !dV.getElementById('histBox').classList.contains('open'));
+      ok('v1.7：载入订单后切到订单视图', dV.body.classList.contains('view-order'));
       click(dV.getElementById('btnQuoteList'));
       click(dV.querySelector('#histList [data-qdel]'));
-      ok('v1.2：删除历史生效', (JSON.parse(wV.localStorage.getItem('dpc_quotes_v1')) || []).length === 0);
-      ok('v1.2：清空按钮随列表隐藏', dV.getElementById('histClear').hidden === true);
+      ok('v1.7：删除订单生效', (JSON.parse(wV.localStorage.getItem('dpc_orders_v1')) || []).length === 0);
+      ok('v1.7：清空按钮随列表隐藏', dV.getElementById('histClear').hidden === true);
       runShareTests(done);
     }, 700);
   }
@@ -1258,6 +1263,229 @@ setTimeout(function () {
     next();
   }
 
+  /* ===== v1.7.0 订单化引擎（纯函数回归） ===== */
+  function runOrderTests(done) {
+    var E = w.__DPC;
+    ok('v1.7.0：引擎测试接口已暴露',
+       !!(E && E.computeFrom && E.computeOrder && E.migrateQuotes && E.tierDisc));
+
+    /* --- A1：computeFrom / 单行订单 与单件 compute 逐项等价（钉死行为不回归） --- */
+    var fA = { qty:"3", printHours:"3", grams:"55", spoolPrice:"65", waste:"5",
+               printerPrice:"2199", lifeHours:"5000", maintPerHour:"0.28",
+               power:"200", elecPrice:"0.6", laborRate:"30", laborMin:"5",
+               postCost:"1", failRate:"8", markup:"2.5", commission:"5",
+               shipping:"12", bulkDisc:"0" };
+    var rA = E.computeFrom(fA);
+    var oA = E.computeOrder({ lines:[{ id:"l1", fields:fA }],
+               orderLevel:{ shipping:12, bulkDisc:0, commission:5, markup:2.5 }, tiers:[] });
+    ok('v1.7.0 A1：单行订单总成本 = 单件总成本', oA.totalCost.toFixed(2) === rA.totalCost.toFixed(2),
+       oA.totalCost.toFixed(2) + ' vs ' + rA.totalCost.toFixed(2));
+    ok('v1.7.0 A1：单行订单收入 = 单件收入', oA.revenue.toFixed(2) === rA.revenue.toFixed(2),
+       oA.revenue.toFixed(2) + ' vs ' + rA.revenue.toFixed(2));
+    ok('v1.7.0 A1：单行订单利润 = 单件利润', oA.profit.toFixed(2) === rA.profit.toFixed(2));
+    ok('v1.7.0 A1：单行订单均件成本 = 单件 unitCost', oA.unitAvg.toFixed(2) === rA.unitCost.toFixed(2));
+    ok('v1.7.0 A1：单行订单毛利率 = 单件毛利率', oA.margin.toFixed(2) === rA.margin.toFixed(2));
+
+    /* --- A2：多行聚合口径 --- */
+    var fB = {}; for (var kA in fA) fB[kA] = fA[kA];
+    fB.qty = "10"; fB.shipping = "0";
+    var oB = E.computeOrder({ lines:[{ id:"l1", fields:fA }, { id:"l2", fields:fB }],
+               orderLevel:{ shipping:20, bulkDisc:0, commission:5, markup:2.5 }, tiers:[] });
+    var rl = oB.lines.map(function (x) { return x.r; });
+    ok('v1.7.0 A2：总成本 = Σ行成本（运费已按件分摊入行）',
+       oB.totalCost.toFixed(2) === (rl[0].totalCost + rl[1].totalCost).toFixed(2),
+       oB.totalCost.toFixed(2));
+    ok('v1.7.0 A2：订单级运费按件分摊且合计守恒（=20）',
+       Math.abs(oB.shipAllocated - 20) < 1e-9 && Math.abs(oB.shipping - 20) < 1e-9,
+       oB.shipAllocated);
+    ok('v1.7.0 A2：分摊比例按件数（3:10）',
+       Math.abs(oB.lines[0].shipShare - 20 * 3 / 13) < 1e-9 &&
+       Math.abs(oB.lines[1].shipShare - 20 * 10 / 13) < 1e-9);
+    ok('v1.7.0 A2：总收入 = Σ行收入',
+       oB.revenue.toFixed(2) === (rl[0].revenue + rl[1].revenue).toFixed(2));
+    ok('v1.7.0 A2：总利润 = 总收入 − 总成本',
+       oB.profit.toFixed(2) === (oB.revenue - oB.totalCost).toFixed(2));
+    ok('v1.7.0 A2：件数合计 = 13', oB.qtyTotal === 13, String(oB.qtyTotal));
+    ok('v1.7.0 A2：单行订单运费份额 = 全额（不分摊损耗）',
+       Math.abs(oA.lines[0].shipShare - 12) < 1e-9, String(oA.lines[0].shipShare));
+    ok('v1.7.0 A2：分摊后行成本 = 同参数单件 computeFrom 成本',
+       rl[0].totalCost.toFixed(2) ===
+       E.computeFrom((function (f) { var g = {}; for (var z in f) g[z] = f[z]; g.shipping = String(oB.lines[0].shipShare); return g; })(fA)).totalCost.toFixed(2));
+
+    /* --- A3：阶梯命中与生效折扣 --- */
+    var oT = { tiers:[{ minQty:1, disc:0 }, { minQty:10, disc:5 }, { minQty:50, disc:12 }] };
+    ok('v1.7.0 A3：qty=9 → 0%',   E.tierDisc(oT, 9) === 0);
+    ok('v1.7.0 A3：qty=10 → 5%',  E.tierDisc(oT, 10) === 0.05);
+    ok('v1.7.0 A3：qty=49 → 5%',  E.tierDisc(oT, 49) === 0.05);
+    ok('v1.7.0 A3：qty=50 → 12%', E.tierDisc(oT, 50) === 0.12);
+    ok('v1.7.0 A3：阶梯与整单折扣取大不叠加（8% > 5%）',
+       E.effDisc({ tiers:[{ minQty:10, disc:5 }], orderLevel:{ bulkDisc:8 } }, 10) === 0.08);
+    ok('v1.7.0 A3：阶梯高于整单折扣时取阶梯',
+       E.effDisc({ tiers:[{ minQty:10, disc:12 }], orderLevel:{ bulkDisc:8 } }, 10) === 0.12);
+    ok('v1.7.0 A3：无阶梯时取整单折扣',
+       E.effDisc({ tiers:[], orderLevel:{ bulkDisc:3 } }, 99) === 0.03);
+
+    /* --- A4：旧报价 → 订单 迁移 --- */
+    var oldQuotes = [
+      { t: 1700000000000, dev:"拓竹 A1", mat:"PLA", qty:2, disc:0.05,
+        unitCost:10, sellNet:25, revenue:47.5, totalCost:20, profit:27.5,
+        fields:{ qty:"2", shipping:"5", commission:"5", markup:"2.5", printHours:"2", grams:"30" } },
+      { t: 1700000100000, dev:"拓竹 P1S", mat:"PETG", qty:1, disc:0,
+        unitCost:12, sellNet:30, revenue:30, totalCost:12, profit:18,
+        fields:{ qty:"1", shipping:"0", commission:"5", markup:"2.5", printHours:"2", grams:"40" } },
+      { t: 1700000200000, dev:"拓竹 A1", mat:"ABS", qty:5, disc:0,
+        unitCost:9, sellNet:22, revenue:110, totalCost:45, profit:65,
+        fields:{ qty:"5", shipping:"0", commission:"5", markup:"2.5", printHours:"2", grams:"20" } }
+    ];
+    w.localStorage.setItem('dpc_quotes_v1', JSON.stringify(oldQuotes));
+    w.localStorage.removeItem('dpc_orders_v1');
+    w.localStorage.removeItem('dpc_orders_migrated');
+    var n4 = E.migrateQuotes();
+    var O4 = E.loadOrders();
+    ok('v1.7.0 A4：迁移 3 条 → 3 单', n4 === 3 && O4.length === 3, 'n=' + n4 + ' len=' + O4.length);
+    ok('v1.7.0 A4：旧键保留（可回滚）', !!w.localStorage.getItem('dpc_quotes_v1'));
+    ok('v1.7.0 A4：最新在前', O4[0].totals.revenue === 110, String(O4[0].totals.revenue));
+    ok('v1.7.0 A4：金额逐项一致（成本/收入/利润）',
+       O4[0].totals.totalCost === 45 && O4[0].totals.revenue === 110 && O4[0].totals.profit === 65);
+    ok('v1.7.0 A4：行项 fields 快照保留',
+       O4[0].lines.length === 1 && O4[0].lines[0].fields && O4[0].lines[0].fields.grams === '20');
+    ok('v1.7.0 A4：整单折扣换算为百分数（0.05 → 5）',
+       O4[2].orderLevel.bulkDisc === 5, String(O4[2].orderLevel.bulkDisc));
+    ok('v1.7.0 A4：编号格式 DPC-YYYYMMDD-NNN',
+       /^DPC-\d{8}-\d{3}$/.test(O4[0].no), O4[0].no);
+    ok('v1.7.0 A4：同日流水按时间升序编号（最新 003 / 最旧 001）',
+       /003$/.test(O4[0].no) && /001$/.test(O4[2].no), O4.map(function (o) { return o.no; }).join(','));
+    ok('v1.7.0 A4：状态默认「已报价」', O4[0].status === 'quoted', O4[0].status);
+
+    /* --- A5：迁移幂等 --- */
+    var n5 = E.migrateQuotes();
+    ok('v1.7.0 A5：再次迁移不重复', n5 === 0 && E.loadOrders().length === 3, 'n=' + n5);
+
+    done();
+  }
+
+  /* ===== v1.7.0 订单视图（P3 UI / P4 导出）===== */
+  function runOrderViewTests(done) {
+    var domO = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            }, set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:o'; };
+        win.URL.revokeObjectURL = function () {};
+        win.print = function () {};
+      }
+    });
+    var wO = domO.window, dO = wO.document;
+    wO.HTMLAnchorElement.prototype.click = function () {};
+
+    ok('v1.7：存在「单件速算 / 订单报价」视图分段控件',
+       !!dO.querySelector('#viewSeg [data-view="single"]') && !!dO.querySelector('#viewSeg [data-view="order"]'));
+    ok('v1.7：订单主视图存在且默认隐藏',
+       !!dO.getElementById('orderMain') && !dO.body.classList.contains('view-order'));
+    ok('v1.7：单件页有「加入订单」入口', !!dO.getElementById('btnAddToOrder'));
+
+    click(dO.querySelector('#viewSeg [data-view="order"]'));
+    ok('v1.7：切到订单视图 → body.view-order', dO.body.classList.contains('view-order'));
+    ok('v1.7：切到订单视图 → aria-pressed 正确',
+       dO.querySelector('#viewSeg [data-view="order"]').getAttribute('aria-pressed') === 'true' &&
+       dO.querySelector('#viewSeg [data-view="single"]').getAttribute('aria-pressed') === 'false');
+    ok('v1.7：空订单显示空提示', /还没有行项/.test(dO.getElementById('ordLines').textContent));
+    ok('v1.7：阶梯默认 3 行编辑器', dO.querySelectorAll('#ordTiers [data-tier-mq]').length === 3);
+
+    click(dO.getElementById('ordAddBtn'));
+    ok('v1.7：加入行项 → 1 行', dO.querySelectorAll('#ordLines .ord-line').length === 1);
+    ok('v1.7：行项计数显示 1 项', /1 项/.test(dO.getElementById('ordLineHint').textContent));
+    ok('v1.7：汇总出现金额', /¥\d/.test(dO.getElementById('ordSum').textContent));
+
+    click(dO.getElementById('ordAddBtn'));
+    ok('v1.7：再加入一行 → 2 行', dO.querySelectorAll('#ordLines .ord-line').length === 2);
+
+    var shipEl = dO.getElementById('ordShipping');
+    var sumBefore = dO.getElementById('ordSum').textContent;
+    shipEl.value = '30'; input(shipEl);
+    ok('v1.7：改订单运费 → 汇总更新', dO.getElementById('ordSum').textContent !== sumBefore);
+
+    var bulkEl = dO.getElementById('ordBulk');
+    bulkEl.value = '10'; input(bulkEl);
+    ok('v1.7：整单折扣 10% 体现在行项', /折扣 10\.0%/.test(dO.getElementById('ordLines').textContent));
+
+    /* 阶梯：把单件页数量设 10 再加一行，第 2 档「满 10 件 25%」应命中 */
+    var qEl = dO.querySelector('[data-field="qty"]');
+    qEl.value = '10'; input(qEl);
+    click(dO.getElementById('ordAddBtn'));
+    ok('v1.7：加入第 3 行（数量 10）', dO.querySelectorAll('#ordLines .ord-line').length === 3);
+    var mq1 = dO.querySelector('[data-tier-mq="1"]'); mq1.value = '10'; input(mq1);
+    var dc1 = dO.querySelector('[data-tier-disc="1"]'); dc1.value = '25'; input(dc1);
+    ok('v1.7：阶梯命中行显示 25% 折扣', /折扣 25\.0%/.test(dO.getElementById('ordLines').textContent));
+
+    /* 保存订单 */
+    click(dO.getElementById('ordSave'));
+    var list = JSON.parse(wO.localStorage.getItem('dpc_orders_v1') || '[]');
+    ok('v1.7：保存订单写入 1 单 / 3 行',
+       list.length === 1 && list[0].lines.length === 3, 'len=' + (list[0] ? list[0].lines.length : 0));
+    ok('v1.7：保存后自动生成编号', /^DPC-\d{8}-\d{3}$/.test(list[0].no || ''), list[0].no);
+    ok('v1.7：编号回填到抬头输入框', dO.getElementById('ordNo').value === list[0].no);
+    ok('v1.7：保存后写入 totals', typeof list[0].totals.totalCost === 'number' && list[0].totals.totalCost > 0);
+    ok('v1.7：订单级运费 / 阶梯已持久化',
+       list[0].orderLevel.shipping === 30 && list[0].tiers.length >= 2);
+
+    click(dO.getElementById('ordSave'));
+    ok('v1.7：重复保存按 id 更新、不新增',
+       (JSON.parse(wO.localStorage.getItem('dpc_orders_v1')) || []).length === 1);
+
+    var custEl = dO.getElementById('ordCustomer'); custEl.value = '张三'; input(custEl);
+    click(dO.getElementById('ordSave'));
+    ok('v1.7：客户名写入订单',
+       (JSON.parse(wO.localStorage.getItem('dpc_orders_v1')) || [])[0].customer.name === '张三');
+
+    click(dO.querySelector('#ordLines [data-oline-del]'));
+    ok('v1.7：删除行项 → 2 行', dO.querySelectorAll('#ordLines .ord-line').length === 2);
+
+    click(dO.querySelector('#ordLines [data-oline-back]'));
+    ok('v1.7：取回行项 → 自动回到单件视图', !dO.body.classList.contains('view-order'));
+    click(dO.querySelector('#viewSeg [data-view="order"]'));
+    ok('v1.7：取回后订单仅剩 1 行', dO.querySelectorAll('#ordLines .ord-line').length === 1);
+
+    click(dO.getElementById('ordNew'));
+    ok('v1.7：新订单 → 行项清空', dO.querySelectorAll('#ordLines .ord-line').length === 0 &&
+       /还没有行项/.test(dO.getElementById('ordLines').textContent));
+
+    /* P4：导出 */
+    click(dO.getElementById('ordAddBtn'));
+    click(dO.getElementById('ordPrint'));
+    ok('v1.7：订单打印页含「行项明细」',
+       /行项明细/.test(dO.getElementById('ppPage').innerHTML) &&
+       /订单总成本/.test(dO.getElementById('ppPage').innerHTML));
+    dO.getElementById('pprev').classList.remove('open'); dO.body.classList.remove('pp');
+
+    click(dO.getElementById('ordCsv'));
+    ok('v1.7：导出订单 CSV 提示', /已导出订单 CSV/.test(dO.getElementById('toast').textContent));
+
+    /* P5：备份含订单 */
+    var bk = wO.__DPC.buildBackup();
+    ok('v1.7：备份包含订单数据', !!(bk.data && bk.data.orders) && bk.data.orders.length === 1,
+       JSON.stringify(bk.counts));
+    ok('v1.7：备份计数含订单数', !!(bk.counts && bk.counts.orders === 1), JSON.stringify(bk.counts));
+
+    click(dO.getElementById('ordShare'));
+    ok('v1.7：订单分享长图打开预览',
+       dO.getElementById('shareBox').classList.contains('open') &&
+       /data:image\/png/.test(dO.getElementById('shareImg').src));
+
+    done();
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -1296,7 +1524,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(finish); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(finish); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);

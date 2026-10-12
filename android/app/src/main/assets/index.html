@@ -490,6 +490,47 @@
     .qact .btn{flex:1 1 calc(33% - 6px); justify-content:center; white-space:nowrap}
     .hist-item .hi-num{width:100%; text-align:left; display:flex; gap:10px; align-items:baseline}
   }
+  /* ===== v1.7.0 订单视图 ===== */
+  .viewseg{display:inline-flex; gap:2px; padding:3px; border:1px solid var(--line2); background:var(--surface);
+           border-radius:10px; margin-right:2px}
+  .viewseg button{border:0; background:transparent; color:var(--text2); font-size:12.5px; font-weight:600;
+                  padding:6px 12px; border-radius:8px; cursor:pointer; transition:.18s var(--ease); white-space:nowrap}
+  .viewseg button:hover{color:var(--text); background:var(--line-soft)}
+  .viewseg button[aria-pressed="true"]{background:var(--accent); color:#fff; box-shadow:var(--sh-accent)}
+  #orderMain{display:none}
+  body.view-order #orderMain{display:grid}
+  body.view-order .grid{display:none}
+  .ord-lines{display:flex; flex-direction:column; gap:8px}
+  .ord-line{border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex; gap:12px;
+            align-items:center; flex-wrap:wrap; background:var(--card-2); transition:.16s}
+  .ord-line:hover{border-color:var(--line3); background:var(--surface); box-shadow:var(--sh-1)}
+  .ord-line .ol-main{flex:1 1 220px; min-width:0}
+  .ord-line .ol-main b{display:block; font-size:13px; letter-spacing:-.005em}
+  .ord-line .ol-main small{color:var(--text3); font-size:11.5px; word-break:break-all}
+  .ord-line .ol-num{text-align:right; flex:0 0 auto}
+  .ord-line .ol-num b{font-size:13.5px}
+  .ord-line .ol-num small{display:block; color:var(--text3); font-size:11px}
+  .ord-empty{border:1px dashed var(--line2); border-radius:12px; padding:16px; text-align:center;
+             color:var(--text3); font-size:12.5px}
+  .ord-tiers{display:flex; flex-direction:column; gap:8px; margin-top:4px}
+  .ord-tiers .tp{display:flex; align-items:center; gap:6px; font-size:12.5px; color:var(--text2)}
+  .ord-tiers input{width:92px; border:1px solid var(--line2); background:var(--surface); border-radius:9px;
+                   height:38px; padding:0 10px; font:inherit; color:var(--text)}
+  .ord-tiers input:hover{border-color:var(--line3)}
+  .ord-sum{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
+  .ord-sum .kpi .v{font-size:17px}
+  .ord-acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
+  .stbadge{display:inline-block; font-size:11px; font-weight:650; padding:2px 8px; border-radius:20px;
+           border:1px solid var(--line2); background:var(--card-2); color:var(--text2)}
+  .stbadge.draft{color:var(--text3)}
+  .stbadge.quoted{color:var(--accent); border-color:var(--accent-line); background:var(--accent-soft)}
+  .stbadge.accepted{color:var(--good); border-color:#bfe3cf; background:#eefaf3}
+  .stbadge.archived{color:var(--text4); text-decoration:line-through}
+  @media (max-width:1080px){ .ord-sum{grid-template-columns:1fr} }
+  @media (max-width:560px){
+    .ord-line .ol-num{width:100%; text-align:left; display:flex; gap:10px; align-items:baseline}
+    .viewseg button{padding:6px 9px; font-size:12px}
+  }
   /* ===== 覆盖层：打印预览 / 导出兜底 ===== */  .ov{position:fixed; inset:0; z-index:var(--z-modal); display:none}
   .ov.open{display:block}
   .ov-bg{position:absolute; inset:0; background:rgba(14,16,21,.5); animation:fadeIn .18s var(--ease);
@@ -602,6 +643,10 @@
         <button type="button" class="topt" data-theme-opt="light" title="浅色" aria-label="浅色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.2M12 19.2v2.2M4.2 12H2M22 12h-2.2M5.6 5.6 4 4M20 20l-1.6-1.6M18.4 5.6 20 4M4 20l1.6-1.6"/></svg></button>
         <button type="button" class="topt" data-theme-opt="dark" title="深色" aria-label="深色"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8.2 8.2 0 0 1 9.5 4 8.5 8.5 0 1 0 20 14.5Z"/></svg></button>
         <button type="button" class="topt" data-theme-opt="auto" title="跟随系统" aria-label="跟随系统"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.4"/><path d="M12 3.6v16.8"/><path d="M12 3.6a8.4 8.4 0 0 1 0 16.8Z" fill="currentColor" stroke="none" opacity=".85"/></svg></button>
+      </div>
+      <div class="viewseg" id="viewSeg" role="group" aria-label="视图切换">
+        <button type="button" data-view="single" aria-pressed="true">单件速算</button>
+        <button type="button" data-view="order" aria-pressed="false">订单报价</button>
       </div>
       <button class="btn" id="btnPreset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16.5 12 21l9-4.5"/></svg>预设管理</button>
       <button class="btn" id="btnCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>导出 CSV</button>
@@ -734,6 +779,7 @@
         </div>
         <div class="qact">
           <button class="btn sm" id="btnQuoteSave" type="button">保存报价</button>
+          <button class="btn sm" id="btnAddToOrder" type="button">加入订单</button>
           <button class="btn sm" id="btnQuoteList" type="button">报价历史</button>
           <button class="btn sm" id="btnShareImg" type="button">分享长图</button>
         </div>
@@ -765,6 +811,70 @@
         </details>
       </section>
 
+    </aside>
+  </main>
+
+  <!-- ===== v1.7.0 订单报价视图（多品项） ===== -->
+  <main class="grid" id="orderMain">
+    <div class="col-in">
+      <section class="card" style="--i:0">
+        <h2><span class="snum">01</span><span class="stitle">订单抬头</span><small id="ordNoHint"></small></h2>
+        <div class="fields">
+          <label class="field"><span class="lb">报价单编号</span>
+            <div class="in"><input id="ordNo" type="text" placeholder="保存时自动生成"></div></label>
+          <label class="field"><span class="lb">状态</span>
+            <div class="in"><select id="ordStatus">
+              <option value="draft">草稿</option>
+              <option value="quoted" selected>已报价</option>
+              <option value="accepted">已成交</option>
+              <option value="archived">已归档</option>
+            </select></div></label>
+          <label class="field"><span class="lb">客户名称</span>
+            <div class="in"><input id="ordCustomer" type="text" placeholder="可留空"></div></label>
+          <label class="field"><span class="lb">联系方式</span>
+            <div class="in"><input id="ordContact" type="text" placeholder="电话 / 微信 / 邮箱"></div></label>
+          <label class="field"><span class="lb">报价有效期</span>
+            <div class="in"><input id="ordValid" type="date"></div></label>
+        </div>
+      </section>
+
+      <section class="card" style="--i:1">
+        <h2><span class="snum">02</span><span class="stitle">行项</span><small id="ordLineHint"></small></h2>
+        <div class="ord-lines" id="ordLines"></div>
+        <div class="ord-acts">
+          <button class="btn sm" id="ordAddBtn" type="button">＋ 加入当前参数作为行项</button>
+        </div>
+      </section>
+    </div>
+
+    <aside class="side">
+      <section class="card" style="--i:0">
+        <h2><span class="snum">03</span><span class="stitle">订单级参数</span></h2>
+        <div class="fields">
+          <label class="field"><span class="lb">运费 / 包装</span>
+            <div class="in"><input id="ordShipping" type="number" min="0" step="1" value="0"><em class="suf">¥</em></div></label>
+          <label class="field"><span class="lb">平台佣金</span>
+            <div class="in"><input id="ordCommission" type="number" min="0" max="95" step="0.5" value="5"><em class="suf">%</em></div></label>
+          <label class="field"><span class="lb">加价倍率</span>
+            <div class="in"><input id="ordMarkup" type="number" min="0" step="0.1" value="2.5"><em class="suf">×成本</em></div></label>
+          <label class="field"><span class="lb">整单折扣</span>
+            <div class="in"><input id="ordBulk" type="number" min="0" max="90" step="1" value="0"><em class="suf">%</em></div></label>
+        </div>
+        <h2 style="margin-top:16px"><span class="snum">04</span><span class="stitle">阶梯定价</span><small>按件数取最高档</small></h2>
+        <div class="ord-tiers" id="ordTiers"></div>
+      </section>
+
+      <section class="card" style="--i:1">
+        <h2><span class="snum">05</span><span class="stitle">汇总</span></h2>
+        <div class="ord-sum" id="ordSum"></div>
+        <div class="ord-acts">
+          <button class="btn primary" id="ordSave" type="button">保存订单</button>
+          <button class="btn sm" id="ordPrint" type="button">打印 / PDF</button>
+          <button class="btn sm" id="ordCsv" type="button">导出 CSV</button>
+          <button class="btn sm" id="ordShare" type="button">分享长图</button>
+          <button class="btn sm ghost" id="ordNew" type="button">新订单</button>
+        </div>
+      </section>
     </aside>
   </main>
 
@@ -1270,7 +1380,10 @@
   }
 
   /* ================= 计算 ================= */
-  function compute(){
+  /* v1.7.0：计算引擎参数化 —— 从普通对象读参数，脱离 DOM（纯函数，可单测、可多行复用） */
+  function nf(f, k){ var v = parseFloat(f && f[k]); return isNaN(v) ? 0 : v; }
+  function computeFrom(f){
+    var num = function(k){ return nf(f, k); };   /* 局部遮蔽：原 compute 里所有 num("x") 无需改动 */
     var qty          = Math.max(1, Math.round(num("qty")));
     var printHours   = Math.max(0, num("printHours"));
     var grams        = Math.max(0, num("grams"));
@@ -1325,6 +1438,8 @@
       depPerHour: depPerHour
     };
   }
+  /* 单件页 = 1 行订单：取当前 DOM 参数快照喂 computeFrom（行为与 v1.6 逐字节一致） */
+  function compute(){ return computeFrom(fieldSnapshot()); }
 
   function renderDonut(items, total){
     var acc = 0, html = "";
@@ -1852,6 +1967,7 @@
 
   function buildBackup(){
     var params = lsGet(SKEY), presets = lsGet(PKEY), catData = lsGet(CKEY);
+    var orders = lsGet(QKEY_NEW);
     var cnt = function(o, k){ return o && Array.isArray(o[k]) ? o[k].length : 0; };
     return {
       type: BK_TYPE, version: BK_VERSION,
@@ -1859,9 +1975,10 @@
       exportedAt: new Date().toISOString(),
       counts: {
         presets: cnt(presets, "device") + cnt(presets, "material"),
-        cats: cnt(catData, "device") + cnt(catData, "material")
+        cats: cnt(catData, "device") + cnt(catData, "material"),
+        orders: Array.isArray(orders) ? orders.length : 0
       },
-      data: { params: params, presets: presets, cats: catData }
+      data: { params: params, presets: presets, cats: catData, orders: orders, quotes: lsGet(QKEY) }
     };
   }
 
@@ -1871,7 +1988,7 @@
     var json = JSON.stringify(b, null, 2);
     download(new Blob([json], {type:"application/json"}),
              "3D打印成本_备份_" + stamp() + ".json", json);
-    toast("已生成备份：参数 / 预设 / 分类");
+    toast("已生成备份：参数 / 预设 / 分类 / 订单");
   }
 
   function restoreBackup(file){
@@ -1893,13 +2010,15 @@
 
       var t = d.exportedAt ? new Date(d.exportedAt) : null;
       var when = (t && !isNaN(t.getTime())) ? t.toLocaleString() : "未知时间";
-      var msg = "恢复备份会【覆盖】当前的参数、自定义预设与分类，且无法撤销。\n\n" +
+      var msg = "恢复备份会【覆盖】当前的参数、自定义预设、分类与订单，且无法撤销。\n\n" +
                 "备份时间：" + when + "\n" +
-                "包含：" + (d.counts ? (d.counts.presets + " 条自定义预设 / " + d.counts.cats + " 个分类") : "—") +
+                "包含：" + (d.counts ? (d.counts.presets + " 条自定义预设 / " + d.counts.cats + " 个分类" +
+                  (d.counts.orders != null ? " / " + d.counts.orders + " 张订单" : "")) : "—") +
                 "\n\n确定继续？";
       if(!window.confirm(msg)) return;
 
-      var pairs = [[SKEY, d.data.params], [PKEY, d.data.presets], [CKEY, d.data.cats]];
+      var pairs = [[SKEY, d.data.params], [PKEY, d.data.presets], [CKEY, d.data.cats],
+                   [QKEY_NEW, d.data.orders], [QKEY, d.data.quotes]];
       var wrote = 0;
       for(var i = 0; i < pairs.length; i++){
         var key = pairs[i][0], val = pairs[i][1];
@@ -1942,7 +2061,7 @@
   }
 
   /* ===== 检查更新 ===== */
-  var APP_VERSION = "1.6.0";
+  var APP_VERSION = "1.7.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -2583,43 +2702,218 @@
     try{ localStorage.setItem(QKEY, JSON.stringify(list.slice(0, 100))); }
     catch(e){ toast("保存失败：本机存储空间不足"); }
   }
+
+  /* ================= 订单化引擎（v1.7.0）=================
+     一张订单 = 多个行项（设备×材料×数量）+ 订单级参数 + 可选阶梯定价。
+     行项 fields 复用单件页 18 字段快照；订单级只覆盖 markup/commission（默认值），
+     运费与折扣在订单级统一处理，避免按行重复计。 */
+  var QKEY_NEW = "dpc_orders_v1";
+  var MIG_KEY  = "dpc_orders_migrated";
+  var ORDER_LIMIT = 60;
+  var STATUSES = ["draft","quoted","accepted","archived"];
+  var STATUS_LABEL = { draft:"草稿", quoted:"已报价", accepted:"已成交", archived:"已归档" };
+
+  function loadOrders(){
+    try{ return JSON.parse(localStorage.getItem(QKEY_NEW) || "[]"); }catch(e){ return []; }
+  }
+  function saveOrders(list){
+    try{ localStorage.setItem(QKEY_NEW, JSON.stringify(list.slice(0, ORDER_LIMIT))); }
+    catch(e){ toast("保存失败：本机存储空间不足"); }
+  }
+  function rid(prefix){
+    return prefix + "_" + Date.now().toString(36) + "_" +
+           Math.random().toString(36).slice(2, 5);
+  }
+  function pad3(n){ return (n < 10 ? "00" : n < 100 ? "0" : "") + n; }
+  function makeNo(seq, t){
+    var d = new Date(t || Date.now()), p2 = function(v){ return (v < 10 ? "0" : "") + v; };
+    return "DPC-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-" + pad3(seq);
+  }
+  /* 阶梯命中：取 qty 命中的最大 minQty 对应折率（返回小数，如 0.05） */
+  function tierDisc(order, qty){
+    var tiers = (order && order.tiers) || [], bestMq = -1, disc = 0;
+    for(var i = 0; i < tiers.length; i++){
+      var mq = Math.max(0, parseInt(tiers[i].minQty, 10) || 0);
+      if(qty >= mq && mq > bestMq){ bestMq = mq; disc = Math.max(0, parseFloat(tiers[i].disc) || 0); }
+    }
+    return disc / 100;
+  }
+  /* 生效折扣：阶梯 与 订单级整单折扣 取较大者（不叠加） */
+  function effDisc(order, qty){
+    var t = tierDisc(order, qty);
+    var b = Math.min(90, Math.max(0, parseFloat(order && order.orderLevel && order.orderLevel.bulkDisc) || 0)) / 100;
+    return Math.max(t, b);
+  }
+  function computeOrder(order){
+    var ol = (order && order.orderLevel) || {};
+    var linesIn = (order && order.lines) || [];
+    var shipping = Math.max(0, parseFloat(ol.shipping) || 0);
+    /* 订单级运费按件分摊进各行成本基础 —— 与单件页口径一致（运费参与加价），
+       且单行订单时全部落到该行 → 与 v1.6 compute() 逐字节等价 */
+    var qtyOf = linesIn.map(function(ln){
+      return Math.max(1, Math.round(parseFloat(ln.fields && ln.fields.qty) || 1));
+    });
+    var totalQty = qtyOf.reduce(function(a, b){ return a + b; }, 0) || 1;
+
+    var lines = [], sumCost = 0, sumRev = 0, sumShip = 0, sumQty = 0;
+    linesIn.forEach(function(ln, i){
+      var share = shipping * qtyOf[i] / totalQty;
+      var f = clone(ln.fields || {});
+      if(ol.markup != null)     f.markup = String(ol.markup);
+      if(ol.commission != null) f.commission = String(ol.commission);
+      f.shipping = String(share);   /* 本行分摊的运费 */
+      f.bulkDisc = "0";             /* 折扣在聚合层按生效折扣统一处理 */
+      var r = computeFrom(f);
+      r.disc    = effDisc(order, r.qty);
+      r.revenue = r.sellNet * r.qty * (1 - r.disc);
+      r.profit  = r.revenue - r.totalCost;
+      lines.push({ line: ln, r: r, shipShare: share });
+      sumCost += r.totalCost; sumRev += r.revenue; sumShip += share; sumQty += r.qty;
+    });
+    var totalCost = sumCost;                 /* 运费已分摊入各行，不再重复相加 */
+    var revenue   = sumRev;
+    var profit    = revenue - totalCost;
+    return {
+      lines: lines,
+      shipping: shipping,
+      shipAllocated: sumShip,
+      qtyTotal: sumQty,
+      totalCost: totalCost,
+      revenue: revenue,
+      profit: profit,
+      unitAvg: sumQty > 0 ? totalCost / sumQty : 0,
+      margin: revenue > 0 ? profit / revenue * 100 : 0,
+      bulkDisc: Math.min(90, Math.max(0, parseFloat(ol.bulkDisc) || 0)) / 100
+    };
+  }
+  /* 报价历史（v1.6 单条快照）→ 订单（v1.7）：启动一次性幂等迁移，旧键保留作回滚兜底 */
+  function migrateQuotes(){
+    try{
+      if(localStorage.getItem(MIG_KEY)) return 0;
+      if(localStorage.getItem(QKEY_NEW)){ localStorage.setItem(MIG_KEY, "1"); return 0; }
+      var old = loadQuotes();
+      if(!old || !old.length){ localStorage.setItem(MIG_KEY, "1"); return 0; }
+      var sorted = old.slice().sort(function(a, b){ return (a.t || 0) - (b.t || 0); });
+      var daySeq = {}, orders = [];
+      sorted.forEach(function(q){
+        var t = q.t || Date.now(), dkey = new Date(t).toDateString();
+        daySeq[dkey] = (daySeq[dkey] || 0) + 1;
+        var f = q.fields || {};
+        orders.push({
+          id: rid("ord"), no: makeNo(daySeq[dkey], t),
+          t: t, updatedAt: t, status: "quoted",
+          customer: null, validUntil: null, currency: "CNY",
+          lines: [{ id: rid("ln"), devName: q.dev || "", matName: q.mat || "",
+                    qty: Math.max(1, parseInt(q.qty, 10) || 1), fields: f }],
+          orderLevel: {
+            bulkDisc: Math.round((q.disc || 0) * 100),
+            shipping: parseFloat(f.shipping) || 0,
+            commission: parseFloat(f.commission) || 0,
+            markup: parseFloat(f.markup) || 0
+          },
+          tiers: [],
+          totals: {
+            totalCost: q.totalCost || 0, revenue: q.revenue || 0, profit: q.profit || 0,
+            margin: (q.revenue > 0 ? (q.profit / q.revenue * 100) : 0), unitAvg: q.unitCost || 0
+          }
+        });
+      });
+      orders.reverse();            /* 最新在前，与旧列表一致 */
+      localStorage.setItem(QKEY_NEW, JSON.stringify(orders));
+      localStorage.setItem(MIG_KEY, "1");
+      return orders.length;
+    }catch(e){ return 0; }
+  }
   function fieldSnapshot(){
     var f = {};
     $$("[data-field]").forEach(function(el){ f[el.getAttribute("data-field")] = el.value; });
     return f;
   }
-  function saveQuote(){
-    var r = last || compute();
+  /* ================= 订单：从单件页参数构建 / 保存 ================= */
+  function buildOrderFromCurrent(){
+    var f = fieldSnapshot();
     var devP = findPreset("device", cur.device), matP = findPreset("material", cur.material);
-    var list = loadQuotes();
-    list.unshift({
-      t: Date.now(),
-      dev: devP ? devP.name : "自定义设备",
-      mat: matP ? matP.name : "自定义材料",
-      qty: r.qty, disc: r.bulkDisc,
-      unitCost: r.unitCost, sellNet: r.sellNet,
-      revenue: r.revenue, totalCost: r.totalCost, profit: r.profit,
-      fields: fieldSnapshot()
+    return {
+      id: rid("ord"), no: "", t: Date.now(), updatedAt: Date.now(),
+      status: "quoted", customer: null, validUntil: null, currency: "CNY",
+      lines: [{
+        id: rid("ln"),
+        devName: devP ? devP.name : "自定义设备",
+        matName: matP ? matP.name : "自定义材料",
+        qty: Math.max(1, Math.round(parseFloat(f.qty) || 1)),
+        fields: f
+      }],
+      orderLevel: {
+        shipping:   Math.max(0, parseFloat(f.shipping) || 0),
+        commission: Math.max(0, parseFloat(f.commission) || 0),
+        markup:     Math.max(0, parseFloat(f.markup) || 0),
+        bulkDisc:   Math.max(0, parseFloat(f.bulkDisc) || 0)
+      },
+      tiers: [], totals: {}
+    };
+  }
+  /* 当日流水编号 DPC-YYYYMMDD-NNN */
+  function assignNo(list){
+    var d = new Date(), p2 = function(v){ return (v < 10 ? "0" : "") + v; };
+    var dpre = "DPC-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-";
+    var max = 0;
+    (list || []).forEach(function(o){
+      if(o && o.no && o.no.indexOf(dpre) === 0){
+        var n = parseInt(o.no.slice(-3), 10) || 0; if(n > max) max = n;
+      }
     });
-    saveQuotes(list);
-    toast("已保存报价（共 " + list.length + " 条）");
+    return dpre + pad3(max + 1);
+  }
+  function summarizeOrder(o){
+    var r = computeOrder(o);
+    return { totalCost: r.totalCost, revenue: r.revenue, profit: r.profit, margin: r.margin, unitAvg: r.unitAvg };
+  }
+  function cloneOrder(o){ try{ return JSON.parse(JSON.stringify(o)); }catch(e){ return o; } }
+  /* 把一份字段快照填回单件页 */
+  function fillFieldsFrom(f){
+    $$("[data-field]").forEach(function(el){
+      var k = el.getAttribute("data-field");
+      if(f && f[k] !== undefined && f[k] !== null && f[k] !== "") el.value = f[k];
+    });
+  }
+  /* 单件页「保存报价」= 新建一张单行订单 */
+  function saveQuote(){
+    var list = loadOrders();
+    var o = buildOrderFromCurrent();
+    o.no = assignNo(list);
+    o.totals = summarizeOrder(o);
+    list.unshift(o);
+    saveOrders(list);
+    renderQuotes();
+    toast("已保存订单 " + o.no + "（共 " + list.length + " 单）");
   }
   function fmtDT(ts){
     var d = new Date(ts), p2 = function(v){ return (v < 10 ? "0" : "") + v; };
     return d.getFullYear() + "-" + p2(d.getMonth() + 1) + "-" + p2(d.getDate()) +
            " " + p2(d.getHours()) + ":" + p2(d.getMinutes());
   }
+
+  /* ================= 报价历史（现为订单列表） ================= */
   function renderQuotes(){
-    var list = loadQuotes(), box = $("#histList");
+    var list = loadOrders(), box = $("#histList");
     $("#histClear").hidden = list.length === 0;
-    if(!list.length){ box.innerHTML = '<div class="hist-empty">还没有保存过报价。填好参数后点「保存报价」即可留档。</div>'; return; }
+    if(!list.length){
+      box.innerHTML = '<div class="hist-empty">还没有保存过订单。在单件页点「保存报价」，或在订单页点「保存订单」即可留档。</div>';
+      return;
+    }
     var html = "";
-    list.forEach(function(q, i){
+    list.forEach(function(o, i){
+      var t = summarizeOrder(o);
+      var ln0 = (o.lines && o.lines[0]) || {};
+      var extra = (o.lines && o.lines.length > 1) ? (" 等 " + o.lines.length + " 项") : "";
+      var st = o.status || "quoted";
       html += '<div class="hist-item">' +
-        '<div class="hi-main"><b>' + esc(q.dev) + " × " + esc(q.mat) + " · " + q.qty + " 件" +
-        (q.disc > 0 ? "（优惠 " + Math.round(q.disc * 100) + "%）" : "") + "</b>" +
-        "<small>" + fmtDT(q.t) + " · 单件成本 " + money(q.unitCost) + " · 单件售价 " + money(q.sellNet) + "</small></div>" +
-        '<div class="hi-num"><b>' + money(q.revenue) + "</b><small>利润 " + money(q.profit) + "</small></div>" +
+        '<div class="hi-main"><b>' + esc(o.no || "（未编号）") +
+          (o.customer && o.customer.name ? " · " + esc(o.customer.name) : "") +
+          ' <span class="stbadge ' + esc(st) + '">' + esc(STATUS_LABEL[st] || "已报价") + "</span></b>" +
+          "<small>" + fmtDT(o.t) + " · " + esc(ln0.devName || "") + " × " + esc(ln0.matName || "") + extra +
+          " · 总成本 " + money(t.totalCost) + "</small></div>" +
+        '<div class="hi-num"><b>' + money(t.revenue) + "</b><small>利润 " + money(t.profit) + "</small></div>" +
         '<button class="btn sm" data-qload="' + i + '">载入</button>' +
         '<button class="btn sm del" data-qdel="' + i + '">删除</button>' +
         "</div>";
@@ -2631,19 +2925,172 @@
     var el = e.target.closest ? e.target.closest("[data-qload],[data-qdel],[data-hisclose]") : null;
     if(!el) return;
     if(el.hasAttribute("data-hisclose")){ $("#histBox").classList.remove("open"); return; }
-    var i = +(el.getAttribute("data-qload") || el.getAttribute("data-qdel")), list = loadQuotes();
+    var i = +(el.getAttribute("data-qload") || el.getAttribute("data-qdel")), list = loadOrders();
     if(!(i >= 0 && i < list.length)) return;
     if(el.hasAttribute("data-qdel")){
-      list.splice(i, 1); saveQuotes(list); renderQuotes(); toast("已删除该条报价"); return;
+      list.splice(i, 1); saveOrders(list); renderQuotes(); toast("已删除该订单"); return;
     }
-    var q = list[i], f = q.fields || {};
-    $$("[data-field]").forEach(function(el2){
-      var k = el2.getAttribute("data-field");
-      if(f[k] !== undefined && f[k] !== null && f[k] !== "") el2.value = f[k];
-    });
+    var o = list[i];
+    fillFieldsFrom((o.lines && o.lines[0] && o.lines[0].fields) || {});
+    curOrder = cloneOrder(o);
     $("#histBox").classList.remove("open");
     update();
-    toast("已载入 " + fmtDT(q.t) + " 的报价参数");
+    setView("order");
+    renderOrder();
+    toast("已载入订单 " + (o.no || ""));
+  }
+
+  /* ================= 订单视图（多品项） ================= */
+  var curOrder = null;
+  function defaultTiers(){ return [{minQty:1,disc:0},{minQty:10,disc:5},{minQty:50,disc:12}]; }
+  function ensureCurrentOrder(){
+    if(!curOrder){
+      curOrder = {
+        id: rid("ord"), no: "", t: Date.now(), updatedAt: Date.now(),
+        status: "quoted", customer: null, validUntil: null, currency: "CNY",
+        lines: [], orderLevel: { shipping:0, commission:5, markup:2.5, bulkDisc:0 },
+        tiers: defaultTiers(), totals: {}
+      };
+    }
+    return curOrder;
+  }
+  function pushCurrentLine(){
+    var o = ensureCurrentOrder();
+    var built = buildOrderFromCurrent();
+    o.lines.push(built.lines[0]);
+    if(o.lines.length === 1) o.orderLevel = built.orderLevel;  /* 首行同步单件页的订单级默认值 */
+    return o;
+  }
+  function syncOrderModelFromInputs(){
+    var o = ensureCurrentOrder();
+    o.no = $("#ordNo").value.trim();
+    o.status = $("#ordStatus").value;
+    o.validUntil = $("#ordValid").value || null;
+    o.customer = {
+      name: $("#ordCustomer").value.trim(),
+      contact: $("#ordContact").value.trim(),
+      note: (o.customer && o.customer.note) || ""
+    };
+    o.orderLevel.shipping   = Math.max(0, parseFloat($("#ordShipping").value) || 0);
+    o.orderLevel.commission = Math.max(0, parseFloat($("#ordCommission").value) || 0);
+    o.orderLevel.markup     = Math.max(0, parseFloat($("#ordMarkup").value) || 0);
+    o.orderLevel.bulkDisc   = Math.max(0, parseFloat($("#ordBulk").value) || 0);
+    return o;
+  }
+  function syncTiersFromInputs(){
+    var o = ensureCurrentOrder(), tiers = [];
+    [0, 1, 2].forEach(function(i){
+      var mqEl = $('[data-tier-mq="' + i + '"]'), dcEl = $('[data-tier-disc="' + i + '"]');
+      if(!mqEl) return;
+      var mqS = mqEl.value.trim(), dcS = dcEl ? dcEl.value.trim() : "";
+      if(mqS === "" && dcS === "") return;
+      tiers.push({ minQty: mqS === "" ? 0 : (parseInt(mqS, 10) || 0),
+                   disc:   dcS === "" ? 0 : (parseFloat(dcS) || 0) });
+    });
+    o.tiers = tiers;
+    return o;
+  }
+  function renderOrderChrome(){
+    var o = ensureCurrentOrder();
+    if(document.activeElement !== $("#ordNo")) $("#ordNo").value = o.no || "";
+    $("#ordNoHint").textContent = o.no ? "" : "保存时自动生成";
+    $("#ordStatus").value = o.status || "quoted";
+    if(document.activeElement !== $("#ordCustomer")) $("#ordCustomer").value = (o.customer && o.customer.name) || "";
+    if(document.activeElement !== $("#ordContact")) $("#ordContact").value = (o.customer && o.customer.contact) || "";
+    $("#ordValid").value = o.validUntil || "";
+    $("#ordShipping").value = o.orderLevel.shipping || 0;
+    $("#ordCommission").value = o.orderLevel.commission != null ? o.orderLevel.commission : 5;
+    $("#ordMarkup").value = o.orderLevel.markup != null ? o.orderLevel.markup : 2.5;
+    $("#ordBulk").value = o.orderLevel.bulkDisc || 0;
+    var tiers = (o.tiers && o.tiers.length) ? o.tiers : defaultTiers(), th = "";
+    for(var i = 0; i < 3; i++){
+      var t = tiers[i] || { minQty: "", disc: "" };
+      th += '<div class="tp">' +
+        '<span>满</span><input type="number" min="0" step="1" data-tier-mq="' + i + '" value="' +
+          (t.minQty === "" ? "" : t.minQty) + '" placeholder="件数">' +
+        '<span>件 → 打折</span><input type="number" min="0" max="90" step="0.5" data-tier-disc="' + i + '" value="' +
+          (t.disc === "" ? "" : t.disc) + '" placeholder="%"><span>%</span></div>';
+    }
+    $("#ordTiers").innerHTML = th;
+  }
+  function renderOrderBody(){
+    var o = ensureCurrentOrder();
+    var r = computeOrder(o);
+    var box = $("#ordLines");
+    $("#ordLineHint").textContent = o.lines.length ? (o.lines.length + " 项") : "";
+    if(!o.lines.length){
+      box.innerHTML = '<div class="ord-empty">还没有行项。切到「单件速算」调好参数后点「加入订单」即可把当前参数作为一行；不同设备 / 材料 / 数量可重复添加。</div>';
+    }else{
+      var h = "";
+      r.lines.forEach(function(x, i){
+        var ln = x.line, rr = x.r;
+        h += '<div class="ord-line">' +
+          '<div class="ol-main"><b>#' + (i + 1) + '　' + esc(ln.devName || "自定义设备") + " × " + esc(ln.matName || "自定义材料") + "</b>" +
+          "<small>" + rr.qty + " 件 · 单件成本 " + money(rr.unitCost) + " · 单件售价 " + money(rr.sellNet) +
+          (rr.disc > 0 ? " · 折扣 " + (rr.disc * 100).toFixed(1) + "%" : "") + "</small></div>" +
+          '<div class="ol-num"><b>' + money(rr.revenue) + '</b><small>成本 ' + money(rr.totalCost) + "</small></div>" +
+          '<button class="btn sm" data-oline-back="' + i + '">取回</button>' +
+          '<button class="btn sm del" data-oline-del="' + i + '">删除</button>' +
+          "</div>";
+      });
+      box.innerHTML = h;
+    }
+    var k = function(t, v, cls){
+      return '<div class="kpi"><div class="k">' + t + '</div><div class="v' + (cls ? " " + cls : "") + '">' + v + "</div></div>";
+    };
+    $("#ordSum").innerHTML =
+      k("订单总成本", money(r.totalCost)) +
+      k("订单总收入", money(r.revenue)) +
+      k("订单总利润", money(r.profit), r.profit >= 0 ? "good" : "bad") +
+      k("毛利率", r.margin.toFixed(1) + "%") +
+      k("合计件数", r.qtyTotal + " 件") +
+      k("平均单件成本", money(r.unitAvg));
+  }
+  function renderOrder(){ renderOrderChrome(); renderOrderBody(); }
+  function setView(v){
+    var isOrder = v === "order";
+    document.body.classList.toggle("view-order", isOrder);
+    $$("#viewSeg [data-view]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-view") === v));
+    });
+    if(isOrder){ ensureCurrentOrder(); renderOrder(); }
+    try{ localStorage.setItem("dpc_view_v1", v); }catch(e){}
+  }
+  function newOrder(){
+    curOrder = null; ensureCurrentOrder(); renderOrder();
+    toast("已新建订单");
+  }
+  function saveCurrentOrder(){
+    var o = syncOrderModelFromInputs();
+    syncTiersFromInputs();
+    if(!o.lines.length){ toast("请先添加至少一个行项"); return; }
+    var list = loadOrders();
+    if(!o.no) o.no = assignNo(list);
+    o.updatedAt = Date.now();
+    o.totals = summarizeOrder(o);
+    var idx = -1;
+    for(var i = 0; i < list.length; i++){ if(list[i].id === o.id){ idx = i; break; } }
+    if(idx >= 0) list[idx] = cloneOrder(o); else list.unshift(cloneOrder(o));
+    saveOrders(list);
+    $("#ordNo").value = o.no;
+    $("#ordNoHint").textContent = "";
+    renderQuotes();
+    toast("已保存订单 " + o.no + "（共 " + list.length + " 单）");
+  }
+  function takeLineBack(i){
+    var o = ensureCurrentOrder(), ln = o.lines[i];
+    if(!ln) return;
+    fillFieldsFrom(ln.fields);
+    o.lines.splice(i, 1);
+    update();
+    setView("single");
+    toast("已取回第 " + (i + 1) + " 行参数到单件页；改好后点「加入订单」重新加回");
+  }
+  function addCurrentToOrder(){
+    var o = pushCurrentLine();
+    setView("order");
+    renderOrder();
+    toast("已加入行项（共 " + o.lines.length + " 项）");
   }
 
   /* ===== 分享长图（Canvas 生成，三端保存适配） ===== */
@@ -2760,6 +3207,122 @@
   /* 触发下载。
      优先级：Android 原生桥（写入系统「下载」目录）→ <a download>。
      若两者都不可靠（嵌入式预览 / WebView 无桥），再弹兜底面板保证内容一定拿得到。 */
+  /* ===== 订单：导出 CSV ===== */
+  function exportOrderCsv(){
+    var o = syncOrderModelFromInputs(); syncTiersFromInputs();
+    var r = computeOrder(o);
+    var rows = [];
+    rows.push(["3D 打印成本报价单"]);
+    rows.push(["编号", o.no || "（未编号）"]);
+    rows.push(["状态", STATUS_LABEL[o.status] || "已报价"]);
+    rows.push(["客户", (o.customer && o.customer.name) || ""]);
+    rows.push(["联系方式", (o.customer && o.customer.contact) || ""]);
+    rows.push(["有效期至", o.validUntil || ""]);
+    rows.push(["生成时间", fmtDT(Date.now())]);
+    rows.push([]);
+    rows.push(["#", "设备", "材料", "数量", "单件成本", "单件售价", "折扣(%)", "小计"]);
+    r.lines.forEach(function(x, i){
+      var rr = x.r, ln = x.line;
+      rows.push([i + 1, ln.devName || "自定义设备", ln.matName || "自定义材料", rr.qty,
+                 rr.unitCost.toFixed(2), rr.sellNet.toFixed(2),
+                 (rr.disc * 100).toFixed(1), rr.revenue.toFixed(2)]);
+    });
+    rows.push([]);
+    rows.push(["订单总成本", r.totalCost.toFixed(2)]);
+    rows.push(["平均单件成本", r.unitAvg.toFixed(2)]);
+    rows.push(["订单总收入", r.revenue.toFixed(2)]);
+    rows.push(["订单总利润", r.profit.toFixed(2)]);
+    rows.push(["毛利率(%)", r.margin.toFixed(2)]);
+
+    var csv = rows.map(function(row){
+      return row.map(function(c){
+        var s = String(c == null ? "" : c);
+        return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+      }).join(",");
+    }).join("\r\n");
+    download(new Blob(["\ufeff" + csv], {type:"text/csv;charset=utf-8;"}),
+             "3D打印报价单_" + stamp() + ".csv", "\ufeff" + csv);
+    toast("已导出订单 CSV");
+  }
+
+  /* ===== 订单：分享长图 ===== */
+  function drawOrderShareImage(){
+    var o = ensureCurrentOrder();
+    var r = computeOrder(o);
+    var W = 750, PAD = 40, scale = Math.min(2, window.devicePixelRatio || 1);
+    var rowH = 60;
+    var H = 128 + 170 + 40 + Math.max(1, r.lines.length) * rowH + 60 + 300;
+    var cv = document.createElement("canvas");
+    cv.width = W * scale; cv.height = H * scale;
+    var ctx = null;
+    try{ ctx = cv.getContext("2d"); }catch(e){}
+    if(!ctx) return null;
+    ctx.scale(scale, scale);
+    ctx.fillStyle = "#f4f5f8"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(0, 0, W, 128);
+    ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 125, W, 3);
+    ctx.fillStyle = "#14161a"; ctx.font = "700 34px system-ui, sans-serif";
+    ctx.fillText("3D 打印成本报价单", PAD, 62);
+    ctx.fillStyle = "#8b93a1"; ctx.font = "22px system-ui, sans-serif";
+    ctx.fillText((o.no || "（未编号）") + " · " + fmtDT(Date.now()) + " · 本地计算生成", PAD, 98);
+    var y = 170;
+    ctx.font = "24px system-ui, sans-serif";
+    [["状态", STATUS_LABEL[o.status] || "已报价"],
+     ["客户", (o.customer && o.customer.name) || "—"],
+     ["有效期", o.validUntil || "—"]].forEach(function(kv){
+      ctx.fillStyle = "#8b93a1"; ctx.textAlign = "left"; ctx.fillText(kv[0], PAD, y);
+      ctx.fillStyle = "#14161a"; ctx.fillText(kv[1], PAD + 110, y);
+      y += 40;
+    });
+    y += 10;
+    ctx.fillStyle = "#14161a"; ctx.font = "700 26px system-ui, sans-serif";
+    ctx.fillText("行项明细", PAD, y); y += 38;
+    ctx.font = "22px system-ui, sans-serif";
+    r.lines.forEach(function(x, i){
+      var rr = x.r, ln = x.line;
+      ctx.fillStyle = "#14161a"; ctx.textAlign = "left";
+      ctx.fillText((i + 1) + ". " + (ln.devName || "自定义设备") + " × " + (ln.matName || "自定义材料"), PAD, y);
+      ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
+      ctx.fillText(rr.qty + " 件 · 单件成本 ¥" + rr.unitCost.toFixed(2) +
+        (rr.disc > 0 ? " · 折扣 " + (rr.disc * 100).toFixed(1) + "%" : ""), PAD, y + 26);
+      ctx.fillStyle = "#14161a"; ctx.font = "700 24px system-ui, sans-serif"; ctx.textAlign = "right";
+      ctx.fillText("¥" + rr.revenue.toFixed(2), W - PAD, y);
+      ctx.textAlign = "left"; ctx.font = "22px system-ui, sans-serif";
+      y += rowH;
+    });
+    y += 14;
+    ctx.fillStyle = "#ffffff"; ctx.fillRect(PAD, y, W - PAD * 2, 4);
+    ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(PAD, y, W - PAD * 2, 4);
+    y += 42;
+    [["订单总成本", r.totalCost, false], ["平均单件成本", r.unitAvg, true], ["订单总收入", r.revenue, false]]
+      .forEach(function(kv){
+        ctx.fillStyle = "#8b93a1"; ctx.font = "24px system-ui, sans-serif";
+        ctx.fillText(kv[0], PAD, y);
+        ctx.fillStyle = "#14161a"; ctx.font = (kv[2] ? "700 " : "") + "28px system-ui, sans-serif";
+        ctx.textAlign = "right"; ctx.fillText("¥" + kv[1].toFixed(2), W - PAD, y);
+        ctx.textAlign = "left"; y += 50;
+      });
+    ctx.fillStyle = "#8b93a1"; ctx.font = "24px system-ui, sans-serif";
+    ctx.fillText("订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", PAD, y);
+    ctx.fillStyle = r.profit >= 0 ? "#0a8f4c" : "#c2410c"; ctx.font = "700 30px system-ui, sans-serif";
+    ctx.textAlign = "right"; ctx.fillText("¥" + r.profit.toFixed(2), W - PAD, y);
+    ctx.textAlign = "left";
+    ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
+    ctx.fillText("由「3D 打印成本计算器」生成 · 参数与订单仅保存在本机", PAD, H - 30);
+    return cv;
+  }
+  function openOrderShare(){
+    var cv = drawOrderShareImage();
+    if(!cv){ toast("当前环境不支持生成图片"); return; }
+    var url;
+    try{ url = cv.toDataURL("image/png"); }catch(e){ toast("生成图片失败"); return; }
+    $("#shareImg").src = url;
+    $("#shareTip").textContent = isIOS()
+      ? "iPhone / iPad：长按上方图片，选「存储到照片」即可保存。"
+      : "点「保存图片」即可保存到本机；也可直接把图发给客户。";
+    $("#shareBox").classList.add("open");
+  }
+
   function download(blob, filename, text){
     var bridge = androidBridge();
     if(bridge && text != null){
@@ -2983,7 +3546,57 @@
   }
 
   /* 用当前参数与结果生成 A4 预览页（与打印输出一致） */
+  /* ===== 订单报价单（打印 / PDF） ===== */
+  var ppMode = "single";
+  function renderOrderPrintPage(){
+    var o = ensureCurrentOrder();
+    var r = computeOrder(o);
+    var now = new Date();
+    var y = function(v){ return "¥" + Number(v).toFixed(2); };
+    var h = "";
+    h += '<h2>3D 打印成本报价单</h2>';
+    h += '<p class="pp-meta">编号 ' + esc(o.no || "（未编号）") +
+         '　·　状态：' + esc(STATUS_LABEL[o.status] || "已报价") +
+         (o.customer && o.customer.name ? '　·　客户：' + esc(o.customer.name) : "") +
+         (o.customer && o.customer.contact ? '（' + esc(o.customer.contact) + '）' : "") +
+         (o.validUntil ? '　·　有效期至：' + esc(o.validUntil) : "") +
+         '<br>生成时间 ' + now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()) +
+         ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + '　·　本地计算生成</p>';
+
+    h += '<h3>行项明细</h3><table><thead><tr><th>#</th><th>设备</th><th>材料</th>' +
+         '<th class="n">数量</th><th class="n">单件成本</th><th class="n">单件售价</th><th class="n">折扣</th><th class="n">小计</th></tr></thead><tbody>';
+    r.lines.forEach(function(x, i){
+      var rr = x.r, ln = x.line;
+      h += '<tr><td>' + (i + 1) + '</td><td>' + esc(ln.devName || "自定义设备") + '</td><td>' + esc(ln.matName || "自定义材料") + '</td>' +
+           '<td class="n">' + rr.qty + '</td><td class="n">' + y(rr.unitCost) + '</td><td class="n">' + y(rr.sellNet) + '</td>' +
+           '<td class="n">' + (rr.disc > 0 ? (rr.disc * 100).toFixed(1) + '%' : '—') + '</td>' +
+           '<td class="n">' + y(rr.revenue) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+
+    h += '<h3>汇总</h3><table class="sum"><tbody>';
+    h += '<tr><td>行项数 / 合计件数</td><td class="n">' + r.lines.length + ' 项 / ' + r.qtyTotal + ' 件</td></tr>';
+    h += '<tr class="big"><td>订单总成本</td><td class="n">' + y(r.totalCost) + '</td></tr>';
+    h += '<tr><td>平均单件成本</td><td class="n">' + y(r.unitAvg) + '</td></tr>';
+    h += '<tr class="big"><td>订单总收入</td><td class="n">' + y(r.revenue) + '</td></tr>';
+    h += '<tr><td>订单总利润</td><td class="n">' + y(r.profit) + '</td></tr>';
+    h += '<tr><td>毛利率</td><td class="n">' + Number(r.margin).toFixed(2) + '%</td></tr>';
+    if(o.orderLevel && o.orderLevel.shipping > 0)
+      h += '<tr><td>其中运费 / 包装</td><td class="n">' + y(o.orderLevel.shipping) + '</td></tr>';
+    h += '</tbody></table>';
+
+    h += '<p class="pp-foot">本报价由「3D 打印成本计算器」本地生成，参数与订单仅保存在本机浏览器；' +
+         '预设参考价为经验值 / 电商参考价，请按实际购入价调整。</p>';
+    $("#ppPage").innerHTML = h;
+  }
+  function openOrderPrint(){
+    syncOrderModelFromInputs();
+    syncTiersFromInputs();
+    openPrint("order");
+  }
+
   function renderPrintPage(){
+    if(ppMode === "order"){ renderOrderPrintPage(); return; }
     var r = last || compute();
     var devP = findPreset("device", cur.device);
     var matP = findPreset("material", cur.material);
@@ -3027,7 +3640,8 @@
     $("#ppPage").innerHTML = h;
   }
 
-  function openPrint(){
+  function openPrint(mode){
+    ppMode = (mode === "order") ? "order" : "single";
     renderPrintPage();
     var b = androidBridge();
     if(b && typeof b.printPage === "function"){
@@ -3109,7 +3723,49 @@
   $("#btnQuoteSave").addEventListener("click", saveQuote);
   $("#btnQuoteList").addEventListener("click", openHist);
   $("#histBox").addEventListener("click", histClick);
+  $("#histClear").addEventListener("click", function(){
+    if(!loadOrders().length) return;
+    if(!window.confirm("确定清空全部订单？此操作不可撤销。")) return;
+    saveOrders([]); renderQuotes(); toast("已清空全部订单");
+  });
   $("#btnShareImg").addEventListener("click", openShare);
+
+  /* ===== v1.7.0 订单视图事件 ===== */
+  $("#btnAddToOrder").addEventListener("click", addCurrentToOrder);
+  $("#viewSeg").addEventListener("click", function(e){
+    var b = e.target && e.target.closest ? e.target.closest("[data-view]") : null;
+    if(b) setView(b.getAttribute("data-view"));
+  });
+  $("#ordAddBtn").addEventListener("click", function(){
+    var o = pushCurrentLine();
+    renderOrder();
+    toast("已加入行项（共 " + o.lines.length + " 项）");
+  });
+  $("#ordSave").addEventListener("click", saveCurrentOrder);
+  $("#ordNew").addEventListener("click", newOrder);
+  $("#ordPrint").addEventListener("click", openOrderPrint);
+  $("#ordCsv").addEventListener("click", exportOrderCsv);
+  $("#ordShare").addEventListener("click", openOrderShare);
+  $("#ordLines").addEventListener("click", function(e){
+    var el = e.target.closest ? e.target.closest("[data-oline-back],[data-oline-del]") : null;
+    if(!el) return;
+    var i = +(el.getAttribute("data-oline-back") || el.getAttribute("data-oline-del"));
+    var o = ensureCurrentOrder();
+    if(!(i >= 0 && i < o.lines.length)) return;
+    if(el.hasAttribute("data-oline-del")){
+      o.lines.splice(i, 1); renderOrderBody(); toast("已删除该行项"); return;
+    }
+    takeLineBack(i);
+  });
+  ["ordNo", "ordStatus", "ordCustomer", "ordContact", "ordValid"].forEach(function(id){
+    $("#" + id).addEventListener("input", syncOrderModelFromInputs);
+    $("#" + id).addEventListener("change", syncOrderModelFromInputs);
+  });
+  ["ordShipping", "ordCommission", "ordMarkup", "ordBulk"].forEach(function(id){
+    $("#" + id).addEventListener("input", function(){ syncOrderModelFromInputs(); renderOrderBody(); });
+  });
+  $("#ordTiers").addEventListener("input", function(){ syncTiersFromInputs(); renderOrderBody(); });
+  $("#ordTiers").addEventListener("change", function(){ syncTiersFromInputs(); renderOrderBody(); });
   $("#shareSave").addEventListener("click", saveShareImage);
   $("#shareBox").addEventListener("click", function(e){
     if(e.target.closest && e.target.closest("[data-shclose]")) $("#shareBox").classList.remove("open");
@@ -3178,6 +3834,23 @@
   if(androidBridge() || isElectron){
     setTimeout(function(){ checkUpdate(false); }, 3000);
   }
+
+  /* v1.7.0：报价历史 → 订单 的一次性幂等迁移（旧键 dpc_quotes_v1 保留作回滚兜底） */
+  migrateQuotes();
+  /* 恢复上次所在视图 */
+  try{ if(localStorage.getItem("dpc_view_v1") === "order") setView("order"); }catch(e){}
+
+  /* 纯函数测试接口：离线单文件应用，暴露纯计算 / 存储函数便于 jsdom 回归断言（无副作用） */
+  try{
+    window.__DPC = {
+      compute: compute, computeFrom: computeFrom, computeOrder: computeOrder,
+      tierDisc: tierDisc, effDisc: effDisc, nf: nf, fieldSnapshot: fieldSnapshot,
+      loadOrders: loadOrders, saveOrders: saveOrders, migrateQuotes: migrateQuotes,
+      loadQuotes: loadQuotes, saveQuotes: saveQuotes,
+      assignNo: assignNo, summarizeOrder: summarizeOrder, buildOrderFromCurrent: buildOrderFromCurrent,
+      setView: setView, saveQuote: saveQuote, renderQuotes: renderQuotes, buildBackup: buildBackup
+    };
+  }catch(e){}
 })();
 </script>
 </body>
