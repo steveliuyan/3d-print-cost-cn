@@ -213,10 +213,15 @@
   @media (max-width:1080px){ .side{position:static} }
 
   .hero{position:relative; overflow:hidden; color:#fff; border-radius:var(--r); padding:18px 18px 16px; margin-bottom:14px;
-        background:linear-gradient(155deg,#6259f2 0%,#4f46e5 46%,#3f36c9 100%); box-shadow:var(--sh-accent)}
+        background:radial-gradient(340px 160px at 88% -20%, rgba(255,255,255,.34), transparent 62%),
+                   radial-gradient(300px 200px at 0% 122%, rgba(255,255,255,.12), transparent 62%),
+                   linear-gradient(155deg,#6259f2 0%,#4f46e5 46%,#3f36c9 100%); box-shadow:var(--sh-accent)}
+  /* 流光：一道弱光泽斜向缓慢扫过（8s 循环），reduced-motion 时整块关闭 */
   .hero::before{content:""; position:absolute; inset:0; pointer-events:none;
-    background:radial-gradient(340px 160px at 88% -20%, rgba(255,255,255,.34), transparent 62%),
-               radial-gradient(300px 200px at 0% 122%, rgba(255,255,255,.12), transparent 62%)}
+    background:linear-gradient(115deg, transparent 44%, rgba(255,255,255,.13) 50%, transparent 56%) no-repeat;
+    background-size:250% 100%; background-position:-35% 0;
+    animation:heroSheen 8s ease-in-out infinite}
+  @keyframes heroSheen{ from{background-position:-35% 0} to{background-position:135% 0} }
   .hero::after{content:""; position:absolute; inset:0; pointer-events:none; opacity:.16; mix-blend-mode:soft-light;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='90' height='90' filter='url(%23n)'/%3E%3C/svg%3E")}
   .hero > *{position:relative}
@@ -241,8 +246,13 @@
   .donut-num{fill:var(--text)}
   .donut-cap{fill:var(--text3)}
   @keyframes spinIn{ from{opacity:0; transform:scale(.86) rotate(-14deg)} to{opacity:1; transform:none} }
+  /* 弧段画入：每段从 0 长到目标比例，--d 交错延迟 */
+  #donutSeg circle{animation:segIn .5s var(--ease) backwards; animation-delay:var(--d,0ms)}
+  @keyframes segIn{ from{stroke-dasharray:0 100} }
   .legend{display:flex; flex-direction:column; gap:6px; flex:1; min-width:0}
-  .lg{display:flex; align-items:center; gap:8px; font-size:12px; padding:2px 0}
+  .lg{display:flex; align-items:center; gap:8px; font-size:12px; padding:2px 0;
+      animation:lgIn .35s var(--ease) backwards; animation-delay:var(--d,0ms)}
+  @keyframes lgIn{ from{opacity:0; transform:translateX(-6px)} to{opacity:1; transform:none} }
   .lg .dot{width:9px; height:9px; border-radius:3px; flex:none}
   .lg .nm{color:var(--text2); flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .lg .amt{font-variant-numeric:tabular-nums; color:var(--text); font-weight:500}
@@ -655,6 +665,7 @@
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001ms!important; animation-delay:0!important; transition-duration:.001ms!important}
     html{scroll-behavior:auto}
+    .hero::before{animation:none!important}   /* 无限循环的流光在减弱动效下整个关掉 */
   }
 </style>
 <script>
@@ -1498,27 +1509,28 @@
   function compute(){ return computeFrom(fieldSnapshot()); }
 
   function renderDonut(items, total){
-    var acc = 0, html = "";
+    var acc = 0, idx = 0, html = "";
     items.forEach(function(it){
       if(it.value <= 0.0001) return;
       var pct = it.value / total * 100;
       html += '<circle cx="21" cy="21" r="15.9155" fill="none" stroke="' + it.color +
               '" stroke-width="5.5" stroke-dasharray="' + pct.toFixed(3) + " " + (100 - pct).toFixed(3) +
-              '" stroke-dashoffset="' + (-acc).toFixed(3) + '"/>';
-      acc += pct;
+              '" stroke-dashoffset="' + (-acc).toFixed(3) + '" style="--d:' + (idx * 70) + 'ms"/>';
+      acc += pct; idx++;
     });
     $("#donutSeg").innerHTML = html;
     animateNum($("#donutTxt"), total, money0);
   }
 
   function renderLegend(items, total){
-    var html = "";
+    var idx = 0, html = "";
     items.forEach(function(it){
       if(it.value <= 0.0001) return;
       var pct = total > 0 ? it.value / total * 100 : 0;
-      html += '<div class="lg"><span class="dot" style="background:' + it.color + '"></span>' +
+      html += '<div class="lg" style="--d:' + (idx * 45) + 'ms"><span class="dot" style="background:' + it.color + '"></span>' +
               '<span class="nm">' + it.name + '</span>' +
               '<span class="amt">' + money(it.value) + " · " + pct.toFixed(1) + "%</span></div>";
+      idx++;
     });
     $("#legend").innerHTML = html || '<div class="lg"><span class="nm">暂无数据</span></div>';
   }

@@ -1719,6 +1719,60 @@ setTimeout(function () {
     }, 900);
   }
 
+  /* ============ 动效（v1.8.3：Hero 流光 / donut 画入 / 图例交错 / reduced-motion 兜底） ============ */
+  function runAnimTests(done) {
+    /* --- 源码级断言：关键 CSS / JS 结构必须存在 --- */
+    ok('动效：Hero 蓝卡有流光 keyframes（heroSheen）', /@keyframes heroSheen/.test(html));
+    ok('动效：Hero::before 挂了流光动画且为慢速循环（6s 以上，不闪眼）',
+       /\.hero::before\{[^}]*animation:heroSheen ([6-9]|\d\d)s/.test(html));
+    ok('动效：donut 弧段有画入 keyframes（segIn）', /@keyframes segIn/.test(html));
+    ok('动效：donut 弧段样式挂 segIn 且支持 --d 交错延迟',
+       /#donutSeg circle\{[^}]*animation:segIn[^;]*;[^}]*animation-delay:var\(--d/.test(html));
+    ok('动效：renderDonut 给每段输出 --d 延迟', /renderDonut[\s\S]{0,600}--d:'/.test(html));
+    ok('动效：图例行有交错入场 keyframes（lgIn）', /@keyframes lgIn/.test(html));
+    ok('动效：图例行样式挂 lgIn 且延迟走 --d',
+       /\.lg\{[^}]*animation:lgIn[^;]*;[^}]*animation-delay:var\(--d/.test(html));
+    ok('动效：renderLegend 给每行输出 --d 延迟', /renderLegend[\s\S]{0,500}--d:'/.test(html));
+    ok('动效：reduced-motion 兜底仍在（系统减弱动效时全关）',
+       /@media \(prefers-reduced-motion:reduce\)\{[^}]*animation-duration/.test(html));
+
+    /* --- 运行时断言：初始渲染后 donut 弧段 / 图例行真的带上了 --d --- */
+    var dom9 = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            }, set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:o'; };
+        win.URL.revokeObjectURL = function () {};
+        win.print = function () {};
+      }
+    });
+    var d9 = dom9.window.document;
+    setTimeout(function () {
+      var segs = d9.querySelectorAll('#donutSeg circle');
+      ok('动效：donut 弧段渲染出来且每段带 --d', segs.length > 0 &&
+         Array.prototype.every.call(segs, function (c) { return /--d:\s*\d+ms/.test(c.getAttribute('style') || ''); }),
+         segs.length + ' 段');
+      var ds = Array.prototype.map.call(segs, function (c) { return c.getAttribute('style'); });
+      ok('动效：donut 各段 --d 递增（交错画入）', segs.length < 2 || ds[0] !== ds[1]);
+      var lgs = d9.querySelectorAll('.legend .lg');
+      ok('动效：图例行渲染出来且每行带 --d', lgs.length > 0 &&
+         Array.prototype.every.call(lgs, function (el) { return /--d:\s*\d+ms/.test(el.getAttribute('style') || ''); }),
+         lgs.length + ' 行');
+      done();
+    }, 400);
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -1757,7 +1811,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(finish); }); }); }); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(finish); }); }); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);
