@@ -1643,6 +1643,21 @@ setTimeout(function () {
     var _q0 = typeof qb === 'function' ? qb(_it, 0, 29.03) : {items:[null],total:0};
     ok('v1.8r2 客户版：成本为 0 时不产生分项（仅报价总额）', _q0.items.length === 0 && Math.abs(_q0.total - 29.03) < 0.005);
 
+    /* --- 客户版：透明分项（电费/运费）锁定真实值，不上调 --- */
+    ok('v1.8r2 客户版：锁定清单含电费与运费/包装',
+       (E.QUOTE_LOCKED || []).indexOf('电费') >= 0 && (E.QUOTE_LOCKED || []).join('').indexOf('运费') >= 0);
+    var _ql = typeof qb === 'function' ? qb(_it, 11.03, 29.03, ['电费']) : {items:[],total:0};
+    var _e = null; _ql.items.forEach(function(x){ if(x.name === '电费') _e = x; });
+    ok('v1.8r2 客户版：电费锁定为真实值（不上调）', !!_e && Math.abs(_e.value - 0.42) < 0.005, _e ? _e.value : '-');
+    var _s2 = 0; _ql.items.forEach(function(x){ _s2 += x.value; });
+    ok('v1.8r2 客户版：锁电费后加总仍 = 报价总额', Math.abs(_s2 - 29.03) < 0.005, _s2.toFixed(2));
+    var _it2 = _it.concat([{name:'运费 / 包装', value:0.60, color:'#9aa3b2'}]);
+    var _q2 = typeof qb === 'function' ? qb(_it2, 11.63, 29.03, ['电费','运费 / 包装']) : {items:[],total:0};
+    var _sh = null; _q2.items.forEach(function(x){ if(x.name === '运费 / 包装') _sh = x; });
+    ok('v1.8r2 客户版：运费锁定为真实值', !!_sh && Math.abs(_sh.value - 0.60) < 0.005, _sh ? _sh.value : '-');
+    ok('v1.8r2 客户版：锁定项为末项时尾差不得污染（加总仍 = 报价总额）',
+       Math.abs(_q2.items.reduce(function(s,x){ return s + x.value; }, 0) - 29.03) < 0.005);
+
     ok('v1.8r2 客户版：摘要仅「报价总额」，无成本/利润/毛利率',
        (function(){ if(typeof E.shareSummaryRows !== 'function') return false;
          var a = E.shareSummaryRows({qty:1,totalCost:11.03,unitCost:11.03,unitAvg:11.03,sellNet:29.03,revenue:29.03,profit:18,margin:62}, true, 'single');

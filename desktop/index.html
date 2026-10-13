@@ -3439,22 +3439,40 @@
     });
     ctx.restore();
   }
-  /* v1.8.0-r2 客户版分项：把成本分项按 k = 报价总额 / 总成本 统一上调，使加总精确 = 报价总额。
-     利润被按比例揉进各项，客户看不到独立的成本合计与利润/毛利率。纯函数，便于回归断言。 */
-  function quoteBreakdown(items, totalCost, revenue){
+  /* v1.8.0-r2 客户版分项：把成本分项「上调」到加总 = 报价总额（利润按比例揉进各项，隐藏毛利率）。
+     - 透明可核算的分项（电费 / 运费包装）**锁定真实值**，不上调 —— 客户一看电费贵就觉得不合理；
+     - 其余分项（材料/设备折旧/人工/后处理/失败率）按剩余差额比例吸收；
+     - 四舍五入尾差并入**末个非锁定项**（避免污染锁定值），保证加总分位一致。
+     纯函数，便于回归断言。 */
+  var QUOTE_LOCKED = ["电费", "运费 / 包装"];
+  function quoteBreakdown(items, totalCost, revenue, locked){
     var total = Math.round(revenue * 100) / 100;
     var out = [];
     if(!(totalCost > 0) || !(revenue > 0)) return { items: out, total: total };
-    var k = revenue / totalCost, acc = 0;
+    var lockList = locked || QUOTE_LOCKED;
+    var isLock = function(n){ return lockList.indexOf(n) >= 0; };
+    var lockSum = 0, freeSum = 0;
     items.forEach(function(it){
       if(it.value <= 0.0001) return;
-      var v = Math.round(it.value * k * 100) / 100;
-      if(v < 0.005) return;                    /* 上调后仍为 ¥0.00 的分项不展示 */
+      if(isLock(it.name)) lockSum += it.value; else freeSum += it.value;
+    });
+    var remainder = total - lockSum;                    /* 需由非锁定项吸收的金额 */
+    var useLock = remainder >= 0 && freeSum > 0;        /* 退化（报价 < 锁定真实成本）时回退为全部按比例 */
+    var lastFree = -1, acc = 0;
+    items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      var v = useLock
+        ? (isLock(it.name) ? Math.round(it.value * 100) / 100
+                           : Math.round(it.value / freeSum * remainder * 100) / 100)
+        : Math.round(it.value / totalCost * revenue * 100) / 100;
+      if(v < 0.005) return;                             /* 上调后仍为 ¥0.00 的不展示 */
       out.push({ name: it.name, color: it.color, value: v });
+      if(!isLock(it.name)) lastFree = out.length - 1;
       acc += v;
     });
-    if(out.length){                            /* 尾差并入末项，保证加总与报价总额分位一致 */
-      var diff = Math.round((total - acc) * 100) / 100, li = out.length - 1;
+    if(out.length){                                     /* 尾差并入末个非锁定项 */
+      var diff = Math.round((total - acc) * 100) / 100;
+      var li = lastFree >= 0 ? lastFree : out.length - 1;
       if(Math.abs(diff) >= 0.005) out[li].value = Math.round((out[li].value + diff) * 100) / 100;
     }
     return { items: out, total: total };
@@ -3486,7 +3504,7 @@
     var devP = findPreset("device", cur.device), matP = findPreset("material", cur.material);
     var W = 750, PAD = 40, scale = Math.min(2, window.devicePixelRatio || 1);
     var rows = [];
-    if(cust){ rows = quoteBreakdown(r.items, r.totalCost, r.revenue).items; }
+    if(cust){ rows = quoteBreakdown(r.items, r.totalCost, r.revenue, QUOTE_LOCKED).items; }
     else { r.items.forEach(function(it){ if(it.value > 0.0001) rows.push(it); }); }
     var H = rows.length * 46 + (cust ? 560 : 720);
     var cv = document.createElement("canvas");
@@ -4285,7 +4303,7 @@
       setView: setView, saveQuote: saveQuote, renderQuotes: renderQuotes, buildBackup: buildBackup,
       loadCustomers: loadCustomers, rememberCustomer: rememberCustomer, custLookup: custLookup,
       BRAND_SVG: BRAND_SVG, drawBrandMark: drawBrandMark,
-      quoteBreakdown: quoteBreakdown, shareSummaryRows: shareSummaryRows,
+      quoteBreakdown: quoteBreakdown, shareSummaryRows: shareSummaryRows, QUOTE_LOCKED: QUOTE_LOCKED,
       drawShareImage: drawShareImage, drawOrderShareImage: drawOrderShareImage
     };
   }catch(e){}
