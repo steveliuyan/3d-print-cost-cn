@@ -7,5 +7,8 @@
     <item name="android:navigationBarColor">@color/bg</item>
     <item name="android:windowLightStatusBar">true</item>
     <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+    <!-- 打孔屏横屏：允许内容进入挖孔区（否则系统会在挖孔一侧留出黑色安全带）。
+         页面已用 viewport-fit=cover + env(safe-area-inset-*) 自行避让挖孔。 -->
+    <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
   </style>
 </resources>

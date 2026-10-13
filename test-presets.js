@@ -1965,6 +1965,60 @@ setTimeout(function () {
     });
   }
 
+  /* ============ v1.8.4 横屏 / 平板适配 ============ */
+  function runAdaptiveTests(done) {
+    /* --- 视口与安全区 --- */
+    ok('v1.8.4 适配：viewport 含 viewport-fit=cover（刘海 / 圆角屏）',
+       /<meta name="viewport"[^>]*viewport-fit=cover/.test(html));
+    ok('v1.8.4 适配：横屏安全区参与 .wrap 内边距（env(safe-area-inset-*)）',
+       /env\(safe-area-inset-left\)/.test(html) && /env\(safe-area-inset-right\)/.test(html));
+
+    /* --- 横屏手机：左右分栏 + 收紧头部 + 小一号 Hero --- */
+    var land = html.match(/@media screen and \(orientation:landscape\) and \(max-height:560px\)\{([\s\S]*?)\n  \}/);
+    ok('v1.8.4 适配：存在横屏手机媒体查询块', !!land);
+    ok('v1.8.4 适配：横屏手机走左右分栏（输入 | 结果）',
+       !!land && /\.grid\{grid-template-columns:minmax\(0,1fr\) minmax\(\d+px,\d+px\)/.test(land[1]));
+    ok('v1.8.4 适配：横屏手机收紧 Hero 与顶栏（省竖向空间）',
+       !!land && /\.hero \.v\{font-size:3\dpx\}/.test(land[1]) && /\.brand p\{display:none\}/.test(land[1]));
+
+    /* --- 平板竖屏：也分两栏，结果贴住输入 --- */
+    var tab = html.match(/@media screen and \(min-width:8\d\dpx\) and \(max-width:1080px\)\{([\s\S]*?)\n  \}/);
+    ok('v1.8.4 适配：平板竖屏（820–1080）也走左右分栏且侧栏吸顶',
+       !!tab && /\.side\{position:sticky/.test(tab[1]));
+
+    /* --- 大屏平板 / 桌面：容器收窄居中 + 控件放大 --- */
+    var big = html.match(/@media screen and \(min-width:1200px\)\{([\s\S]*?)\n  \}/);
+    ok('v1.8.4 适配：≥1200px 收窄容器并放大字号 / 结果栏',
+       !!big && /\.wrap\{max-width:1\d\d\dpx/.test(big[1]) && /body\{font-size:1[56]px\}/.test(big[1]) &&
+       /\.grid\{grid-template-columns:minmax\(0,1fr\) minmax\(4\d\dpx,\d+px\)/.test(big[1]));
+
+    /* --- 安卓壳：旋转不重启、支持平板多窗口 --- */
+    var mfPath = path.join(__dirname, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+    var mf = fs.existsSync(mfPath) ? fs.readFileSync(mfPath, 'utf8') : '';
+    ok('v1.8.4 适配：Android 清单 configChanges 覆盖旋转（不重建 Activity）',
+       /configChanges="[^"]*orientation[^"]*"/.test(mf) && /configChanges="[^"]*screenSize[^"]*"/.test(mf));
+    ok('v1.8.4 适配：Android 未锁定竖屏 + 声明支持多窗口/大屏',
+       !/screenOrientation="portrait"/.test(mf) && /resizeableActivity="true"/.test(mf));
+
+    /* --- 打孔屏：横屏时不应留黑边（配合安全区内边距避让） --- */
+    var themesPath = path.join(__dirname, 'android', 'app', 'src', 'main', 'res', 'values', 'themes.xml');
+    var themes = fs.existsSync(themesPath) ? fs.readFileSync(themesPath, 'utf8') : '';
+    ok('v1.8.4 适配：主题声明 windowLayoutInDisplayCutoutMode=shortEdges（横屏不留黑边）',
+       /windowLayoutInDisplayCutoutMode[^<]*shortEdges/.test(themes));
+    ok('v1.8.4 适配：横屏顶栏按钮不竖排（nowrap + 不压缩）',
+       !!land && /\.hd-r \.btn\{[^}]*white-space:nowrap/.test(land[1]) && /\.hd-r \.btn\{[^}]*flex:none/.test(land[1]));
+    ok('v1.8.4 适配：横屏品牌标题可伸缩并省略（不硬切、不压右侧控件）',
+       !!land && /\.brand h1\{[^}]*min-width:0/.test(land[1]) &&
+       /\.brand h1\{[^}]*text-overflow:ellipsis/.test(land[1]));
+
+    /* --- 打印 / 长图不受响应式影响（守住既有断言） --- */
+    ok('v1.8.4 适配：打印仍固定白底 A4（未破坏打印样式）',
+       /@media print\{[\s\S]*?body\{background:#fff\}/.test(html) ||
+       /@media print\{[\s\S]*?body\{background:#fff\}/.test(html.replace(/\n/g, '')));
+
+    done();
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -2003,7 +2057,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(finish); }); }); }); }); }); }); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(function () { runAdaptiveTests(finish); }); }); }); }); }); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);

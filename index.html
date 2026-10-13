@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <meta name="description" content="3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润。支持设备与耗材预设、自定义分类。">
 <meta name="theme-color" content="#4f46e5" id="metaThemeColor">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234f46e5'/%3E%3Cg fill='%23ffffff'%3E%3Cpath d='M32 12.48 48.892 22.24 32 32 15.108 22.24Z'/%3E%3Cpath d='M15.108 22.24 32 32 32 51.52 15.108 41.76Z'/%3E%3Cpath d='M48.892 22.24 32 32 32 51.52 48.892 41.76Z'/%3E%3C/g%3E%3Cpath d='M15.108 22.24 32 32M48.892 22.24 32 32M32 32 32 51.52' fill='none' stroke='%234f46e5' stroke-width='2.377' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
@@ -684,6 +684,53 @@
     .pp-page h2{font-size:17px}
     .pp-page table{font-size:11.5px}
     .pp-page th,.pp-page td{padding:4px 6px}
+  }
+  /* ============ v1.8.4 横屏 / 平板适配 ============
+     目标：横屏手机不变成「一条长柱」，平板竖屏也把结果放到输入旁边，大屏不铺满整条超宽显示器。
+     全部只作用于屏幕（@media screen），打印样式不受影响。 */
+  /* ① 横屏手机（高度 ≤560px，例如 850×400 的安卓机 / 平板分屏）：收紧顶栏、左右分栏 */
+  @media screen and (orientation:landscape) and (max-height:560px){
+    .wrap{padding:0 max(14px, env(safe-area-inset-left)) 44px max(14px, env(safe-area-inset-right))}
+    .topbar{padding:8px 0; margin:0 0 12px; gap:8px; flex-wrap:nowrap}
+    .brand p{display:none}
+    .brand h1{font-size:14.5px; white-space:nowrap; min-width:0; flex:0 1 auto;
+              overflow:hidden; text-overflow:ellipsis}
+    .brand{min-width:0; flex:0 1 auto; overflow:hidden}
+    .mark{width:30px; height:30px; border-radius:9px}
+    .mark svg{width:22px; height:22px}
+    .hd-r{flex-wrap:nowrap; overflow-x:auto; scrollbar-width:none}
+    .hd-r::-webkit-scrollbar{display:none}
+    .hd-r .btn{white-space:nowrap; flex:none}
+    .hd-r .viewseg,.hd-r .themebox{flex:none}
+    .btn{padding:6px 10px; font-size:12.5px}
+    .btn.sm{height:34px}
+    .grid{grid-template-columns:minmax(0,1fr) minmax(300px,380px); gap:14px}
+    .side{position:static}
+    .card{padding:14px 16px 16px; margin-bottom:12px}
+    .card > h2{margin-bottom:11px}
+    .hero{padding:12px 14px 10px; margin-bottom:10px}
+    .hero .v{font-size:30px}
+    .hero .sub{margin-top:9px; padding-top:8px}
+    .kpis{gap:8px}
+    .dash-kpis{grid-template-columns:repeat(6,minmax(0,1fr))}
+    .dash-trend{height:110px}
+    .dash-cols{grid-template-columns:1fr 1fr}
+  }
+  /* ② 平板竖屏 / 小笔电（820–1080）：同样分两栏，结果栏吸顶跟随 */
+  @media screen and (min-width:820px) and (max-width:1080px){
+    .grid{grid-template-columns:minmax(0,1fr) minmax(320px,380px); gap:16px}
+    .side{position:sticky; top:78px}
+    .dash-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+  }
+  /* ③ 大屏平板 / 桌面（≥1200）：容器收窄居中，字号与结果栏一起放大，避免超宽铺满 */
+  @media screen and (min-width:1200px){
+    .wrap{max-width:1440px; padding:0 max(28px, env(safe-area-inset-left)) 84px max(28px, env(safe-area-inset-right))}
+    body{font-size:15px}
+    .grid{grid-template-columns:minmax(0,1fr) minmax(420px,470px); gap:24px}
+    .hero .v{font-size:44px}
+    .kpi .v{font-size:21px}
+    .dash-kpis .kpi .v{font-size:19px}
+    .field input{font-size:15.5px}
   }
   @media print{
     body{background:#fff}
