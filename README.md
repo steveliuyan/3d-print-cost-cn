@@ -4,7 +4,7 @@
 得出单件成本、建议售价与利润。同一份 `index.html` 同时打包成 **网页 / Windows 桌面 / Android** 三端。
 
 - **零依赖**：一个 HTML 文件，双击即用，不联网、不上传数据
-- **完整预设**：11 个设备 + 54 个材料预设（拓竹 / 大简 / 三慈 / 通用），可自行增删改
+- **完整预设**：11 个设备 + 50 个材料预设（拓竹 / 大简 / 三慈 / 通用），可自行增删改
 - **实时计算**：成本构成环形图 + 明细表，参数改了立刻出结果
 - **数据自主**：全部存在本机，支持导出 CSV、打印 / 存 PDF、**全量备份与恢复**
 - **模型估算**：导入 STL / 3MF 自动估用量；若文件来自拓竹 Studio / OrcaSlicer 切片，直接读**切片实测耗材克数与打印时长**（无需手填）
@@ -47,13 +47,15 @@ adb install -r -t 3d-print-cost-cn-1.8.0.apk
 ```
 3d-print-cost-calculator/
 ├─ index.html              ← 唯一来源（改只改这个）
-├─ test-presets.js         ← jsdom 回归测试（196 项断言）
+├─ test-presets.js         ← jsdom 回归测试（346 项断言）
 ├─ _sync_clean.py          ← 剥离预览注入并同步三份副本
+├─ _gen_icons.py           ← 三端图标唯一来源（Pillow；favicon / iOS / Android / Windows）
 ├─ desktop/                ← Electron 桌面工程
 │  ├─ main.js              ← 主进程（窗口 / 菜单 / Ctrl+P 打印 / 外链走系统浏览器）
+│  ├─ preload.js           ← 预加载脚本（暴露 window.dpc：更新检查等桥接）
 │  ├─ build-win.js         ← Windows 打包脚本
 │  ├─ rebuild-asar.js      ← 只重建 app.asar（DLL 未变时的快路径）
-│  ├─ build-icon.py        ← 生成应用图标（Pillow）
+│  ├─ build-icon.py        ← 旧版桌面图标脚本（已被根目录 _gen_icons.py 取代，仅留作参考）
 │  ├─ build/icon.ico       ← 应用图标
 │  └─ package.json
 ├─ android/                ← Android WebView 工程
@@ -80,7 +82,7 @@ npm run build:win          # 产物：../dist/desktop/3D打印成本计算器-wi
 ```
 
 打包脚本会把工程根的 `index.html` 拷进临时目录再打包，`app.asar` 内只有
-`main.js` / `index.html` / `package.json` 三个文件。
+`main.js` / `preload.js` / `index.html` / `package.json` 四个文件。
 
 ### 使用
 
@@ -88,7 +90,7 @@ npm run build:win          # 产物：../dist/desktop/3D打印成本计算器-wi
 
 | 形态 | 路径 | 特点 |
 |---|---|---|
-| **单文件便携版** | `dist/desktop-portable/3D打印成本计算器-1.8.0-便携版.exe` | 71 MB，双击即用；每次启动会自解压到临时目录，首次打开稍慢 |
+| **单文件便携版** | `dist/desktop/3D打印成本计算器-1.8.0-便携版.exe` | 71 MB，双击即用；每次启动会自解压到临时目录，首次打开稍慢 |
 | **免安装目录版** | `dist/desktop/3D打印成本计算器-win32-x64/` | 269 MB，启动最快；整个文件夹拷到任意位置都可用 |
 
 无需安装、无需 Node。
@@ -117,7 +119,7 @@ cd android
 ### 安装
 
 ```bash
-adb install -r -t dist/android/3d-print-cost-cn-1.8.0.apk
+adb install -r -t android/app/build/outputs/apk/release/app-release.apk
 ```
 
 ### 实现要点
@@ -189,7 +191,7 @@ npm run dist                                       # 便携版单文件 exe
 打包前建议先跑一遍回归：
 
 ```bash
-node test-presets.js     # 期望 196/196 通过
+node test-presets.js     # 期望 346/346 通过
 ```
 
 > **为什么要有 `_sync_clean.py`**：`index.html` 是唯一来源，但 Android 需要一份在
