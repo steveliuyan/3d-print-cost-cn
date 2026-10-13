@@ -1080,6 +1080,12 @@
       <button class="x" data-shclose aria-label="关闭">×</button>
     </div>
     <div class="ov-body">
+      <div style="text-align:center; margin:0 0 12px">
+        <div class="viewseg" id="shareSeg" role="group" aria-label="报价长图版本">
+          <button type="button" data-sharemode="customer" aria-pressed="true">客户版</button>
+          <button type="button" data-sharemode="internal" aria-pressed="false">内部版</button>
+        </div>
+      </div>
       <div class="share-wrap">
         <img id="shareImg" alt="报价单长图预览">
         <p class="share-tip" id="shareTip"></p>
@@ -3415,6 +3421,8 @@
     ctx.lineTo(x, y + r); ctx.arcTo(x, y, x + r, y, r);
     ctx.closePath();
   }
+  /* v1.8.0-r2：与打印头 BRAND_SVG 同几何的纯立方体线框标（圆角框 + 顶/左/右三面，无 ¥ 徽标）。
+     改了几何只动 _gen_icons.py / BRAND_SVG，此处同步，保证长图与打印/PDF 抬头一致。 */
   function drawBrandMark(ctx, x, y, s, color){
     var u = s / 64;
     ctx.save();
@@ -3422,34 +3430,65 @@
     ctx.strokeStyle = color; ctx.lineJoin = "round"; ctx.lineCap = "round";
     ctx.lineWidth = 4;  roundRectPath(ctx, 4, 4, 56, 56, 14); ctx.stroke();   /* 圆角外框 */
     ctx.lineWidth = 3.4;                                                       /* 等距立方体三面 */
-    [[[30,11.4],[43.5,19.2],[30,27],[16.5,19.2]],
-     [[16.5,19.2],[30,27],[30,42.6],[16.5,34.8]],
-     [[43.5,19.2],[30,27],[30,42.6],[43.5,34.8]]].forEach(function(f){
+    [[[32,16.4],[45.5,24.2],[32,32],[18.5,24.2]],
+     [[18.5,24.2],[32,32],[32,47.6],[18.5,39.8]],
+     [[45.5,24.2],[32,32],[32,47.6],[45.5,39.8]]].forEach(function(f){
       ctx.beginPath(); ctx.moveTo(f[0][0], f[0][1]);
       for(var i = 1; i < f.length; i++) ctx.lineTo(f[i][0], f[i][1]);
       ctx.closePath(); ctx.stroke();
     });
-    ctx.beginPath(); ctx.arc(48, 48, 11.5, 0, Math.PI * 2);                    /* ¥ 徽标 */
-    ctx.fillStyle = color; ctx.fill();
-    ctx.save();
-    ctx.translate(40.56, 40.4); ctx.scale(0.62, 0.62);
-    ctx.strokeStyle = "#ffffff"; ctx.lineWidth = 4.2;
-    ctx.beginPath();
-    ctx.moveTo(6.5, 4); ctx.lineTo(12, 12.5);
-    ctx.moveTo(17.5, 4); ctx.lineTo(12, 12.5);
-    ctx.moveTo(12, 12.5); ctx.lineTo(12, 20.5);
-    ctx.moveTo(8, 14); ctx.lineTo(16, 14);
-    ctx.moveTo(8, 17.2); ctx.lineTo(16, 17.2);
-    ctx.stroke();
-    ctx.restore(); ctx.restore();
+    ctx.restore();
   }
-  function drawShareImage(){
+  /* v1.8.0-r2 客户版分项：把成本分项按 k = 报价总额 / 总成本 统一上调，使加总精确 = 报价总额。
+     利润被按比例揉进各项，客户看不到独立的成本合计与利润/毛利率。纯函数，便于回归断言。 */
+  function quoteBreakdown(items, totalCost, revenue){
+    var total = Math.round(revenue * 100) / 100;
+    var out = [];
+    if(!(totalCost > 0) || !(revenue > 0)) return { items: out, total: total };
+    var k = revenue / totalCost, acc = 0;
+    items.forEach(function(it){
+      if(it.value <= 0.0001) return;
+      var v = Math.round(it.value * k * 100) / 100;
+      if(v < 0.005) return;                    /* 上调后仍为 ¥0.00 的分项不展示 */
+      out.push({ name: it.name, color: it.color, value: v });
+      acc += v;
+    });
+    if(out.length){                            /* 尾差并入末项，保证加总与报价总额分位一致 */
+      var diff = Math.round((total - acc) * 100) / 100, li = out.length - 1;
+      if(Math.abs(diff) >= 0.005) out[li].value = Math.round((out[li].value + diff) * 100) / 100;
+    }
+    return { items: out, total: total };
+  }
+  /* 长图底部摘要行：客户版只出「报价总额」；内部版保留成本/售价/收入/利润。纯函数，便于回归。 */
+  function shareSummaryRows(r, cust, kind){
+    if(cust){
+      return [{ label: kind === "order" ? "报价总额" : "报价总额（" + r.qty + " 件）",
+                value: r.revenue, size: 30, bold: true }];
+    }
+    if(kind === "order") return [
+      { label: "订单总成本", value: r.totalCost, size: 28, bold: false },
+      { label: "平均单件成本", value: r.unitAvg, size: 28, bold: true },
+      { label: "订单总收入", value: r.revenue, size: 28, bold: false },
+      { label: "订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", value: r.profit, size: 30, bold: true, tone: "profit" }
+    ];
+    return [
+      { label: "订单总成本", value: r.totalCost, size: 28, bold: false },
+      { label: "单件综合成本", value: r.unitCost, size: 28, bold: true },
+      { label: "单件建议售价（含佣金）", value: r.sellNet, size: 28, bold: true },
+      { label: "订单总收入（" + r.qty + " 件）", value: r.revenue, size: 30, bold: true },
+      { label: "订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", value: r.profit, size: 30, bold: true, tone: "profit" }
+    ];
+  }
+  /* mode：缺省/ "customer" = 客户版（只报价，分项上调、加总=报价）；"internal" = 内部版（含成本与利润） */
+  function drawShareImage(mode){
+    var cust = mode !== "internal";
     var r = last || compute();
     var devP = findPreset("device", cur.device), matP = findPreset("material", cur.material);
     var W = 750, PAD = 40, scale = Math.min(2, window.devicePixelRatio || 1);
     var rows = [];
-    r.items.forEach(function(it){ if(it.value > 0.0001) rows.push(it); });
-    var H = 300 + rows.length * 46 + 420;
+    if(cust){ rows = quoteBreakdown(r.items, r.totalCost, r.revenue).items; }
+    else { r.items.forEach(function(it){ if(it.value > 0.0001) rows.push(it); }); }
+    var H = rows.length * 46 + (cust ? 560 : 720);
     var cv = document.createElement("canvas");
     cv.width = W * scale; cv.height = H * scale;
     var ctx = null;
@@ -3461,7 +3500,7 @@
     ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 125, W, 3);
     drawBrandMark(ctx, PAD, 26, 74, "#4f46e5");
     ctx.fillStyle = "#14161a"; ctx.font = "700 32px system-ui, sans-serif";
-    ctx.fillText("3D 打印成本报价单", PAD + 92, 60);
+    ctx.fillText(cust ? "3D 打印报价单" : "3D 打印成本报价单", PAD + 92, 60);
     ctx.fillStyle = "#8b93a1"; ctx.font = "22px system-ui, sans-serif";
     ctx.fillText(fmtDT(Date.now()) + " · 本地计算生成", PAD + 92, 96);
     var y = 170;
@@ -3478,7 +3517,7 @@
     });
     y += 16;
     ctx.fillStyle = "#14161a"; ctx.font = "700 26px system-ui, sans-serif";
-    ctx.fillText("成本构成", PAD, y); y += 34;
+    ctx.fillText(cust ? "报价构成" : "成本构成", PAD, y); y += 34;
     ctx.font = "24px system-ui, sans-serif";
     rows.forEach(function(it){
       ctx.fillStyle = it.color; ctx.fillRect(PAD, y - 17, 14, 14);
@@ -3493,46 +3532,44 @@
     ctx.fillStyle = "#ffffff"; ctx.fillRect(PAD, y, W - PAD * 2, 4);
     ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(PAD, y, W - PAD * 2, 4);
     y += 40;
-    var sums = [
-      ["订单总成本", r.totalCost, false],
-      ["单件综合成本", r.unitCost, true],
-      ["单件建议售价（含佣金）", r.sellNet, true]
-    ];
-    sums.forEach(function(kv){
-      ctx.fillStyle = "#8b93a1"; ctx.fillText(kv[0], PAD, y);
-      ctx.fillStyle = "#14161a"; ctx.font = (kv[2] ? "700 " : "") + "28px system-ui, sans-serif";
-      ctx.textAlign = "right"; ctx.fillText("¥" + kv[1].toFixed(2), W - PAD, y);
-      ctx.textAlign = "left"; ctx.font = "24px system-ui, sans-serif";
-      y += 52;
+    shareSummaryRows(r, cust, "single").forEach(function(kv){
+      ctx.fillStyle = "#8b93a1"; ctx.font = "24px system-ui, sans-serif"; ctx.textAlign = "left";
+      ctx.fillText(kv.label, PAD, y);
+      ctx.fillStyle = kv.tone === "profit" ? (r.profit >= 0 ? "#0a8f4c" : "#c2410c") : "#14161a";
+      ctx.font = (kv.bold ? "700 " : "") + kv.size + "px system-ui, sans-serif";
+      ctx.textAlign = "right"; ctx.fillText("¥" + kv.value.toFixed(2), W - PAD, y);
+      ctx.textAlign = "left"; y += 52;
     });
-    ctx.fillStyle = "#8b93a1"; ctx.fillText("订单总收入（" + r.qty + " 件）", PAD, y);
-    ctx.fillStyle = "#14161a"; ctx.font = "700 30px system-ui, sans-serif";
-    ctx.textAlign = "right"; ctx.fillText("¥" + r.revenue.toFixed(2), W - PAD, y);
-    ctx.textAlign = "left"; y += 56;
-    ctx.fillStyle = "#8b93a1"; ctx.fillText("订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", PAD, y);
-    ctx.fillStyle = r.profit >= 0 ? "#0a8f4c" : "#c2410c"; ctx.font = "700 30px system-ui, sans-serif";
-    ctx.textAlign = "right"; ctx.fillText("¥" + r.profit.toFixed(2), W - PAD, y);
-    ctx.textAlign = "left";
+    if(cust){
+      ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
+      ctx.fillText("报价已含材料、加工与后处理等全部费用", PAD, y + 8);
+    }
     ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
     ctx.fillText("由「3D 打印成本计算器」生成 · 参数与数据仅保存在本机", PAD, H - 30);
     return cv;
   }
-  function openShare(){
-    var cv = drawShareImage();
-    if(!cv){ toast("当前环境不支持生成图片"); return; }
+  /* 分享框状态：默认客户版；shareKind 记录是单件页还是订单页，切换版本时按当前来源重绘。 */
+  var shareMode = "customer", shareKind = "single";
+  function renderShareImage(){
+    var cv = shareKind === "order" ? drawOrderShareImage(shareMode) : drawShareImage(shareMode);
+    if(!cv){ toast("当前环境不支持生成图片"); return false; }
     var url;
-    try{ url = cv.toDataURL("image/png"); }catch(e){ toast("生成图片失败"); return; }
+    try{ url = cv.toDataURL("image/png"); }catch(e){ toast("生成图片失败"); return false; }
     $("#shareImg").src = url;
-    $("#shareTip").textContent = isIOS()
-      ? "iPhone / iPad：长按上方图片，选「存储到照片」即可保存。"
-      : "点「保存图片」即可保存到本机；也可直接把图发给客户。";
-    $("#shareBox").classList.add("open");
+    $("#shareTip").textContent = (shareMode === "customer"
+        ? "客户版：仅展示报价，不含利润与内部成本。"
+        : "内部版：含成本构成与利润，请勿外发。") + (isIOS()
+        ? " iPhone / iPad：长按图片选「存储到照片」。"
+        : " 点「保存图片」即可保存到本机。");
+    return true;
   }
+  function openShare(){ shareKind = "single"; if(renderShareImage()) $("#shareBox").classList.add("open"); }
   function saveShareImage(){
     var img = $("#shareImg");
     if(!img.src || img.src.indexOf("data:image/png") !== 0){ toast("请先生成长图"); return; }
     var b64 = img.src.split(",")[1];
-    var name = "3D打印成本报价单-" + fmtDT(Date.now()).replace(/[- :]/g, "") + ".png";
+    var name = (shareMode === "customer" ? "3D打印报价单-" : "3D打印成本报价单-") +
+               fmtDT(Date.now()).replace(/[- :]/g, "") + ".png";
     var b = androidBridge();
     if(b && typeof b.saveBitmap === "function"){
       try{
@@ -3591,13 +3628,14 @@
     toast("已导出订单 CSV");
   }
 
-  /* ===== 订单：分享长图 ===== */
-  function drawOrderShareImage(){
+  /* ===== 订单：分享长图（mode 同 drawShareImage） ===== */
+  function drawOrderShareImage(mode){
+    var cust = mode !== "internal";
     var o = ensureCurrentOrder();
     var r = computeOrder(o);
     var W = 750, PAD = 40, scale = Math.min(2, window.devicePixelRatio || 1);
     var rowH = 60;
-    var H = 128 + 170 + 40 + Math.max(1, r.lines.length) * rowH + 60 + 300;
+    var H = Math.max(1, r.lines.length) * rowH + (cust ? 540 : 698);
     var cv = document.createElement("canvas");
     cv.width = W * scale; cv.height = H * scale;
     var ctx = null;
@@ -3609,7 +3647,7 @@
     ctx.fillStyle = "#4f46e5"; ctx.fillRect(0, 125, W, 3);
     drawBrandMark(ctx, PAD, 26, 74, "#4f46e5");
     ctx.fillStyle = "#14161a"; ctx.font = "700 32px system-ui, sans-serif";
-    ctx.fillText("3D 打印成本报价单", PAD + 92, 60);
+    ctx.fillText(cust ? "3D 打印报价单" : "3D 打印成本报价单", PAD + 92, 60);
     ctx.fillStyle = "#8b93a1"; ctx.font = "22px system-ui, sans-serif";
     ctx.fillText((o.no || "（未编号）") + " · " + fmtDT(Date.now()) + " · 本地计算生成", PAD + 92, 96);
     var y = 170;
@@ -3623,14 +3661,15 @@
     });
     y += 10;
     ctx.fillStyle = "#14161a"; ctx.font = "700 26px system-ui, sans-serif";
-    ctx.fillText("行项明细", PAD, y); y += 38;
+    ctx.fillText(cust ? "报价明细" : "行项明细", PAD, y); y += 38;
     ctx.font = "22px system-ui, sans-serif";
     r.lines.forEach(function(x, i){
       var rr = x.r, ln = x.line;
       ctx.fillStyle = "#14161a"; ctx.textAlign = "left";
       ctx.fillText((i + 1) + ". " + (ln.devName || "自定义设备") + " × " + (ln.matName || "自定义材料"), PAD, y);
       ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
-      ctx.fillText(rr.qty + " 件 · 单件成本 ¥" + rr.unitCost.toFixed(2) +
+      ctx.fillText(rr.qty + " 件 · " + (cust ? "单件报价" : "单件成本") + " ¥" +
+        (cust ? rr.sellNet : rr.unitCost).toFixed(2) +
         (rr.disc > 0 ? " · 折扣 " + (rr.disc * 100).toFixed(1) + "%" : ""), PAD, y + 26);
       ctx.fillStyle = "#14161a"; ctx.font = "700 24px system-ui, sans-serif"; ctx.textAlign = "right";
       ctx.fillText("¥" + rr.revenue.toFixed(2), W - PAD, y);
@@ -3641,34 +3680,19 @@
     ctx.fillStyle = "#ffffff"; ctx.fillRect(PAD, y, W - PAD * 2, 4);
     ctx.strokeStyle = "#e5e7eb"; ctx.strokeRect(PAD, y, W - PAD * 2, 4);
     y += 42;
-    [["订单总成本", r.totalCost, false], ["平均单件成本", r.unitAvg, true], ["订单总收入", r.revenue, false]]
-      .forEach(function(kv){
-        ctx.fillStyle = "#8b93a1"; ctx.font = "24px system-ui, sans-serif";
-        ctx.fillText(kv[0], PAD, y);
-        ctx.fillStyle = "#14161a"; ctx.font = (kv[2] ? "700 " : "") + "28px system-ui, sans-serif";
-        ctx.textAlign = "right"; ctx.fillText("¥" + kv[1].toFixed(2), W - PAD, y);
-        ctx.textAlign = "left"; y += 50;
-      });
-    ctx.fillStyle = "#8b93a1"; ctx.font = "24px system-ui, sans-serif";
-    ctx.fillText("订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", PAD, y);
-    ctx.fillStyle = r.profit >= 0 ? "#0a8f4c" : "#c2410c"; ctx.font = "700 30px system-ui, sans-serif";
-    ctx.textAlign = "right"; ctx.fillText("¥" + r.profit.toFixed(2), W - PAD, y);
-    ctx.textAlign = "left";
+    shareSummaryRows(r, cust, "order").forEach(function(kv){
+      ctx.fillStyle = "#8b93a1"; ctx.font = "24px system-ui, sans-serif"; ctx.textAlign = "left";
+      ctx.fillText(kv.label, PAD, y);
+      ctx.fillStyle = kv.tone === "profit" ? (r.profit >= 0 ? "#0a8f4c" : "#c2410c") : "#14161a";
+      ctx.font = (kv.bold ? "700 " : "") + kv.size + "px system-ui, sans-serif";
+      ctx.textAlign = "right"; ctx.fillText("¥" + kv.value.toFixed(2), W - PAD, y);
+      ctx.textAlign = "left"; y += 52;
+    });
     ctx.fillStyle = "#8b93a1"; ctx.font = "20px system-ui, sans-serif";
     ctx.fillText("由「3D 打印成本计算器」生成 · 参数与订单仅保存在本机", PAD, H - 30);
     return cv;
   }
-  function openOrderShare(){
-    var cv = drawOrderShareImage();
-    if(!cv){ toast("当前环境不支持生成图片"); return; }
-    var url;
-    try{ url = cv.toDataURL("image/png"); }catch(e){ toast("生成图片失败"); return; }
-    $("#shareImg").src = url;
-    $("#shareTip").textContent = isIOS()
-      ? "iPhone / iPad：长按上方图片，选「存储到照片」即可保存。"
-      : "点「保存图片」即可保存到本机；也可直接把图发给客户。";
-    $("#shareBox").classList.add("open");
-  }
+  function openOrderShare(){ shareKind = "order"; if(renderShareImage()) $("#shareBox").classList.add("open"); }
 
   function download(blob, filename, text){
     var bridge = androidBridge();
@@ -4088,6 +4112,14 @@
     saveOrders([]); renderQuotes(); toast("已清空全部订单");
   });
   $("#btnShareImg").addEventListener("click", openShare);
+  $("#shareSeg").addEventListener("click", function(e){
+    var b = e.target && e.target.closest ? e.target.closest("[data-sharemode]") : null;
+    if(!b) return;
+    shareMode = b.getAttribute("data-sharemode");
+    var bs = $("#shareSeg").querySelectorAll("[data-sharemode]");
+    for(var i = 0; i < bs.length; i++) bs[i].setAttribute("aria-pressed", String(bs[i] === b));
+    renderShareImage();
+  });
 
   /* ===== v1.7.0 订单视图事件 ===== */
   $("#btnAddToOrder").addEventListener("click", addCurrentToOrder);
@@ -4252,7 +4284,9 @@
       assignNo: assignNo, summarizeOrder: summarizeOrder, buildOrderFromCurrent: buildOrderFromCurrent,
       setView: setView, saveQuote: saveQuote, renderQuotes: renderQuotes, buildBackup: buildBackup,
       loadCustomers: loadCustomers, rememberCustomer: rememberCustomer, custLookup: custLookup,
-      BRAND_SVG: BRAND_SVG, drawBrandMark: drawBrandMark
+      BRAND_SVG: BRAND_SVG, drawBrandMark: drawBrandMark,
+      quoteBreakdown: quoteBreakdown, shareSummaryRows: shareSummaryRows,
+      drawShareImage: drawShareImage, drawOrderShareImage: drawOrderShareImage
     };
   }catch(e){}
 })();

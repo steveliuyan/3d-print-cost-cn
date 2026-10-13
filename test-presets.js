@@ -1619,6 +1619,39 @@ setTimeout(function () {
     ok('v1.8 B8：被单独调整的行显示「已调」标记',
        /已调/.test(d8.getElementById('ordLines').textContent));
 
+    /* --- v1.8.0-r2：分享长图 = 内部版/客户版；客户版隐藏利润与内部成本；品牌统一 --- */
+    var dbm = String(E.drawBrandMark || '');
+    ok('v1.8r2 品牌：canvas 标识已同步为纯立方体（去 ¥ 徽标高亮弧）',
+       /16\.4/.test(dbm) && /45\.5/.test(dbm) && !/M6\.5/.test(dbm) && !/arc\(48,/.test(dbm));
+    ok('v1.8r2 品牌：canvas 标识与打印头 BRAND_SVG 同几何（顶面 32 16.4）',
+       /32 16\.4/.test(E.BRAND_SVG || '') && /16\.4/.test(dbm));
+    ok('v1.8r2 分享：含 客户版/内部版 切换',
+       /data-sharemode="customer"/.test(html) && /data-sharemode="internal"/.test(html));
+    ok('v1.8r2 分享：默认客户版', /var shareMode\s*=\s*"customer"/.test(html));
+    ok('v1.8r2 客户版：标题「3D 打印报价单」（去「成本」）', /"3D 打印报价单"/.test(html));
+
+    var qb = E.quoteBreakdown;
+    ok('v1.8r2 客户版：quoteBreakdown 为纯函数', typeof qb === 'function');
+    var _it = [{name:'材料（含损耗）',value:3.71,color:'#5b52ee'},{name:'设备折旧 + 维护',value:2.52,color:'#3f8bd6'},
+               {name:'电费',value:0.42,color:'#12a48b'},{name:'人工',value:2.50,color:'#d98a12'},
+               {name:'后处理',value:1.00,color:'#d0543a'},{name:'失败率摊销',value:0.88,color:'#8b6bd9'}];
+    var _q = typeof qb === 'function' ? qb(_it, 11.03, 29.03) : {items:[],total:0}, _s = 0;
+    _q.items.forEach(function(x){ _s += x.value; });
+    ok('v1.8r2 客户版：分项上调后加总精确 = 报价总额', Math.abs(_s - 29.03) < 0.005, _s.toFixed(2));
+    ok('v1.8r2 客户版：分项 ≠ 真实成本（已按 k 上调）', _q.items.length > 0 && Math.abs(_q.items[0].value - 3.71) > 0.5);
+    ok('v1.8r2 客户版：报价总额保留', Math.abs(_q.total - 29.03) < 0.005);
+    var _q0 = typeof qb === 'function' ? qb(_it, 0, 29.03) : {items:[null],total:0};
+    ok('v1.8r2 客户版：成本为 0 时不产生分项（仅报价总额）', _q0.items.length === 0 && Math.abs(_q0.total - 29.03) < 0.005);
+
+    ok('v1.8r2 客户版：摘要仅「报价总额」，无成本/利润/毛利率',
+       (function(){ if(typeof E.shareSummaryRows !== 'function') return false;
+         var a = E.shareSummaryRows({qty:1,totalCost:11.03,unitCost:11.03,unitAvg:11.03,sellNet:29.03,revenue:29.03,profit:18,margin:62}, true, 'single');
+         return a.length === 1 && /报价总额/.test(a[0].label) && !/成本|利润|毛利/.test(a[0].label); })());
+    ok('v1.8r2 内部版：摘要保留成本/售价/收入/利润',
+       (function(){ if(typeof E.shareSummaryRows !== 'function') return false;
+         var a = E.shareSummaryRows({qty:1,totalCost:11.03,unitCost:11.03,unitAvg:11.03,sellNet:29.03,revenue:29.03,profit:18,margin:62}, false, 'single');
+         return a.length >= 4 && a.some(function(x){ return /利润/.test(x.label); }); })());
+
     /* --- A3 草稿自动保存（防抖 800ms） --- */
     setTimeout(function () {
       var dk = w8.localStorage.getItem('dpc_order_draft_v1');
