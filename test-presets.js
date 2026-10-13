@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.2', dU.getElementById('footVer').textContent === '1.8.2',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.8.3',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.8\.2/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.8\.3/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.8\.2/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.8\.3/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.8.2');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.8.3');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.8.2', d8.getElementById('footVer').textContent === '1.8.2',
+    ok('v1.8：版本号已升到 1.8.3', d8.getElementById('footVer').textContent === '1.8.3',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -1773,6 +1773,198 @@ setTimeout(function () {
     }, 400);
   }
 
+  /* ============ v1.8.3 经营看板（dashStats 纯函数 + 视图渲染 + 月报打印） ============ */
+  function runDashTests(done) {
+    var dom9 = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            }, set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:o'; };
+        win.URL.revokeObjectURL = function () {};
+        win.print = function () {};
+      }
+    });
+    var w9 = dom9.window, d9 = w9.document;
+    w9.HTMLAnchorElement.prototype.click = function () {};
+    var ED = w9.__DPC;
+
+    /* --- 结构 --- */
+    ok('v1.8.3 看板：顶栏视图切换含「经营看板」入口',
+       !!d9.querySelector('#viewSeg [data-view="dash"]'));
+    ok('v1.8.3 看板：#dashMain 容器存在且默认隐藏', !!d9.getElementById('dashMain'));
+
+    /* --- 固定时间轴：NOW 之前 5 天 / 40 天 / 200 天各一单，另有一张草稿 --- */
+    var NOW = new Date(2026, 9, 13, 12, 0, 0).getTime();   /* 2026-10-13 12:00 本地 */
+    var DAY = 86400000;
+    function mkOrder(id, t, customer, matName, f, status) {
+      return {
+        id: id, no: 'DPC-' + id, t: t, updatedAt: t, status: status || 'quoted',
+        customer: customer, validUntil: null, currency: 'CNY',
+        lines: [{ id: id + '_l1', devName: 'X1', matName: matName,
+                  qty: parseInt(f.qty, 10) || 1, fields: f }],
+        orderLevel: { shipping: 0, commission: 0, markup: null, bulkDisc: 0 },
+        tiers: []
+      };
+    }
+    var F1 = { qty: '2', grams: '80', spoolPrice: '120', printHours: '3', power: '120', markup: '3' };
+    var F2 = { qty: '1', grams: '30', spoolPrice: '200', printHours: '8', power: '120', markup: '2' };
+    var F3 = { qty: '4', grams: '150', spoolPrice: '90', printHours: '2', power: '120', markup: '2.5' };
+    var ORDERS = [
+      mkOrder('a', NOW - 5 * DAY, '王小明', 'PLA 白', F1),
+      mkOrder('b', NOW - 40 * DAY, '王小明', 'PETG 黑', F2),
+      mkOrder('c', NOW - 200 * DAY, '李四', 'PLA 白', F3),
+      mkOrder('d', NOW - 2 * DAY, '草稿客户', '树脂', F1, 'draft')
+    ];
+
+    /* --- 纯函数：聚合口径 = 逐单 computeOrder 求和 --- */
+    var all = ED.dashStats(ORDERS, 'all', NOW);
+    var expRev = 0, expCost = 0, expN = 3;
+    [ORDERS[0], ORDERS[1], ORDERS[2]].forEach(function (o) {
+      var r = ED.computeOrder(o); expRev += r.revenue; expCost += r.totalCost;
+    });
+    ok('v1.8.3 看板：订单数正确（草稿不计入）', all.count === expN, String(all.count));
+    ok('v1.8.3 看板：收入合计 = 逐单求和', Math.abs(all.revenue - expRev) < 1e-6);
+    ok('v1.8.3 看板：成本合计 = 逐单求和', Math.abs(all.cost - expCost) < 1e-6);
+    ok('v1.8.3 看板：利润 = 收入 − 成本', Math.abs(all.profit - (all.revenue - all.cost)) < 1e-6);
+    ok('v1.8.3 看板：毛利率 = 利润 / 收入',
+       Math.abs(all.margin - (all.profit / all.revenue * 100)) < 1e-9);
+    ok('v1.8.3 看板：客单价 = 收入 / 订单数',
+       Math.abs(all.avgOrder - all.revenue / all.count) < 1e-9);
+
+    /* --- 时间范围过滤 --- */
+    ok('v1.8.3 看板：近 30 天只含 1 单', ED.dashStats(ORDERS, '30', NOW).count === 1,
+       String(ED.dashStats(ORDERS, '30', NOW).count));
+    ok('v1.8.3 看板：近 90 天含 2 单', ED.dashStats(ORDERS, '90', NOW).count === 2,
+       String(ED.dashStats(ORDERS, '90', NOW).count));
+    ok('v1.8.3 看板：今年（2026）含 3 单，去年那单被排除',
+       ED.dashStats(ORDERS, 'year', NOW).count === 3 &&
+       ED.dashStats(ORDERS, '30', NOW).revenue < ED.dashStats(ORDERS, 'all', NOW).revenue);
+    ok('v1.8.3 看板：草稿在任何范围下都不计入',
+       ['30', '90', 'year', 'all'].every(function (rg) {
+         return ED.dashStats(ORDERS, rg, NOW).byCustomer.every(function (c) { return c.name !== '草稿客户'; });
+       }));
+
+    /* --- 分组：材料 / 客户 / 月度 --- */
+    ok('v1.8.3 看板：材料 TOP 按收入降序且合计 = 总收入',
+       all.byMaterial.length >= 2 && all.byMaterial[0].revenue >= all.byMaterial[1].revenue &&
+       Math.abs(all.byMaterial.reduce(function (a, m) { return a + m.revenue; }, 0) - all.revenue) < 1e-6);
+    ok('v1.8.3 看板：客户 TOP 按收入降序，且跨订单正确聚合（王小明 2 单合并）',
+       all.byCustomer.every(function (c, i, arr) { return i === 0 || arr[i - 1].revenue >= c.revenue; }) &&
+       all.byCustomer.some(function (c) { return c.name === '王小明' && c.count === 2; }),
+       JSON.stringify(all.byCustomer.map(function (c) { return c.name + ':' + c.count; })));
+    ok('v1.8.3 看板：月度趋势按月升序且键为 YYYY-MM',
+       all.months.length === 3 && /^\d{4}-\d{2}$/.test(all.months[0].key) &&
+       all.months[0].key < all.months[1].key && all.months[1].key < all.months[2].key);
+
+    /* --- 客户结构：真实订单存的是 {name, contact} 对象，不是字符串 --- */
+    var objCust = ED.dashStats([mkOrder('e', NOW - 3 * DAY, { name: '赵六', contact: '13900000000' }, 'PLA 白', F1)], 'all', NOW);
+    ok('v1.8.3 看板：客户为对象结构（{name,contact}）时按姓名聚合，不出现 [object Object]',
+       objCust.byCustomer.length === 1 && objCust.byCustomer[0].name === '赵六',
+       JSON.stringify(objCust.byCustomer.map(function (c) { return c.name; })));
+
+    /* --- 退化：空数据不抛错 --- */
+    var empty = ED.dashStats([], 'all', NOW);
+    ok('v1.8.3 看板：空数据返回零值且不抛错',
+       empty.count === 0 && empty.revenue === 0 && empty.margin === 0 && empty.months.length === 0);
+
+    /* --- 运行时：切视图 + 渲染 + 月报打印 --- */
+    ED.saveOrders(ORDERS.slice());          /* 把固定样本写入本机，让看板真正渲染出内容 */
+    ED.setView('dash');
+    ok('v1.8.3 看板：切到看板视图时 body 带 view-dash',
+       d9.body.classList.contains('view-dash') && !d9.body.classList.contains('view-order'));
+    var kpi = d9.getElementById('dashKpis');
+    ok('v1.8.3 看板：KPI 渲染 6 张卡且含金额',
+       !!kpi && kpi.querySelectorAll('.kpi').length === 6 && /¥/.test(kpi.textContent));
+    ok('v1.8.3 看板：材料 / 客户 TOP 区块已渲染',
+       d9.getElementById('dashMat').querySelectorAll('.rk').length > 0 &&
+       d9.getElementById('dashCust').querySelectorAll('.rk').length > 0);
+
+    ED.setView('single');
+    ok('v1.8.3 看板：切回单件视图后 view-dash 解除、看板容器隐藏',
+       !d9.body.classList.contains('view-dash'));
+
+    ED.setView('dash');
+    click(d9.getElementById('btnPrint'));
+    var ppd = d9.getElementById('ppPage').innerHTML;
+    ok('v1.8.3 看板：看板视图下「打印 / PDF」输出经营月报（含品牌头）',
+       /经营月报/.test(ppd) && /pp-brand/.test(ppd) && /<svg/.test(ppd));
+    d9.getElementById('pprev').classList.remove('open'); d9.body.classList.remove('pp');
+    ED.setView('single');
+    ED.saveOrders([]);                      /* 收拾干净，不影响后续 */
+
+    done();
+  }
+
+  /* ============ v1.8.3 弹窗滚动锁（防滚动穿透到背景主页） ============ */
+  function runScrollLockTests(done) {
+    /* --- 源码级：锁滚动 + 限制滚动链 + 打印时让位 --- */
+    ok('v1.8.3 滚动锁：有 body.modal-open 锁页规则', /body\.modal-open\{overflow:hidden/.test(html));
+    ok('v1.8.3 滚动锁：弹窗滚动容器限制滚动链（overscroll-behavior:contain）',
+       /\.ov-body\s*,\s*\.modal-body\s*,\s*\.pk-body\s*\{[^}]*overscroll-behavior:contain/.test(html));
+    ok('v1.8.3 滚动锁：打印样式里解除滚动锁（不影响出 PDF）',
+       (html.match(/body\.modal-open/g) || []).length >= 2);
+    ok('v1.8.3 滚动锁：集中式同步函数 + 监听 class 变化',
+       /function syncScrollLock/.test(html) && /MutationObserver/.test(html));
+
+    /* --- 运行时：任一遮罩打开即锁；还有遮罩时不解锁；全关才解锁 --- */
+    var domS = new JSDOM(html, {
+      runScripts: 'dangerously', url: 'http://localhost/', pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        function ctxProxy() {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            }, set: function () { return true; }
+          });
+        }
+        win.HTMLCanvasElement.prototype.getContext = function () { return ctxProxy(); };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:o'; };
+        win.URL.revokeObjectURL = function () {};
+        win.print = function () {};
+      }
+    });
+    var dS = domS.window.document;
+    var tick = function (fn) { setTimeout(fn, 20); };
+
+    tick(function () {
+      ok('v1.8.3 滚动锁：初始未锁', !dS.body.classList.contains('modal-open'));
+      click(dS.getElementById('btnPreset'));            /* 打开「预设管理」弹窗 */
+      tick(function () {
+        ok('v1.8.3 滚动锁：弹窗打开后页面被锁住',
+           dS.getElementById('modal').classList.contains('open') && dS.body.classList.contains('modal-open'));
+        click(dS.getElementById('matBtn'));             /* 再开一个选择器遮罩 */
+        tick(function () {
+          var pkOpen = dS.getElementById('picker').classList.contains('open');
+          dS.getElementById('modal').classList.remove('open');   /* 关掉其中一个 */
+          tick(function () {
+            ok('v1.8.3 滚动锁：仍有弹窗时保持锁定（不会提前解锁）',
+               pkOpen && dS.body.classList.contains('modal-open'));
+            dS.getElementById('picker').classList.remove('open'); /* 全部关掉 */
+            tick(function () {
+              ok('v1.8.3 滚动锁：全部关闭后解除锁定', !dS.body.classList.contains('modal-open'));
+              done();
+            });
+          });
+        });
+      });
+    });
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -1811,7 +2003,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(finish); }); }); }); }); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(finish); }); }); }); }); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);

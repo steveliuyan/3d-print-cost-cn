@@ -511,9 +511,55 @@
                   padding:6px 12px; border-radius:8px; cursor:pointer; transition:.18s var(--ease); white-space:nowrap}
   .viewseg button:hover{color:var(--text); background:var(--line-soft)}
   .viewseg button[aria-pressed="true"]{background:var(--accent); color:#fff; box-shadow:var(--sh-accent)}
+  /* v1.8.3 弹窗滚动锁：任一遮罩打开时锁住背景页滚动，并把滚动链限制在弹窗内部
+     —— 修「弹窗滑到底后继续滑，背后主页跟着动」 */
+  body.modal-open{overflow:hidden; padding-right:var(--sbw,0px)}
+  .ov-body,.modal-body,.pk-body{overscroll-behavior:contain}
   #orderMain{display:none}
   body.view-order #orderMain{display:grid}
   body.view-order .grid{display:none}
+
+  /* ================= v1.8.3 经营看板 ================= */
+  #dashMain{display:none}
+  body.view-dash #dashMain{display:block}
+  body.view-dash .grid{display:none}
+  body.view-dash #orderMain{display:none}
+  .dash-head{display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:14px}
+  .dash-head h2{margin:0; font-size:16px; font-weight:650; letter-spacing:-.015em}
+  .dash-head .dash-note{font-size:11.5px; color:var(--text3)}
+  .dash-seg{margin-left:auto}
+  .dash-kpis{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:10px; margin-bottom:14px}
+  @media (max-width:900px){ .dash-kpis{grid-template-columns:repeat(3,minmax(0,1fr))} }
+  @media (max-width:560px){ .dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr))} }
+  .dash-kpis .kpi{animation:rise .45s var(--ease) backwards; animation-delay:calc(var(--i,0) * 45ms)}
+  .dash-kpis .kpi .v{font-size:17px}
+  .dash-cols{display:grid; grid-template-columns:1.15fr 1fr; gap:14px; align-items:start}
+  @media (max-width:900px){ .dash-cols{grid-template-columns:1fr} }
+  .dash-trend{display:flex; align-items:flex-end; gap:10px; height:150px; padding:6px 2px 0;
+              border-bottom:1px solid var(--line)}
+  .dash-col{flex:1 1 0; min-width:0; display:flex; flex-direction:column; justify-content:flex-end; gap:4px; text-align:center}
+  .dash-bar{position:relative; width:100%; border-radius:7px 7px 3px 3px; overflow:hidden;
+            background:linear-gradient(180deg,#7b73f2,#4f46e5); height:var(--h,0%);
+            animation:growY .55s var(--ease) backwards; animation-delay:calc(var(--i,0) * 55ms)}
+  .dash-bar i{position:absolute; left:0; right:0; bottom:0; height:var(--p,0%);
+              background:rgba(255,255,255,.34); border-top:1px solid rgba(255,255,255,.5)}
+  .dash-col .mt{font-size:11px; color:var(--text3); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+  .dash-col .mv{font-size:11.5px; font-weight:600; font-variant-numeric:tabular-nums}
+  @keyframes growY{ from{height:0} }
+  .rk{position:relative; display:flex; align-items:center; gap:8px; padding:6px 8px; border-radius:8px;
+      font-size:12.5px; overflow:hidden}
+  .rk + .rk{margin-top:4px}
+  .rk .rkb{position:absolute; inset:0; width:var(--w,0%); background:var(--accent-soft); z-index:0;
+           animation:grow .6s var(--ease) backwards}
+  .rk > *{position:relative; z-index:1}
+  .rk .rkn{font-weight:600; flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .rk .rks{color:var(--text3); font-size:11.5px}
+  .rk .rkv{font-variant-numeric:tabular-nums; font-weight:600}
+  .dash-empty{padding:26px 8px; text-align:center; color:var(--text3); font-size:13px; line-height:1.8}
+  .dash-sec{margin-top:16px}
+  .dash-sec > h3{margin:0 0 10px; font-size:12.5px; font-weight:650; color:var(--text2);
+                 display:flex; align-items:center; gap:8px}
+  .dash-sec > h3 small{font-weight:500; color:var(--text3); font-size:11px}
   .ord-lines{display:flex; flex-direction:column; gap:8px}
   .ord-line{border:1px solid var(--line); border-radius:12px; padding:10px 12px; display:flex; gap:12px;
             align-items:center; flex-wrap:wrap; background:var(--card-2); transition:.16s}
@@ -661,6 +707,9 @@
                       animation:none; overflow:visible; display:block}
     body.pp .ov-body{overflow:visible; padding:0; background:#fff}
     body.pp .pp-page{width:auto; min-height:0; margin:0; padding:0; box-shadow:none}
+    /* 打印时解除弹窗滚动锁，避免只印出可视区一页 */
+    body.modal-open{overflow:visible; padding-right:0}
+    .ov-body,.modal-body,.pk-body{overscroll-behavior:auto}
   }
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001ms!important; animation-delay:0!important; transition-duration:.001ms!important}
@@ -708,6 +757,7 @@
       <div class="viewseg" id="viewSeg" role="group" aria-label="视图切换">
         <button type="button" data-view="single" aria-pressed="true">单件速算</button>
         <button type="button" data-view="order" aria-pressed="false">订单报价</button>
+        <button type="button" data-view="dash" aria-pressed="false">经营看板</button>
       </div>
       <button class="btn" id="btnPreset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 3 7.5l9 4.5 9-4.5L12 3Z"/><path d="M3 12l9 4.5L21 12"/><path d="M3 16.5 12 21l9-4.5"/></svg>预设管理</button>
       <button class="btn" id="btnCsv"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12"/><path d="m7 11 5 5 5-5"/><path d="M4 20h16"/></svg>导出 CSV</button>
@@ -873,6 +923,41 @@
       </section>
 
     </aside>
+  </main>
+
+  <!-- ===== v1.8.3 经营看板（历史订单统计） ===== -->
+  <main id="dashMain">
+    <section class="card" style="--i:0">
+      <div class="dash-head">
+        <h2>经营看板</h2>
+        <span class="dash-note" id="dashNote"></span>
+        <div class="viewseg dash-seg" id="dashRange" role="group" aria-label="统计范围">
+          <button type="button" data-range="30" aria-pressed="false">近 30 天</button>
+          <button type="button" data-range="90" aria-pressed="false">近 90 天</button>
+          <button type="button" data-range="year" aria-pressed="false">今年</button>
+          <button type="button" data-range="all" aria-pressed="true">全部</button>
+        </div>
+      </div>
+      <div class="dash-kpis" id="dashKpis"></div>
+      <div class="dash-empty" id="dashEmpty" hidden></div>
+      <div id="dashStats">
+        <div class="dash-sec">
+          <h3>月度趋势 <small id="dashTrendCap"></small></h3>
+          <div class="dash-trend" id="dashTrend"></div>
+        </div>
+        <div class="dash-cols">
+          <div class="dash-sec"><h3>材料 TOP</h3><div id="dashMat"></div></div>
+          <div class="dash-sec"><h3>客户 TOP</h3><div id="dashCust"></div></div>
+        </div>
+        <details class="tip">
+          <summary>统计口径说明</summary>
+          <p>只统计<b>非草稿</b>订单（草稿 / 已报价 / 已成交 / 已归档）。收入、成本、利润全部按订单页口径
+          （<b>订单级运费按件分摊进各行成本</b>、阶梯折扣与整单折扣取大不叠加）逐单复算后汇总，
+          与订单详情里的数字逐个对得上。毛利率 = 利润 ÷ 收入；客单价 = 收入 ÷ 订单数。
+          材料 / 客户排行按<b>收入</b>降序，条形长度表示占当前范围最大值的比例（仅用于比较，不改变统计值）。</p>
+        </details>
+      </div>
+    </section>
   </main>
 
   <!-- ===== v1.7.0 订单报价视图（多品项） ===== -->
@@ -1614,6 +1699,28 @@
 
   /* ================= 保存菜单 ================= */
   function closePops(){ $$(".pop").forEach(function(p){ p.classList.remove("open"); }); }
+
+  /* ===== v1.8.3 弹窗滚动锁 =====
+     任一遮罩层（打印预览 / 预设弹窗 / 选择器 / 分类表单 / 分享 / 历史 / 更新 / 导出）打开时，
+     锁住背景页滚动并把滚动链限制在弹窗内部，避免「弹窗滑到底后继续滑、背后主页跟着动」。
+     用 MutationObserver 监听 body 子树的 class 变化：所有 open/close 入口都无需逐个改造。 */
+  var OVERLAY_OPEN_SEL = ".ov.open, .modal.open, .picker.open, .pform.open";
+  function syncScrollLock(){
+    var on = !!document.querySelector(OVERLAY_OPEN_SEL);
+    if(on === document.body.classList.contains("modal-open")) return;
+    if(on){
+      var sbw = Math.max(0, (window.innerWidth || 0) - (document.documentElement.clientWidth || 0));
+      document.documentElement.style.setProperty("--sbw", sbw + "px");
+    }
+    document.body.classList.toggle("modal-open", on);
+  }
+  function watchOverlays(){
+    syncScrollLock();
+    if(typeof MutationObserver !== "function") return;
+    new MutationObserver(syncScrollLock).observe(document.body, {
+      subtree: true, attributes: true, attributeFilter: ["class"]
+    });
+  }
   function popId(type){ return type === "device" ? "#devPop" : "#matPop"; }
   function openPop(type){
     var pid = popId(type);
@@ -2150,7 +2257,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.8.2";
+  var APP_VERSION = "1.8.3";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -2908,6 +3015,71 @@
       bulkDisc: Math.min(90, Math.max(0, parseFloat(ol.bulkDisc) || 0)) / 100
     };
   }
+  /* ================= v1.8.3 经营看板：聚合（纯函数，便于回归断言） ================= */
+  var DASH_RANGE_LABEL = { "30": "近 30 天", "90": "近 90 天", "year": "今年", "all": "全部" };
+  function dashRangeStart(range, now){
+    if(range === "30") return now - 30 * 86400000;
+    if(range === "90") return now - 90 * 86400000;
+    if(range === "year"){ var d = new Date(now); return new Date(d.getFullYear(), 0, 1).getTime(); }
+    return -Infinity;
+  }
+  function monthKey(t){
+    var d = new Date(t);
+    return d.getFullYear() + "-" + (d.getMonth() + 1 < 10 ? "0" : "") + (d.getMonth() + 1);
+  }
+  /* 订单里的 customer 是 {name, contact} 对象（打印页 / 客户库同结构），
+     兼容老的纯字符串写法，统一取名字用于排行 */
+  function orderCustomerName(o){
+    var c = o && o.customer;
+    if(!c) return "未指定客户";
+    if(typeof c === "string") return c.trim() || "未指定客户";
+    return (c.name || "").trim() || (c.contact ? "（未填名称）" + c.contact : "未指定客户");
+  }
+  function dashSort(map, key, topN){
+    return Object.keys(map).map(function(k){ return map[k]; })
+      .sort(function(a, b){ return (b[key] - a[key]) || (a.name < b.name ? -1 : 1); })
+      .slice(0, topN || 999);
+  }
+  /* 看板统计：只计非草稿订单；收入/成本/利润按订单页口径逐单复算后汇总，
+     与订单详情里的数字逐个对得上（订单级运费按件分摊、阶梯与整单折扣取大不叠加）。 */
+  function dashStats(orders, range, now){
+    now = now || Date.now();
+    var from = dashRangeStart(range, now);
+    var list = (orders || []).filter(function(o){
+      if(!o || o.status === "draft") return false;
+      var t = o.t || o.updatedAt || 0;
+      return t >= from && t <= now;
+    });
+    var revenue = 0, cost = 0, qty = 0;
+    var matMap = {}, custMap = {}, monMap = {};
+    list.forEach(function(o){
+      var r = computeOrder(o);
+      revenue += r.revenue; cost += r.totalCost; qty += r.qtyTotal;
+      var t = o.t || o.updatedAt || 0, mk = monthKey(t);
+      if(!monMap[mk]) monMap[mk] = { key: mk, revenue: 0, cost: 0, profit: 0 };
+      monMap[mk].revenue += r.revenue; monMap[mk].cost += r.totalCost; monMap[mk].profit += r.profit;
+      r.lines.forEach(function(L){
+        var mn = (L.line && L.line.matName) || "未指定材料";
+        if(!matMap[mn]) matMap[mn] = { name: mn, count: 0, cost: 0, revenue: 0 };
+        matMap[mn].count++; matMap[mn].cost += L.r.totalCost; matMap[mn].revenue += L.r.revenue;
+      });
+      var cn = orderCustomerName(o);
+      if(!custMap[cn]) custMap[cn] = { name: cn, count: 0, revenue: 0, profit: 0 };
+      custMap[cn].count++; custMap[cn].revenue += r.revenue; custMap[cn].profit += r.profit;
+    });
+    var months = Object.keys(monMap).sort().map(function(k){ return monMap[k]; });
+    if(months.length > 12) months = months.slice(-12);
+    return {
+      range: range, count: list.length, qty: qty,
+      revenue: revenue, cost: cost, profit: revenue - cost,
+      margin: revenue > 0 ? (revenue - cost) / revenue * 100 : 0,
+      avgOrder: list.length ? revenue / list.length : 0,
+      months: months,
+      byMaterial: dashSort(matMap, "revenue", 5),
+      byCustomer: dashSort(custMap, "revenue", 5)
+    };
+  }
+
   /* 报价历史（v1.6 单条快照）→ 订单（v1.7）：启动一次性幂等迁移，旧键保留作回滚兜底 */
   function migrateQuotes(){
     try{
@@ -3321,14 +3493,104 @@
     renderOrderSummary(r);
   }
   function renderOrder(){ renderOrderChrome(); renderOrderBody(); renderDraftHint(); }
+
+  /* ================= v1.8.3 经营看板：渲染 ================= */
+  var DASH_KEY = "dpc_dash_v1";
+  var dashRange = "all";
+  function loadDashRange(){
+    try{ var v = localStorage.getItem(DASH_KEY); if(DASH_RANGE_LABEL[v]) dashRange = v; }catch(e){}
+  }
+  var DASH_KPIS = [
+    { id: "dashKCount",   k: "订单数",   fmt: function(v){ return Math.round(v) + " 单"; } },
+    { id: "dashKRevenue", k: "收入合计", money: true },
+    { id: "dashKCost",    k: "成本合计", money: true },
+    { id: "dashKProfit",  k: "利润合计", money: true },
+    { id: "dashKMargin",  k: "平均毛利率", fmt: function(v){ return v.toFixed(1) + "%"; } },
+    { id: "dashKAvg",     k: "客单价",   money: true }
+  ];
+  function ensureDashKpis(){
+    var box = $("#dashKpis");
+    if(!box || box.children.length) return;
+    box.innerHTML = DASH_KPIS.map(function(d, i){
+      return '<div class="kpi" style="--i:' + i + '"><div class="k">' + d.k +
+             '</div><div class="v" id="' + d.id + '">—</div></div>';
+    }).join("");
+  }
+  function dashRows(items, key, sub, opts){
+    if(!items.length) return '<div class="dash-empty" style="padding:10px 0;text-align:left">暂无数据</div>';
+    var max = items.reduce(function(a, x){ return Math.max(a, x[key]); }, 0) || 1;
+    return items.map(function(x, i){
+      var w = Math.max(3, x[key] / max * 100);
+      return '<div class="rk"><span class="rkb" style="--w:' + w.toFixed(1) + '%;animation-delay:' +
+             (i * 40) + 'ms"></span>' +
+             '<span class="rkn">' + esc(x.name) + '</span>' +
+             '<span class="rks">' + sub(x) + '</span>' +
+             '<span class="rkv">' + (opts && opts.money ? money(x[key]) : nf(x[key])) + '</span></div>';
+    }).join("");
+  }
+  function renderDash(){
+    ensureDashKpis();
+    if(!$("#dashKpis")) return;
+    var st = dashStats(loadOrders(), dashRange, Date.now());
+    $$("#dashRange [data-range]").forEach(function(b){
+      b.setAttribute("aria-pressed", String(b.getAttribute("data-range") === dashRange));
+    });
+    if($("#dashNote")) $("#dashNote").textContent = "统计范围：" + DASH_RANGE_LABEL[dashRange] + "　·　不含草稿";
+    var isEmpty = st.count === 0;
+    $("#dashEmpty").hidden = !isEmpty;
+    $("#dashEmpty").innerHTML = isEmpty
+      ? "当前范围还没有订单数据。<br>切到「订单报价」保存订单后，这里会自动汇总收入、成本、利润与排行。"
+      : "";
+    $("#dashStats").hidden = isEmpty;
+
+    animateNum($("#dashKCount"),   st.count,     DASH_KPIS[0].fmt);
+    animateNum($("#dashKRevenue"), st.revenue,   money);
+    animateNum($("#dashKCost"),    st.cost,      money);
+    animateNum($("#dashKProfit"),  st.profit,    money);
+    animateNum($("#dashKMargin"),  st.margin,    DASH_KPIS[4].fmt);
+    animateNum($("#dashKAvg"),     st.avgOrder,  money);
+    var pv = $("#dashKProfit");
+    if(pv) pv.className = "v " + (st.profit >= 0 ? "good" : "bad");
+
+    /* 月度趋势：柱高 = 当月收入占范围内最大月收入的比例；柱内浅色段 = 当月利润占比 */
+    var max = st.months.reduce(function(a, m){ return Math.max(a, m.revenue); }, 0) || 1;
+    $("#dashTrendCap").textContent = st.months.length
+      ? ("共 " + st.months.length + " 个月　·　柱高 = 收入占比，内含浅色段 = 利润")
+      : "";
+    $("#dashTrend").innerHTML = st.months.map(function(m, i){
+      var hp = Math.max(2, m.revenue / max * 100);
+      var pp = m.revenue > 0 ? Math.max(0, Math.min(100, m.profit / m.revenue * 100)) : 0;
+      return '<div class="dash-col" title="' + m.key + "：收入 " + money(m.revenue) +
+             "　成本 " + money(m.cost) + "　利润 " + money(m.profit) + '">' +
+             '<span class="dash-bar" style="--h:' + hp.toFixed(1) + '%;--p:' + pp.toFixed(1) +
+             '%;--i:' + i + '"><i></i></span>' +
+             '<span class="mv">' + money0(m.revenue) + '</span>' +
+             '<span class="mt">' + m.key.slice(2) + '</span></div>';
+    }).join("");
+
+    $("#dashMat").innerHTML = dashRows(st.byMaterial, "revenue", function(x){
+      return x.count + " 行 · 成本 " + money(x.cost);
+    }, { money: true });
+    $("#dashCust").innerHTML = dashRows(st.byCustomer, "revenue", function(x){
+      return x.count + " 单 · 利润 " + money(x.profit);
+    }, { money: true });
+  }
   function setView(v){
-    var isOrder = v === "order";
+    var isOrder = v === "order", isDash = v === "dash";
     document.body.classList.toggle("view-order", isOrder);
+    document.body.classList.toggle("view-dash", isDash);
     $$("#viewSeg [data-view]").forEach(function(b){
       b.setAttribute("aria-pressed", String(b.getAttribute("data-view") === v));
     });
     if(isOrder){ ensureCurrentOrder(); renderOrder(); }
+    if(isDash){ loadDashRange(); renderDash(); }
     try{ localStorage.setItem("dpc_view_v1", v); }catch(e){}
+  }
+  /* 当前所在视图：单件 / 订单 / 看板（打印时据此决定输出哪份单据） */
+  function currentView(){
+    if(document.body.classList.contains("view-dash")) return "dash";
+    if(document.body.classList.contains("view-order")) return "order";
+    return "single";
   }
   /* ---- v1.8.0 订单草稿：编辑 800ms 防抖自动落盘，刷新/重启可恢复；离开前确认 ---- */
   var DRAFT_KEY = "dpc_order_draft_v1";
@@ -3921,7 +4183,7 @@
   });
 
   $("#btnCsv").addEventListener("click", exportCsv);
-  $("#btnPrint").addEventListener("click", openPrint);
+  $("#btnPrint").addEventListener("click", function(){ openPrint(currentView() === "dash" ? "dash" : "single"); });
   $("#btnReset").addEventListener("click", function(){
     if(!window.confirm("恢复所有参数为默认值？（自定义预设与分类会保留）")) return;
     try{ localStorage.removeItem(SKEY); }catch(e){}
@@ -3949,6 +4211,59 @@
   /* 用当前参数与结果生成 A4 预览页（与打印输出一致） */
   /* ===== 订单报价单（打印 / PDF） ===== */
   var ppMode = "single";
+  /* v1.8.3 经营月报：与看板同口径，供打印 / 存 PDF */
+  function renderDashPrintPage(){
+    var st = dashStats(loadOrders(), dashRange, Date.now());
+    var now = new Date();
+    var y = function(v){ return "¥" + Number(v).toFixed(2); };
+    var pct = function(v){ return v.toFixed(1) + "%"; };
+    var h = "";
+    h += brandHeadHTML("经营月报　·　本地统计生成，数据仅存本机");
+    h += '<h2>经营月报</h2>';
+    h += '<p class="pp-meta">生成时间 ' + now.getFullYear() + "-" + pad2(now.getMonth() + 1) + "-" + pad2(now.getDate()) +
+         " " + pad2(now.getHours()) + ":" + pad2(now.getMinutes()) +
+         "　·　统计范围：" + DASH_RANGE_LABEL[dashRange] + "　·　不含草稿订单</p>";
+
+    h += '<h3>总览</h3><table class="sum"><tbody>';
+    h += '<tr class="big"><td>收入合计</td><td class="n">' + y(st.revenue) + '</td></tr>';
+    h += '<tr><td>成本合计</td><td class="n">' + y(st.cost) + '</td></tr>';
+    h += '<tr class="big"><td>利润合计　·　平均毛利率 ' + pct(st.margin) + '</td><td class="n">' + y(st.profit) + '</td></tr>';
+    h += '<tr><td>订单数</td><td class="n">' + st.count + ' 单</td></tr>';
+    h += '<tr><td>客单价</td><td class="n">' + y(st.avgOrder) + '</td></tr>';
+    h += '</tbody></table>';
+
+    h += '<h3>月度趋势</h3><table><thead><tr><th>月份</th><th class="n">收入</th><th class="n">成本</th>' +
+         '<th class="n">利润</th><th class="n">毛利率</th></tr></thead><tbody>';
+    if(!st.months.length) h += '<tr><td colspan="5">暂无数据</td></tr>';
+    st.months.forEach(function(m){
+      h += '<tr><td>' + m.key + '</td><td class="n">' + y(m.revenue) + '</td><td class="n">' + y(m.cost) +
+           '</td><td class="n">' + y(m.profit) + '</td><td class="n">' +
+           (m.revenue > 0 ? pct(m.profit / m.revenue * 100) : "—") + '</td></tr>';
+    });
+    h += '</tbody></table>';
+
+    h += '<h3>材料 TOP</h3><table><thead><tr><th>材料</th><th class="n">行数</th><th class="n">成本</th>' +
+         '<th class="n">收入</th></tr></thead><tbody>';
+    if(!st.byMaterial.length) h += '<tr><td colspan="4">暂无数据</td></tr>';
+    st.byMaterial.forEach(function(m){
+      h += '<tr><td>' + esc(m.name) + '</td><td class="n">' + m.count + '</td><td class="n">' + y(m.cost) +
+           '</td><td class="n">' + y(m.revenue) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+
+    h += '<h3>客户 TOP</h3><table><thead><tr><th>客户</th><th class="n">订单数</th><th class="n">收入</th>' +
+         '<th class="n">利润</th></tr></thead><tbody>';
+    if(!st.byCustomer.length) h += '<tr><td colspan="4">暂无数据</td></tr>';
+    st.byCustomer.forEach(function(c){
+      h += '<tr><td>' + esc(c.name) + '</td><td class="n">' + c.count + '</td><td class="n">' + y(c.revenue) +
+           '</td><td class="n">' + y(c.profit) + '</td></tr>';
+    });
+    h += '</tbody></table>';
+
+    h += '<p class="pp-foot">口径：只统计非草稿订单；收入 / 成本 / 利润按订单页口径逐单复算后汇总' +
+         '（订单级运费按件分摊进各行成本，阶梯折扣与整单折扣取大不叠加）。</p>';
+    $("#ppPage").innerHTML = h;
+  }
   function renderOrderPrintPage(){
     var o = ensureCurrentOrder();
     var r = computeOrder(o);
@@ -3999,6 +4314,7 @@
 
   function renderPrintPage(){
     if(ppMode === "order"){ renderOrderPrintPage(); return; }
+    if(ppMode === "dash"){ renderDashPrintPage(); return; }
     var r = last || compute();
     var devP = findPreset("device", cur.device);
     var matP = findPreset("material", cur.material);
@@ -4044,7 +4360,7 @@
   }
 
   function openPrint(mode){
-    ppMode = (mode === "order") ? "order" : "single";
+    ppMode = (mode === "order") ? "order" : (mode === "dash") ? "dash" : "single";
     renderPrintPage();
     var b = androidBridge();
     if(b && typeof b.printPage === "function"){
@@ -4156,6 +4472,13 @@
   $("#viewSeg").addEventListener("click", function(e){
     var b = e.target && e.target.closest ? e.target.closest("[data-view]") : null;
     if(b) setView(b.getAttribute("data-view"));
+  });
+  $("#dashRange").addEventListener("click", function(e){
+    var b = e.target && e.target.closest ? e.target.closest("[data-range]") : null;
+    if(!b) return;
+    dashRange = b.getAttribute("data-range") || "all";
+    try{ localStorage.setItem(DASH_KEY, dashRange); }catch(e2){}
+    renderDash();
   });
   $("#ordAddBtn").addEventListener("click", function(){
     var o = pushCurrentLine();
@@ -4291,6 +4614,7 @@
   migrateQuotes();
   renderCustList();               /* v1.8.0：填充客户库下拉数据 */
   ensureOrdDraftUI();
+  watchOverlays();                /* v1.8.3：弹窗滚动锁（遮罩打开时锁住背景页滚动） */
   /* v1.8.0：恢复上次未提交的订单草稿（仅当上次停留在订单视图） */
   try{
     if(localStorage.getItem("dpc_view_v1") === "order"){
@@ -4301,8 +4625,11 @@
       }
     }
   }catch(e){}
-  /* 恢复上次所在视图 */
-  try{ if(localStorage.getItem("dpc_view_v1") === "order") setView("order"); }catch(e){}
+  /* 恢复上次所在视图（订单 / 经营看板） */
+  try{
+    var _lastView = localStorage.getItem("dpc_view_v1");
+    if(_lastView === "order" || _lastView === "dash") setView(_lastView);
+  }catch(e){}
 
   /* 纯函数测试接口：离线单文件应用，暴露纯计算 / 存储函数便于 jsdom 回归断言（无副作用） */
   try{
@@ -4316,7 +4643,9 @@
       loadCustomers: loadCustomers, rememberCustomer: rememberCustomer, custLookup: custLookup,
       BRAND_SVG: BRAND_SVG, drawBrandMark: drawBrandMark,
       quoteBreakdown: quoteBreakdown, shareSummaryRows: shareSummaryRows, QUOTE_LOCKED: QUOTE_LOCKED,
-      drawShareImage: drawShareImage, drawOrderShareImage: drawOrderShareImage
+      drawShareImage: drawShareImage, drawOrderShareImage: drawOrderShareImage,
+      dashStats: dashStats, dashRangeStart: dashRangeStart, renderDash: renderDash,
+      currentView: currentView, DASH_RANGE_LABEL: DASH_RANGE_LABEL
     };
   }catch(e){}
 })();
