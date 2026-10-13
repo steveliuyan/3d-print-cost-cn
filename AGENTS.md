@@ -2,25 +2,26 @@
 
 > **新对话请先读完这一篇再动手。** 本文档面向「没有上下文的新 AI / 新协作者」，
 > 目标是让接手者在不翻聊天记录的情况下，也能知道**做了什么、在哪、怎么改、怎么验证、怎么发版**。
-> 最后更新：2026-10-12（v1.7.0 订单化开发完成，待打包发版）
+> 最后更新：2026-10-13（v1.8.2 已发布）
 
 ---
 
 ## 0. 30 秒速览（接手第一屏）
 
+> 另见 **`HANDOFF.md`**（更精简的本次交接单 + 开新对话的启动提示词）。
+
 | 项 | 值 |
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.8.0** |
-| 本地 HEAD | 以 `git log --oneline -1` 为准（v1.8.0 基线提交，本文档更新会再领先少量提交） |
-| 功能提交 | v1.8.0 交互增强（见 §9）；tag `v1.5.1` → `dde8b9ca8b`（最新已发布） |
-| 回归测试 | **346/346 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `36149f9fdef386a3815a6afe2a1ee091`（223,724 B，逐字节一致） |
-| 最新 Release | **v1.5.1 更新体验重做**（待发 v1.6.0 / v1.7.0 / v1.8.0） |
+| 当前版本 | **v1.8.2**（versionCode 15） |
+| 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.8.2` → `37de7ac16ef356f364fb741051e682dc036d1529`**（v1.8.1 / v1.8.0 / v1.5.1 保留） |
+| 回归测试 | **366/366 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `823abb51e3e5ea2a19a5b20affe5f5ad`（227,022 B，逐字节一致） |
+| 最新 Release | **v1.8.2 安卓图标尺寸修正**（tag 共 13 个） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
-| 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
-| 唯一待办 | 打包 + 发版 v1.6.0 / v1.7.0 / v1.8.0；PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
+| 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
+| 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
 ---
 
@@ -44,10 +45,11 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（346 项断言）
+├─ test-presets.js         ← jsdom 回归测试（366 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
-├─ AGENTS.md               ← 本文件
+├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
+├─ AGENTS.md               ← 本文件（深度说明书）
 ├─ .gitignore              ← 忽略 dist/、node_modules/、.secrets/、*.jks、.workbuddy/
 ├─ .secrets/               ← 凭据与发版脚本（绝不入库）
 ├─ .workbuddy/memory/      ← 工作日志 =「聊天记录」的落地（见 §15）
@@ -65,7 +67,7 @@ H:\3d-print-cost-calculator\
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
 "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-2/node.exe" test-presets.js
-# 期望：结果: 310/310 通过
+# 期望：结果: 366/366 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -100,15 +102,21 @@ PY_ENV="C:/Users/steveliuyan/.workbuddy/binaries/python/envs/default/Scripts/pyt
 "$PY_ENV" _gen_icons.py        # 需要 Pillow（已装在托管 venv default 里）
 ```
 
-**图标唯一来源 = `_gen_icons.py`**（内含 64×64 品牌几何常量，`CUBE`/`BADGE`/`YEN` 等）。一次产出：
+**图标唯一来源 = `_gen_icons.py`**（内含 64×64 品牌几何常量：`CUBE` / `SEAMS` / `SEAM_W` / `STYLES`）。一次产出：
 Web（`favicon.svg`/`favicon.ico`、`icon-192/512.png`、`maskable-512.png`）、
 iOS（`apple-touch-icon.png` 180 + 167，满幅无透明）、
 Android（`mipmap-*` 5 档 `ic_launcher{,_round}.png`、`drawable/ic_launcher_foreground.xml`、
 `values/ic_launcher_background.xml`、`mipmap-anydpi-v26/ic_launcher{,_round}.xml`）、
 Windows（`desktop/build/icon.{png,ico}`）、品牌资产（`docs/brand/icon-tile.svg` + `logo-mark.svg` + `icon-preview.png`）。
-此外生成器会**自动把内联 favicon data-URI 与顶栏 `.mark` 内嵌 SVG 同步进 `index.html`**
-（`sync_favicon_uri()` / `sync_topbar_mark()`，正则容忍 IDE 预览回注属性）——改几何只改本脚本，勿手改 HTML。
+此外生成器会**自动把内联 favicon data-URI、顶栏 `.mark` 内嵌 SVG、报价单抬头 `BRAND_SVG` 同步进 `index.html`**
+（`sync_favicon_uri()` / `sync_topbar_mark()` / `sync_brand_svg()`，正则容忍 IDE 预览回注属性）——改几何只改本脚本，勿手改 HTML。
 改完**必须再跑 `_sync_clean.py`**（三副本同步 + 剥离注入属性，含 `logo-preview.html`）。
+
+> ⚠️ **标识缩放占比（`STYLES`，v1.8.2 关键）**：立方体占各自「可视区」比例须统一 ≈61%，否则桌面图标会显大。
+> `tile=0.61(线性)` / `touch=0.55` / `round=0.305(径向)` / `maskable=0.40(径向)`；
+> **Android 自适应前景 `android_vector(safe_frac=0.205)`** —— 启动器只显示 108dp 画布中央 **72dp 可视区**，
+> 立方体高 = `2 × safe_frac × 108`，`0.205 → 占可视区 61.5%`；**旧值 0.31 → 93%**（几乎顶边、显大，用户已报过）。
+> `test-presets.js` 有 3 条断言读 `ic_launcher_foreground.xml` 钉住此比例（<75%）。
 
 > 注意：`index.html` 的 favicon 用**内联 data-URI**（保证单文件自洽）；`_gen_icons.py` 会**自动把它同步进 head**
 > （正则容忍 IDE 预览回注的多余属性）。`desktop/build/icon.png` 被 `.gitignore` 忽略（Windows 打包只用 `icon.ico`）。
@@ -217,6 +225,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | 模型估算 | STL（二进制 / ASCII）与 3MF（Stored / Deflate）导入，算体积、包围盒、按密度与填充率估用量；**切片 3MF（Bambu Studio / OrcaSlicer `Metadata/slice_info.config`）直接读实测耗材克数与打印时长**，无切片数据时回退几何估算 |
 | 主题 | 浅色 / 深色 / 跟随系统三档；**深色仅屏幕**，打印与长图恒浅色 |
 | **更新体验（v1.5.1）** | **应用内更新弹窗**（三端统一）：发布说明轻量 Markdown 渲染、四态（检查中 / 发现新版 / 已是最新 / 失败+重试）、头部版本徽标 `v当前 → v新版`、平台产物行（按端显示 web.html / .apk / .exe + 体积）；**历史更新日志面板**（页脚「更新日志」，可翻看所有版本） |
+| **分享长图（v1.8.1）** | 分享框有 **「客户版（默认）/ 内部版」** 切换。**客户版**（给客户）：标题「3D 打印报价单」，只呈现**报价**；`quoteBreakdown()` 把成本分项按比例**上调到加总 = 报价总额**（利润揉进分项，无成本/利润/毛利率行），其中 **`QUOTE_LOCKED = ["电费","运费 / 包装"]` 保持真实值不上调**，尾差并入末个非锁定项。**内部版**保留成本构成 + 成本/售价/收入/利润/毛利率。**打印 / 保存 PDF 恒为内部明细**，不受切换影响。canvas 品牌标 `drawBrandMark()` 与打印头 `BRAND_SVG` 同几何（纯立方体，无 ¥） |
 | **交互增强（v1.8.0）** | **A 档**：① **行项就地编辑**（订单视图内点「编辑」展开 6 项快速表单：数量 / 打印时长 / 耗材用量 / 材料单价 / 损耗率 / 后处理，输入即写回该行 `fields` 并**只刷数字不重建 DOM** 保住焦点）；② **历史订单工具条**（关键词搜索 + 状态分档 chips + 金额/时间排序 + 空态）；③ **草稿自动保存**（编辑 800ms 防抖落盘 `dpc_order_draft_v1`，刷新/重启恢复，界面提示「草稿已保存」，保存后自动清除 + 新建时确认丢弃）；④ **客户库**（`dpc_customers_v1`，上限 50，去重置顶，datalist 复用，选中带出联系方式）。**B 档**：⑤ **品牌标识**（矢量 SVG 内嵌 + Canvas 同构复刻，打印页/分享长图头部统一品牌头，源文件 `docs/brand/logo-mark.svg`）；⑥ **翻单/复制**（订单历史一键复制为新单，新 id/编号/时间）；⑦ **状态流转**（列表内下拉直接改 草稿·已报价·已成交·已归档 并即时持久化）；⑧ **按行覆盖**（被单独调整的行标「已调」） |
 
 ## 9. 版本时间线（做了什么）
@@ -236,6 +245,8 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.6.0** | **切片 3MF 实测用量读取 + 生产扩展 3MF 支持**：新增 `parseSliceInfo()` 解析 Bambu Studio / OrcaSlicer 的 `Metadata/slice_info.config`（`weight` 克 / `prediction` 秒，`filament used_g` 兜底）；`stlRender` 增显「切片实测 X 克 / 时长」，「填入用量」优先用实测值；无切片数据 / 解析失败**静默回退几何估算**。**关键修复**：支持 3MF **生产扩展**——主 model 用 `<component p:path>` 引用外部 object 文件、`build item`/`component` 的 4×3 仿射 `transform` 逐级复合（拓竹 Studio 导出即此结构，旧实现只读主文件 → 报"无法解析"）；`inflateRaw` 改为**按 ZIP 中央目录 usize 预分配**输出缓冲，显著加速大模型解压。版本号四处联动 1.5.1 → 1.6.0（`APP_VERSION` / build.gradle vc10→11 / desktop package.json+artifactName / README）。**纯前端，零新依赖**。回归 196 → **245** |
 | **v1.7.0** | **订单化（多品项报价）**：① **引擎参数化**——把 `compute()` 里「从 DOM 读 18 个 `data-field`」剥出为**纯函数 `computeFrom(fields)`**，`compute()` 退化为 `computeFrom(fieldSnapshot())` 薄封装（v1.6 单件行为逐字节不变）；② 新增 `computeOrder(order)`（多行聚合，**订单级运费按件分摊进各行成本基础**以保持与单件口径一致）、`tierDisc/effDisc`（阶梯与整单折扣取大）、`dpc_orders_v1` 存储与 `migrateQuotes()`（旧 `dpc_quotes_v1` → 订单，幂等、旧键保留）；③ **订单视图 UI**（顶栏分段切换）+ 报价历史面板改造为订单列表；④ 订单级打印 / CSV / 分享长图；⑤ `buildBackup()` **补上订单**（v1.6 及以前备份不含报价历史，顺带修坑）。版本号四处联动 1.6.0 → 1.7.0（build.gradle vc11→12）。**纯前端，零新依赖**。回归 245 → **310** |
 | **v1.8.0** | **交互增强（A/B 档）+ 品牌标识**：**A 档**——A1 行项就地编辑（6 项表单，输入即写回 `ln.fields` 并 `refreshLineNumbers()` 只刷数字不重建 DOM）、A2 历史订单工具条（搜索 + 状态 chips + 排序 + 空态）、A3 草稿自动保存（`dpc_order_draft_v1`，800ms 防抖 / 恢复 / 保存即清 / 新建确认）、A4 客户库（`dpc_customers_v1`，去重置顶 + datalist + 带出联系方式）；**B 档**——B5 品牌标识（内嵌 `BRAND_SVG` 矢量 + Canvas `drawBrandMark()` 复刻，打印页/长图统一品牌头）、B6 翻单复制、B7 列表内状态流转、B8 按行覆盖「已调」标记。配套矢量 logo 源文件 `docs/brand/logo-mark.svg` + 预览页 `docs/brand/logo-preview.html`。版本号四处联动 1.7.0 → 1.8.0（build.gradle vc12→13）。**纯前端，零新依赖**。回归 310 → **342**。**品牌图标**：由 `_gen_icons.py` 重绘三端全套（Web/iOS/Android 自适应/Windows），后续修正**顶栏漏改 + 徽标比例失衡**（几何收归单一来源、徽标内收居中），回归 → **346** |
+| **v1.8.1** | **分享长图「客户版 / 内部版」+ 品牌标统一**：① 分享框加分段开关（默认**客户版**）；`quoteBreakdown(items,totalCost,revenue,locked)` 把成本分项按比例**上调到加总 = 报价总额**，客户版**无成本/利润/毛利率**；**`QUOTE_LOCKED=["电费","运费 / 包装"]` 锁真实值、不上调**（透明信息），尾差并入末个非锁定项；`shareSummaryRows()` 客户版只回「报价总额」一行；② 打印 / PDF **恒为内部明细**，不受切换影响；③ 分享长图顶部品牌标（旧 ¥ 徽标）重画为与打印头 `BRAND_SVG` **同几何的纯立方体**。文件：`index.html`（`drawShareImage`/`drawOrderShareImage`/`shareMode`/`shareKind`）。**纯前端，零新依赖**。回归 346 → **363** |
+| **v1.8.2** | **修复安卓桌面图标过大 + 站点更新**：① `_gen_icons.py` 自适应前景 **`safe_frac 0.31 → 0.205`**（立方体占启动器 72dp 可视区 **93% → 61.5%**，与网页/PWA tile 一致）；旧版圆形 `round 0.44 → 0.305` 同比例；② `test-presets.js` 新增 **3 条图标占比断言**（解析 `ic_launcher_foreground.xml`）。版本号四处联动 1.8.1 → 1.8.2（build.gradle vc14→15）。**纯前端 + 资源**，零新依赖。回归 363 → **366**。③ 同步更新个人站点 `myweb/project-dpc.html`（v1.4.2 → v1.8.2、换官方品牌图标 + favicon、修正失效下载链接、功能亮点补 订单化报价 / 客户版·内部版长图 / STL·3MF），站点仓库提交 `c08b7fc` |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -288,14 +299,28 @@ M2 删顶栏徽标圆 → 「已换新徽标」+ 几何 2 条 FAIL；M3 打印�
 → 恢复 → 全量回归 **346/346**。三副本逐字节一致 223,724 B，md5 `36149f9fdef386a3815a6afe2a1ee091`。
 另修 `_sync_clean.py`：一并剥离 `docs/brand/logo-preview.html` 的 IDE 注入属性（否则 pre-commit 拦截）。
 
+**v1.8.1（分享长图 客户版/内部版）**：RED 先失败（新增 12 条 ＋ 3 条锁定断言在实现前不成立）→ minimal GREEN → 全绿；
+变异 **2 组被捕获**（M1 `quoteBreakdown` 的 k 恒 1（不上调）→ `分项 ≠ 真实成本` FAIL；M2 `isLock` 恒 false → 电费/运费锁定 2 条 FAIL）
+→ 恢复 → 全量回归 **363/363**。三副本逐字节一致 227,022 B，md5 `98db2e5a54b19adecec7001f6dfc05a3`。
+**真实渲染核验**（`@napi-rs/canvas` 无头实绘，非模拟）：客户版 电费 **¥0.36 = 内部版真实值**，
+`10.09+5.81+0.36+6.72+2.69+2.29 = 27.96 = 报价总额`，无利润/毛利率；内部版保留 成本 10.62 / 利润 17.33 · 62.0%。
+APK（vc14）1,186,276 B / EXE 74,270,166 B，asar 内 index.html md5 与源一致。
+
+**v1.8.2（安卓图标尺寸修正）**：新增 3 条断言先 RED（366 中 2 条 FAIL / 居中断言 PASS）→ 调 `safe_frac` 至 GREEN；
+变异：把 `safe_frac` 改回 0.31（重跑 `_gen_icons.py`）→ `占可视区 ~61.5%` 与 `不顶满 <75%` **2 条 FAIL（364/366）** →
+恢复 → 全量回归 **366/366**。三副本逐字节一致 227,022 B，md5 `823abb51e3e5ea2a19a5b20affe5f5ad`。
+**真机核验**：`adb install -r -t`（vc15）后截启动器桌面，立方体留白由「几乎顶边」变为「与相邻应用一致」。
+APK 1,183,436 B（内嵌 index.html md5 = 源）；EXE 74,271,338 B（asar 内 index.html md5 = 源，version 1.8.2）。
+
 ## 11. 未完成 / 待办
 
 - ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
   但**仍是 classic 型且权限极大**（scopes 含 `admin:enterprise` / `admin:org` / `delete_repo` / `workflow`…），应换为 fine-grained。
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
-- ⏳ **v1.8.0 待打包 + 发版**（v1.6.0 / v1.7.0 尚未打包，可一次带出）：
-  代码已本地提交，回归 **346/346**；下一步 `_sync_clean.py` → Gradle APK（vc13）→ `npm run dist` 便携 exe → `_api_push.py` 推提交 → `_api_release.py` 发版（3 附件）。
+- ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / **v1.8.1 / v1.8.2** 均已打包 + 建 Release（各 3 附件）。
+  最新 = **v1.8.2**（提交 `37de7ac`，tag 共 13 个）；产物在 `dist/release/3d-print-cost-cn-1.8.2-{web.html,…-portable.exe,.apk}`。
+- 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
 - ✅ **v1.5.1 已发版**（提交 `dde8b9ca8b` 已推送；APK/EXE 已核验；Release 已发布；Pages 已构建）。
@@ -304,6 +329,14 @@ M2 删顶栏徽标圆 → 「已换新徽标」+ 几何 2 条 FAIL；M3 打印�
 - 💡 迁移遗留：`desktop/node_modules` 未随仓库带（被 .gitignore 忽略），新机器首次打包前需 `npm install`。
 
 ## 12. 关联项目
+
+**个人站点 `myweb`**（= `www.20050905.xyz`）—— 本应用的项目页在其中：`steveliuyan/myweb` 仓库的 `project-dpc.html`
+（商城风格：应用图标 / 下载按钮 / 应用预览 / 功能亮点 / 版本信息）。
+- ⚠️ **与应用仓库是两个仓库**，改站点要单独提交到 `myweb`。
+- ⚠️ 克隆必须落在**工作区内**（沙箱禁写工作区外；克隆到 `/h/myweb` 会失败并留幻影目录）；推送用 token URL：
+  `git push https://x-access-token:TOKEN@github.com/steveliuyan/myweb.git HEAD:main`。
+- 应用图标资源：把 `icon-192.png` 拷为站点 `dpc-icon.png`，并作页面 `favicon` / `apple-touch-icon`；
+  下载链接须指向当前 Release 的**实际附件名**（旧版 `web.html` 等已失效）。
 
 **比价助手 `price-compare-cn`** —— 另一个还没实现的新项目，设计文档在：
 `H:\workbuddy\2026-10-11-01-15-23\price-compare-cn\docs\superpowers\specs\2026-10-11-price-compare-cn-design.md`
@@ -360,15 +393,14 @@ $PY .secrets/_api_release.py    # 建 tag/Release 并上传附件（改脚本内
 H:\3d-print-cost-calculator\.workbuddy\memory\
 ├─ MEMORY.md        ← 长期稳定的事实与硬性约定（最该先看的那张「备忘卡」）
 ├─ 2026-10-11.md    ← 当天：三端初版、v1.1~v1.5 的迭代过程
-└─ 2026-10-12.md    ← 迁移、推送、发版、更新体验重做、v1.5.1 全流程
+├─ 2026-10-12.md    ← 迁移、推送、发版、更新体验重做、订单化 v1.7.0、品牌
+└─ 2026-10-13.md    ← v1.8.0 交互增强、v1.8.1 客户版/内部版长图、v1.8.2 图标修正 + 站点更新
 ```
 
-（同一份副本也在工作区 `H:\workbuddy\2026-10-11-01-15-23\.workbuddy\memory\`，两边内容 md5 一致。）
-
 **新对话接手时的推荐动作**：
-1. 读本文件 §0 速览与 §8 功能清单，建立全局印象；
+1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 342/342；
+3. 跑一次 §4.1 的回归测试，确认基线是 **366/366**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），
