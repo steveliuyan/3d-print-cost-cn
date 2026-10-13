@@ -25,6 +25,29 @@ function field(id) { return d.querySelector('[data-field="' + id + '"]'); }
 
 setTimeout(function () {
 
+  /* ===== v1.8.2：Android 自适应图标前景层占比回归（防再次误放大）=====
+     启动器只显示自适应图标中央 72dp 可视区；立方体高度应 ≈61.5%，与网页/PWA tile 图标一致。
+     历史问题：前景 safe_frac=0.31 → 立方体占可视区 93%（几乎顶边，视觉显大）。 */
+  (function () {
+    var fx = path.join(__dirname, 'android', 'app', 'src', 'main', 'res',
+                        'drawable', 'ic_launcher_foreground.xml');
+    var xml = fs.existsSync(fx) ? fs.readFileSync(fx, 'utf8') : '';
+    var pts = [];
+    (xml.match(/[-\d.]+,[-\d.]+/g) || []).forEach(function (p) {
+      var a = p.split(',');
+      pts.push([parseFloat(a[0]), parseFloat(a[1])]);
+    });
+    var ys = pts.map(function (p) { return p[1]; });
+    var h = ys.length ? Math.max.apply(null, ys) - Math.min.apply(null, ys) : 0;
+    var frac = h / 72;
+    ok('v1.8.2 安卓图标：前景立方体占可视区 ~61.5%', Math.abs(frac - 0.615) < 0.02,
+       (frac * 100).toFixed(1) + '%');
+    ok('v1.8.2 安卓图标：立方体不再顶满可视区（<75%）', frac > 0 && frac < 0.75,
+       (frac * 100).toFixed(1) + '%');
+    ok('v1.8.2 安卓图标：立方体在 108dp 画布上居中（中心 y≈54）',
+       ys.length > 0 && Math.abs((Math.max.apply(null, ys) + Math.min.apply(null, ys)) / 2 - 54) < 0.6);
+  })();
+
   /* ===== 0. Android WebView 原生导出桥（回归：真机导出 CSV / 备份 / 预设 无反应） =====
      真机 WebView 默认不处理 <a download> + Blob 下载，且页面非 iframe，
      isEmbedded() 为 false → 旧实现静默失败。必须优先走 JS 桥写入系统「下载」目录。 */
@@ -517,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.1', dU.getElementById('footVer').textContent === '1.8.1',
+    ok('更新：footer 显示当前版本号 1.8.2', dU.getElementById('footVer').textContent === '1.8.2',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -633,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.8\.1/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.8\.2/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -691,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.8\.1/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.8\.2/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -819,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.8.1');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.8.2');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1530,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.8.1', d8.getElementById('footVer').textContent === '1.8.1',
+    ok('v1.8：版本号已升到 1.8.2', d8.getElementById('footVer').textContent === '1.8.2',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */

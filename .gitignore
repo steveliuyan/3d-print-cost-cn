@@ -44,3 +44,6 @@ _crop_icon.py
 .DS_Store
 Thumbs.db
 .vscode/
+
+# ===== 本地临时工作目录（临时克隆 / 模拟脚本等，不入库）=====
+.tmp-*/

@@ -92,7 +92,7 @@ def build_xf_radial(safe_frac, canvas):
 STYLES = {
     "tile":     (0.61, False),   # 网页/PWA/Windows 圆角方框
     "touch":    (0.55, False),   # iOS 满幅（系统自行圆角）
-    "round":    (0.44, True),    # 安卓圆形图标
+    "round":    (0.305, True),   # 安卓圆形图标（与 tile 视觉占比一致 ≈61.5%）
     "maskable": (0.40, True),    # PWA maskable（安全圆内）
 }
 
@@ -306,7 +306,10 @@ def sync_topbar_mark():
     return True
 
 
-def android_vector(safe_frac=0.31, canvas=108):
+def android_vector(safe_frac=0.205, canvas=108):
+    """自适应图标前景层（108dp 画布）。
+    v1.8.2 修订：safe_frac 0.31 → 0.205。启动器只显示中央 72dp 可视区，
+    旧值使立方体占可视区 93%（几乎顶满、显大）；新值 ≈61.5%，与网页/PWA tile 图标比例一致。"""
     f, k = build_xf_radial(safe_frac, canvas)
 
     def c(p):
