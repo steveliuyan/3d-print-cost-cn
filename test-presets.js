@@ -416,7 +416,7 @@ setTimeout(function () {
   ok('预览渲染出 A4 报价页',
      /3D 打印成本报价单/.test(d.getElementById('ppPage').innerHTML) &&
      /订单总成本/.test(d.getElementById('ppPage').innerHTML) &&
-     /建议售价/.test(d.getElementById('ppPage').innerHTML));
+     /建议零售价/.test(d.getElementById('ppPage').innerHTML));
   ok('预览页含当前单件成本数值',
      d.getElementById('ppPage').innerHTML.indexOf(d.getElementById('unitCost').textContent) >= 0);
   ok('打印模式类挂到 body', d.body.classList.contains('pp'));
@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.8.3',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.9.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.8\.3/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.9\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.8\.3/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.9\.0/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.8.3');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.9.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.8.3', d8.getElementById('footVer').textContent === '1.8.3',
+    ok('v1.8：版本号已升到 1.9.0', d8.getElementById('footVer').textContent === '1.9.0',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2019,6 +2019,122 @@ setTimeout(function () {
     done();
   }
 
+  /* ============ v1.9.0：平台活动报名 + 建议零售价主视觉 ============ */
+  function runV19Tests(done) {
+    var E = w.__DPC;
+    var mk = function (ol, tiers, qty) {
+      var ff = E.fieldSnapshot();
+      ff.qty = String(qty || 10);
+      var level = { shipping: 0, commission: 5, markup: 2.5, bulkDisc: 0 };
+      for (var k in ol) level[k] = ol[k];
+      return { lines: [{ id: 'l1', fields: ff }], orderLevel: level, tiers: tiers || [] };
+    };
+    var near = function (a, b) { return Math.abs(a - b) < 1e-9; };
+
+    /* --- 1. 纯计算口径 --- */
+    var rOff = E.computeOrder(mk({ activity: { on: false, name: '双 11', disc: 15 } }));
+    ok('v1.9 活动：未报名（开关关闭）时折扣不生效', (rOff.lines[0].r || {}).disc === 0);
+    ok('v1.9 活动：未报名时优惠金额为 0', rOff.discTotal === 0);
+
+    var rOn = E.computeOrder(mk({ activity: { on: true, name: '双 11', disc: 15 } }));
+    ok('v1.9 活动：报名后 15% 折扣生效', near((rOn.lines[0].r || {}).disc, 0.15), String((rOn.lines[0].r || {}).disc));
+    ok('v1.9 活动：优惠金额 = 售价 × 件数 × 折扣',
+       near(rOn.discTotal || 0, rOn.lines[0].r.sellNet * rOn.lines[0].r.qty * 0.15),
+       String(rOn.discTotal));
+    ok('v1.9 活动：名称随订单结果透出（供报价单 / 长图）',
+       !!rOn.activity && rOn.activity.on === true && rOn.activity.name === '双 11');
+
+    var rLow = E.computeOrder(mk({ bulkDisc: 8, activity: { on: true, name: 'X', disc: 5 } }));
+    ok('v1.9 活动：活动折扣低于整单折扣 → 取整单 8%（不叠加）', near((rLow.lines[0].r || {}).disc, 0.08));
+    var rTier = E.computeOrder(mk({ activity: { on: true, name: 'X', disc: 15 } },
+                                 [{ minQty: 10, disc: 20 }], 10));
+    ok('v1.9 活动：阶梯 20% 高于活动 15% → 取阶梯 20%', near((rTier.lines[0].r || {}).disc, 0.20));
+    ok('v1.9 活动：折扣上限钳到 90%',
+       near((E.computeOrder(mk({ activity: { on: true, name: 'X', disc: 200 } })).lines[0].r || {}).disc, 0.9));
+
+    var rOld = E.computeOrder(mk({}));
+    ok('v1.9 活动：老订单无 activity 字段 → 按未报名处理，不报错',
+       (rOld.lines[0].r || {}).disc === 0 && rOld.activity && rOld.activity.on === false);
+
+    ok('v1.9 活动：effDisc 纳入活动折扣',
+       near(E.effDisc({ tiers: [], orderLevel: { bulkDisc: 0, activity: { on: true, disc: 12 } } }, 5), 0.12));
+    ok('v1.9 活动：effDisc 在未报名时忽略活动折扣',
+       E.effDisc({ tiers: [], orderLevel: { bulkDisc: 0, activity: { on: false, disc: 12 } } }, 5) === 0);
+
+    /* --- 2. 建议零售价主视觉（静态结构 + 样式） --- */
+    var sellEl = d.getElementById('sellPrice');
+    var retail = sellEl ? sellEl.closest('.retail') : null;
+    ok('v1.9 零售价：建议零售价移入独立主视觉块 .retail', !!retail);
+    ok('v1.9 零售价：主视觉数字明显放大（≥34px）',
+       /\.retail[^{]*\.rv\{[^}]*font-size:3[4-9]px/.test(html));
+    ok('v1.9 零售价：主视觉带毛利率与单件利润副指标',
+       !!d.getElementById('retailMargin') && !!d.getElementById('unitProfit'));
+    ok('v1.9 零售价：文案统一为「建议零售价」',
+       /建议零售价/.test(retail ? retail.textContent : html));
+
+    /* --- 3. 订单页：报名交互 + 持久化 + 报价单 --- */
+    var domV = new JSDOM(html, {
+      runScripts: 'dangerously',
+      url: 'http://localhost/',
+      pretendToBeVisual: true,
+      beforeParse: function (win) {
+        win.confirm = function () { return true; };
+        win.HTMLCanvasElement.prototype.getContext = function () {
+          return new Proxy({}, {
+            get: function (t, k) {
+              if (k === 'measureText') return function () { return { width: 10 }; };
+              if (k === 'canvas') return {};
+              return function () {};
+            }, set: function () { return true; }
+          });
+        };
+        win.HTMLCanvasElement.prototype.toDataURL = function () { return 'data:image/png;base64,QUFBQQ=='; };
+        win.URL.createObjectURL = function () { return 'blob:o'; };
+        win.URL.revokeObjectURL = function () {};
+        win.print = function () {};
+      }
+    });
+    var dV = domV.window.document, wV = domV.window;
+    wV.HTMLAnchorElement.prototype.click = function () {};
+
+    click(dV.querySelector('#viewSeg [data-view="order"]'));
+    click(dV.getElementById('ordAddBtn'));
+    var actOn = dV.getElementById('ordActOn');
+    ok('v1.9 活动：订单页有「报名平台活动」开关', !!actOn && !!dV.getElementById('ordActName') &&
+       !!dV.getElementById('ordActDisc'));
+    ok('v1.9 活动：默认未报名（开关关闭）', !!actOn && actOn.checked === false);
+    if (!actOn) { done(); return; }
+
+    actOn.checked = true; change(actOn);
+    var actName = dV.getElementById('ordActName'); actName.value = '平台双 11'; input(actName);
+    var actDisc = dV.getElementById('ordActDisc'); actDisc.value = '12'; input(actDisc);
+    ok('v1.9 活动：行项显示 12.0% 折扣', /折扣 12\.0%/.test(dV.getElementById('ordLines').textContent));
+    ok('v1.9 活动：汇总显示活动名与优惠',
+       /平台双 11/.test(dV.getElementById('ordSum').textContent) &&
+       /优惠/.test(dV.getElementById('ordSum').textContent));
+
+    click(dV.getElementById('ordSave'));
+    var saved = JSON.parse(wV.localStorage.getItem('dpc_orders_v1') || '[]')[0] || {};
+    ok('v1.9 活动：报名状态写入订单', !!(saved && saved.orderLevel.activity) &&
+       saved.orderLevel.activity.on === true && saved.orderLevel.activity.name === '平台双 11' &&
+       saved.orderLevel.activity.disc === 12,
+       JSON.stringify(saved && saved.orderLevel.activity));
+
+    click(dV.getElementById('ordPrint'));
+    var pp = dV.getElementById('ppPage').innerHTML;
+    ok('v1.9 活动：报价单抬头含活动名与折扣', /平台活动/.test(pp) && /平台双 11/.test(pp));
+    ok('v1.9 活动：报价单汇总含活动优惠行', /活动优惠/.test(pp));
+
+    /* 关闭开关 → 折扣立刻失效 */
+    var ppClose = dV.getElementById('pprev').querySelector('[data-ppclose]');
+    if (ppClose) click(ppClose);
+    actOn.checked = false; change(actOn);
+    ok('v1.9 活动：取消报名后折扣立即失效',
+       !/折扣 12\.0%/.test(dV.getElementById('ordLines').textContent));
+
+    done();
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -2057,7 +2173,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(function () { runAdaptiveTests(finish); }); }); }); }); }); }); }); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(function () { runAdaptiveTests(function () { runV19Tests(finish); }); }); }); }); }); }); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);

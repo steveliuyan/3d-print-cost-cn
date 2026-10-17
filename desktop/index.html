@@ -232,6 +232,27 @@
              border-top:1px solid rgba(255,255,255,.24); font-size:12px; color:rgba(255,255,255,.85)}
   .hero .sub b{font-weight:600; color:#fff; font-variant-numeric:tabular-nums}
 
+  /* 建议零售价主视觉（v1.9.0）：独立于成本 hero 的高亮块，字号明显大于普通 KPI */
+  .retail{position:relative; display:flex; align-items:center; justify-content:space-between; gap:14px;
+          flex-wrap:wrap; margin:0 0 12px; padding:12px 14px 12px 16px; border-radius:var(--r);
+          background:linear-gradient(135deg, var(--accent-soft), transparent 82%);
+          border:1px solid var(--accent-line); overflow:hidden}
+  .retail::before{content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--accent)}
+  .retail .rk{font-size:11.5px; font-weight:600; color:var(--text2); letter-spacing:.02em;
+              display:flex; align-items:center; gap:6px; flex-wrap:wrap}
+  .retail .rtag{font-size:10px; font-weight:500; color:var(--accent-2); background:var(--card);
+                border:1px solid var(--accent-line); border-radius:999px; padding:1px 7px; letter-spacing:0}
+  .retail .rv{font-size:36px; font-weight:750; letter-spacing:-.04em; line-height:1.08; margin-top:3px;
+              color:var(--accent); font-variant-numeric:tabular-nums}
+  .retail .rside{display:flex; gap:18px; padding-left:14px; border-left:1px solid var(--accent-line)}
+  .retail .rm span{display:block; font-size:10.5px; color:var(--text3); margin-bottom:2px}
+  .retail .rm b{font-size:15px; font-weight:650; font-variant-numeric:tabular-nums}
+  .retail .rm b.good{color:var(--good)} .retail .rm b.bad{color:var(--danger)}
+  @media (max-width:520px){
+    .retail .rv{font-size:32px}
+    .retail .rside{gap:14px; padding-left:12px}
+  }
+
   .kpis{display:grid; grid-template-columns:1fr 1fr; gap:10px}
   .kpi{background:var(--card-2); border:1px solid var(--line); border-radius:var(--r); padding:11px 12px;
        transition:transform .16s var(--ease), border-color .16s, box-shadow .16s}
@@ -577,6 +598,20 @@
   .ord-tiers input{width:92px; border:1px solid var(--line2); background:var(--surface); border-radius:9px;
                    height:38px; padding:0 10px; font:inherit; color:var(--text)}
   .ord-tiers input:hover{border-color:var(--line3)}
+  /* v1.9.0 平台活动报名：整宽小卡片，关闭时下方字段禁用并变淡 */
+  .actbox{grid-column:1/-1; margin-top:2px; padding:11px 12px 12px; border-radius:11px;
+          border:1px dashed var(--line2); background:var(--card-2)}
+  .actbox.on{border-style:solid; border-color:var(--accent-line); background:var(--accent-soft)}
+  .actsw{display:flex; align-items:center; gap:8px; cursor:pointer; font-size:13px; color:var(--text); user-select:none}
+  .actsw input{width:17px; height:17px; margin:0; accent-color:var(--accent); flex:none; cursor:pointer}
+  .actsw b{font-weight:650}
+  .actsw-note{font-size:11px; font-weight:400; color:var(--text3)}
+  .actgrid{display:grid; grid-template-columns:1fr 120px; gap:10px; margin-top:10px}
+  .actbox:not(.on) .actgrid,
+  .actbox:not(.on) .acthint{opacity:.45; pointer-events:none}
+  .acthint{margin:8px 0 0; font-size:11px; line-height:1.55; color:var(--text3)}
+  .actbox.on .acthint{color:var(--text2)}
+  @media (max-width:560px){ .actgrid{grid-template-columns:1fr} }
   /* v1.8.0 行项就地编辑（B8：损耗率 / 材料单价等可按行覆盖） */
   .ord-line.editing{flex-direction:column; align-items:stretch; border-color:var(--accent-line);
                     background:var(--surface); box-shadow:var(--sh-1)}
@@ -596,6 +631,14 @@
   @media (max-width:560px){ .ord-line .olf-grid{grid-template-columns:repeat(2,minmax(0,1fr))} }
   .ord-sum{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px}
   .ord-sum .kpi .v{font-size:17px}
+  .ord-actbar{grid-column:1/-1; display:flex; align-items:center; gap:8px; flex-wrap:wrap;
+    padding:8px 11px; border-radius:10px; border:1px solid var(--accent-line); background:var(--accent-soft);
+    font-size:12px; color:var(--text2)}
+  .ord-actbar b{font-size:10.5px; font-weight:650; color:var(--accent-2); background:var(--card);
+    border:1px solid var(--accent-line); border-radius:999px; padding:1px 7px}
+  .ord-actbar span{font-weight:600; color:var(--text)}
+  .ord-actbar em{font-style:normal; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums}
+  .ord-actbar i{font-style:normal; font-size:11px; color:var(--text3)}
   .ord-acts{display:flex; flex-wrap:wrap; gap:8px; margin-top:14px}
   .ord-draft{margin:0 0 8px; font-size:11.5px; color:var(--text3); min-height:15px}
   .ord-draft.warn{color:var(--warn, #b45309)}
@@ -664,6 +707,8 @@
   .pp-page td.n,.pp-page th.n{text-align:right; white-space:nowrap; font-variant-numeric:tabular-nums}
   .pp-page .kv td:first-child{color:#6b7280; width:52%}
   .pp-page .sum tr.big td{font-weight:700; color:#4f46e5; font-size:12.5px}
+  .pp-page .pp-sub{display:inline-block; margin-left:4px; padding:0 4px; border-radius:4px;
+    background:#eef0ff; color:#4f46e5; font-size:9.5px; font-weight:600}
   .pp-page .pp-foot{margin-top:18px; padding-top:8px; border-top:1px solid #e5e7eb; color:#9ca3af; font-size:10.5px}
   /* v1.8.0 报价单品牌头（打印/PDF 恒浅色，用固定主色，不跟随屏幕主题） */
   .pp-brand{display:flex; align-items:center; gap:10px}
@@ -929,9 +974,17 @@
           <div class="v" id="unitCost">¥0.00</div>
           <div class="sub">总成本 <b id="totalCost">¥0.00</b> &nbsp;·&nbsp; 总时长 <b id="totalTime">0 h</b></div>
         </div>
+        <div class="retail" id="retailCard">
+          <div class="rst">
+            <div class="rk">建议零售价 <span class="rtag">含平台佣金</span></div>
+            <div class="rv" id="sellPrice">¥0.00</div>
+          </div>
+          <div class="rside">
+            <div class="rm"><span>单件利润</span><b class="good" id="unitProfit">¥0.00</b></div>
+            <div class="rm"><span>毛利率</span><b id="retailMargin">—</b></div>
+          </div>
+        </div>
         <div class="kpis">
-          <div class="kpi"><div class="k">建议售价（含佣金）</div><div class="v" id="sellPrice">¥0.00</div></div>
-          <div class="kpi"><div class="k">单件利润</div><div class="v good" id="unitProfit">¥0.00</div></div>
           <div class="kpi"><div class="k">订单总收入</div><div class="v" id="totalRevenue">¥0.00</div></div>
           <div class="kpi"><div class="k">订单总利润</div><div class="v" id="totalProfit">¥0.00</div></div>
         </div>
@@ -1052,6 +1105,18 @@
             <div class="in"><input id="ordMarkup" type="number" min="0" step="0.1" value="2.5"><em class="suf">×成本</em></div></label>
           <label class="field"><span class="lb">整单折扣</span>
             <div class="in"><input id="ordBulk" type="number" min="0" max="90" step="1" value="0"><em class="suf">%</em></div></label>
+
+          <div class="actbox" id="actBox">
+            <label class="actsw"><input type="checkbox" id="ordActOn"><b>报名平台活动</b>
+              <span class="actsw-note">报名后按活动价报价</span></label>
+            <div class="actgrid">
+              <label class="field"><span class="lb">活动名称</span>
+                <div class="in"><input id="ordActName" type="text" maxlength="24" placeholder="如：双 11 满减 / 平台补贴周"></div></label>
+              <label class="field"><span class="lb">活动折扣</span>
+                <div class="in"><input id="ordActDisc" type="number" min="0" max="90" step="0.5" value="0"><em class="suf">%</em></div></label>
+            </div>
+            <p class="acthint">活动折扣与<b>整单折扣 / 阶梯折扣取最大者</b>生效，不叠加；报价单会标注活动名称。</p>
+          </div>
         </div>
         <h2 style="margin-top:16px"><span class="snum">04</span><span class="stitle">阶梯定价</span><small>按件数取最高档</small></h2>
         <div class="ord-tiers" id="ordTiers"></div>
@@ -1706,7 +1771,11 @@
     animateNum($("#totalCost"), r.totalCost, money);
     animateNum($("#totalTime"), r.totalTime, function(v){ return v.toFixed(1) + " h"; });
     animateNum($("#sellPrice"), r.sellNet, money);
-    animateNum($("#unitProfit"), r.unitProfit, money);
+    var up = $("#unitProfit");
+    animateNum(up, r.unitProfit, money);
+    if(up) up.className = r.unitProfit >= 0 ? "good" : "bad";
+    var mg = $("#retailMargin");
+    if(mg) mg.textContent = (r.margin >= 0 ? "" : "") + r.margin.toFixed(1) + "%";
     animateNum($("#totalRevenue"), r.revenue, money);
     var tp = $("#totalProfit");
     animateNum(tp, r.profit, money);
@@ -2117,7 +2186,7 @@
     });
     rows.push(["订单总成本", r.totalCost.toFixed(2), "100.00"]);
     rows.push(["单件成本", r.unitCost.toFixed(2), ""]);
-    rows.push(["建议售价(含佣金)", r.sellNet.toFixed(2), ""]);
+    rows.push(["建议零售价(含佣金)", r.sellNet.toFixed(2), ""]);
     rows.push(["单件利润", r.unitProfit.toFixed(2), ""]);
     rows.push(["订单总收入", r.revenue.toFixed(2), ""]);
     rows.push(["订单总利润", r.profit.toFixed(2), ""]);
@@ -2304,7 +2373,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.8.3";
+  var APP_VERSION = "1.9.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -3014,11 +3083,21 @@
     }
     return disc / 100;
   }
-  /* 生效折扣：阶梯 与 订单级整单折扣 取较大者（不叠加） */
+  /* 生效折扣：阶梯 / 订单级整单折扣 / 平台活动折扣 三者取较大者（不叠加）
+     v1.9.0：平台活动需显式报名（on），未报名时即使填了折扣也不生效 */
+  function activityOf(order){
+    var a = order && order.orderLevel && order.orderLevel.activity;
+    return (a && typeof a === "object") ? a : {};
+  }
+  function activityDisc(order){
+    var a = activityOf(order);
+    if(!a.on) return 0;
+    return Math.min(90, Math.max(0, parseFloat(a.disc) || 0)) / 100;
+  }
   function effDisc(order, qty){
     var t = tierDisc(order, qty);
     var b = Math.min(90, Math.max(0, parseFloat(order && order.orderLevel && order.orderLevel.bulkDisc) || 0)) / 100;
-    return Math.max(t, b);
+    return Math.max(t, b, activityDisc(order));
   }
   function computeOrder(order){
     var ol = (order && order.orderLevel) || {};
@@ -3031,7 +3110,8 @@
     });
     var totalQty = qtyOf.reduce(function(a, b){ return a + b; }, 0) || 1;
 
-    var lines = [], sumCost = 0, sumRev = 0, sumShip = 0, sumQty = 0;
+    var lines = [], sumCost = 0, sumRev = 0, sumShip = 0, sumQty = 0, sumDisc = 0;
+    var actD = activityDisc(order);
     linesIn.forEach(function(ln, i){
       var share = shipping * qtyOf[i] / totalQty;
       var f = clone(ln.fields || {});
@@ -3043,12 +3123,16 @@
       r.disc    = effDisc(order, r.qty);
       r.revenue = r.sellNet * r.qty * (1 - r.disc);
       r.profit  = r.revenue - r.totalCost;
+      r.discAmt = r.sellNet * r.qty * r.disc;          /* 本行让利金额 */
+      r.actApplied = actD > 0 && Math.abs(r.disc - actD) < 1e-9;
       lines.push({ line: ln, r: r, shipShare: share });
       sumCost += r.totalCost; sumRev += r.revenue; sumShip += share; sumQty += r.qty;
+      sumDisc += r.discAmt;
     });
     var totalCost = sumCost;                 /* 运费已分摊入各行，不再重复相加 */
     var revenue   = sumRev;
     var profit    = revenue - totalCost;
+    var act = activityOf(order);
     return {
       lines: lines,
       shipping: shipping,
@@ -3057,6 +3141,12 @@
       totalCost: totalCost,
       revenue: revenue,
       profit: profit,
+      discTotal: sumDisc,
+      activity: {
+        on: !!act.on,
+        name: String(act.name == null ? "" : act.name).trim(),
+        disc: Math.min(90, Math.max(0, parseFloat(act.disc) || 0))
+      },
       unitAvg: sumQty > 0 ? totalCost / sumQty : 0,
       margin: revenue > 0 ? profit / revenue * 100 : 0,
       bulkDisc: Math.min(90, Math.max(0, parseFloat(ol.bulkDisc) || 0)) / 100
@@ -3188,7 +3278,8 @@
         shipping:   Math.max(0, parseFloat(f.shipping) || 0),
         commission: Math.max(0, parseFloat(f.commission) || 0),
         markup:     Math.max(0, parseFloat(f.markup) || 0),
-        bulkDisc:   Math.max(0, parseFloat(f.bulkDisc) || 0)
+        bulkDisc:   Math.max(0, parseFloat(f.bulkDisc) || 0),
+        activity:   { on:false, name:"", disc:0 }   /* v1.9：活动在订单页报名，单件页不带 */
       },
       tiers: [], totals: {}
     };
@@ -3398,7 +3489,8 @@
       curOrder = {
         id: rid("ord"), no: "", t: Date.now(), updatedAt: Date.now(),
         status: "quoted", customer: null, validUntil: null, currency: "CNY",
-        lines: [], orderLevel: { shipping:0, commission:5, markup:2.5, bulkDisc:0 },
+        lines: [], orderLevel: { shipping:0, commission:5, markup:2.5, bulkDisc:0,
+                                 activity:{ on:false, name:"", disc:0 } },
         tiers: defaultTiers(), totals: {}
       };
     }
@@ -3425,6 +3517,14 @@
     o.orderLevel.commission = Math.max(0, parseFloat($("#ordCommission").value) || 0);
     o.orderLevel.markup     = Math.max(0, parseFloat($("#ordMarkup").value) || 0);
     o.orderLevel.bulkDisc   = Math.max(0, parseFloat($("#ordBulk").value) || 0);
+    var onEl = $("#ordActOn"), nameEl = $("#ordActName"), discEl = $("#ordActDisc");
+    if(onEl || nameEl || discEl){
+      o.orderLevel.activity = {
+        on: !!(onEl && onEl.checked),
+        name: nameEl ? nameEl.value.trim().slice(0, 24) : "",
+        disc: discEl ? Math.min(90, Math.max(0, parseFloat(discEl.value) || 0)) : 0
+      };
+    }
     return o;
   }
   function syncTiersFromInputs(){
@@ -3452,6 +3552,13 @@
     $("#ordCommission").value = o.orderLevel.commission != null ? o.orderLevel.commission : 5;
     $("#ordMarkup").value = o.orderLevel.markup != null ? o.orderLevel.markup : 2.5;
     $("#ordBulk").value = o.orderLevel.bulkDisc || 0;
+    /* v1.9.0 平台活动：回填开关 / 名称 / 折扣（正在输入的框不覆盖） */
+    var act = activityOf(o), aOn = $("#ordActOn"), aName = $("#ordActName"), aDisc = $("#ordActDisc");
+    if(aOn) aOn.checked = !!act.on;
+    if(aName && document.activeElement !== aName) aName.value = act.name || "";
+    if(aDisc && document.activeElement !== aDisc) aDisc.value = act.disc || 0;
+    var aBox = $("#actBox");
+    if(aBox) aBox.classList.toggle("on", !!act.on);
     var tiers = (o.tiers && o.tiers.length) ? o.tiers : defaultTiers(), th = "";
     for(var i = 0; i < 3; i++){
       var t = tiers[i] || { minQty: "", disc: "" };
@@ -3487,7 +3594,18 @@
     var k = function(t, v, cls){
       return '<div class="kpi"><div class="k">' + t + '</div><div class="v' + (cls ? " " + cls : "") + '">' + v + "</div></div>";
     };
-    $("#ordSum").innerHTML =
+    var act = r.activity || { on:false, name:"", disc:0 };
+    var bar = "";
+    if(act.on){
+      var applied = r.lines.some(function(x){ return x.r.actApplied; });
+      bar = '<div class="ord-actbar">' +
+        '<b>平台活动</b><span>' + esc(act.name || "未命名活动") + '</span>' +
+        '<em>' + act.disc.toFixed(1) + '%</em>' +
+        (r.discTotal > 0.004 ? '<i>优惠 ' + money(r.discTotal) + '</i>' : '') +
+        (applied ? '' : '<i>未高于其他折扣，按更高折扣执行</i>') +
+        '</div>';
+    }
+    $("#ordSum").innerHTML = bar +
       k("订单总成本", money(r.totalCost)) +
       k("订单总收入", money(r.revenue)) +
       k("订单总利润", money(r.profit), r.profit >= 0 ? "good" : "bad") +
@@ -3813,7 +3931,7 @@
     return [
       { label: "订单总成本", value: r.totalCost, size: 28, bold: false },
       { label: "单件综合成本", value: r.unitCost, size: 28, bold: true },
-      { label: "单件建议售价（含佣金）", value: r.sellNet, size: 28, bold: true },
+      { label: "建议零售价（含佣金）", value: r.sellNet, size: 32, bold: true },
       { label: "订单总收入（" + r.qty + " 件）", value: r.revenue, size: 30, bold: true },
       { label: "订单总利润 · 毛利率 " + r.margin.toFixed(1) + "%", value: r.profit, size: 30, bold: true, tone: "profit" }
     ];
@@ -3940,6 +4058,9 @@
     rows.push(["客户", (o.customer && o.customer.name) || ""]);
     rows.push(["联系方式", (o.customer && o.customer.contact) || ""]);
     rows.push(["有效期至", o.validUntil || ""]);
+    rows.push(["平台活动", r.activity.on ? (r.activity.name || "未命名活动") : ""]);
+    rows.push(["活动折扣(%)", r.activity.on ? r.activity.disc.toFixed(1) : "0"]);
+    rows.push(["活动优惠", r.activity.on ? r.discTotal.toFixed(2) : "0.00"]);
     rows.push(["生成时间", fmtDT(Date.now())]);
     rows.push([]);
     rows.push(["#", "设备", "材料", "数量", "单件成本", "单件售价", "折扣(%)", "小计"]);
@@ -3991,9 +4112,12 @@
     ctx.fillText((o.no || "（未编号）") + " · " + fmtDT(Date.now()) + " · 本地计算生成", PAD + 92, 96);
     var y = 170;
     ctx.font = "24px system-ui, sans-serif";
-    [["状态", STATUS_LABEL[o.status] || "已报价"],
+    var infoRows = [["状态", STATUS_LABEL[o.status] || "已报价"],
      ["客户", (o.customer && o.customer.name) || "—"],
-     ["有效期", o.validUntil || "—"]].forEach(function(kv){
+     ["有效期", o.validUntil || "—"]];
+    if(r.activity.on) infoRows.push(["平台活动", (r.activity.name || "未命名活动") +
+      " · " + r.activity.disc.toFixed(1) + "%" + (r.discTotal > 0.004 ? " · 优惠 ¥" + r.discTotal.toFixed(2) : "")]);
+    infoRows.forEach(function(kv){
       ctx.fillStyle = "#8b93a1"; ctx.textAlign = "left"; ctx.fillText(kv[0], PAD, y);
       ctx.fillStyle = "#14161a"; ctx.fillText(kv[1], PAD + 110, y);
       y += 40;
@@ -4324,6 +4448,8 @@
          (o.customer && o.customer.name ? '　·　客户：' + esc(o.customer.name) : "") +
          (o.customer && o.customer.contact ? '（' + esc(o.customer.contact) + '）' : "") +
          (o.validUntil ? '　·　有效期至：' + esc(o.validUntil) : "") +
+         (r.activity.on ? '　·　平台活动：' + esc(r.activity.name || "未命名活动") +
+            '（' + r.activity.disc.toFixed(1) + '%）' : "") +
          '<br>生成时间 ' + now.getFullYear() + '-' + pad2(now.getMonth() + 1) + '-' + pad2(now.getDate()) +
          ' ' + pad2(now.getHours()) + ':' + pad2(now.getMinutes()) + '　·　本地计算生成</p>';
 
@@ -4333,7 +4459,8 @@
       var rr = x.r, ln = x.line;
       h += '<tr><td>' + (i + 1) + '</td><td>' + esc(ln.devName || "自定义设备") + '</td><td>' + esc(ln.matName || "自定义材料") + '</td>' +
            '<td class="n">' + rr.qty + '</td><td class="n">' + y(rr.unitCost) + '</td><td class="n">' + y(rr.sellNet) + '</td>' +
-           '<td class="n">' + (rr.disc > 0 ? (rr.disc * 100).toFixed(1) + '%' : '—') + '</td>' +
+           '<td class="n">' + (rr.disc > 0 ? (rr.disc * 100).toFixed(1) + '%' +
+              (rr.actApplied ? '<span class="pp-sub">活动</span>' : '') : '—') + '</td>' +
            '<td class="n">' + y(rr.revenue) + '</td></tr>';
     });
     h += '</tbody></table>';
@@ -4345,6 +4472,9 @@
     h += '<tr class="big"><td>订单总收入</td><td class="n">' + y(r.revenue) + '</td></tr>';
     h += '<tr><td>订单总利润</td><td class="n">' + y(r.profit) + '</td></tr>';
     h += '<tr><td>毛利率</td><td class="n">' + Number(r.margin).toFixed(2) + '%</td></tr>';
+    if(r.activity.on)
+      h += '<tr><td>活动优惠（' + esc(r.activity.name || "未命名活动") + ' ' +
+           r.activity.disc.toFixed(1) + '%）</td><td class="n">-' + y(r.discTotal) + '</td></tr>';
     if(o.orderLevel && o.orderLevel.shipping > 0)
       h += '<tr><td>其中运费 / 包装</td><td class="n">' + y(o.orderLevel.shipping) + '</td></tr>';
     h += '</tbody></table>';
@@ -4394,7 +4524,7 @@
 
     h += '<h3>结果汇总</h3><table class="sum"><tbody>';
     h += '<tr class="big"><td>单件综合成本</td><td class="n">' + y(r.unitCost) + '</td></tr>';
-    h += '<tr class="big"><td>建议售价（含佣金）</td><td class="n">' + y(r.sellNet) + '</td></tr>';
+    h += '<tr class="big"><td>建议零售价（含佣金）</td><td class="n">' + y(r.sellNet) + '</td></tr>';
     h += '<tr><td>单件利润</td><td class="n">' + y(r.unitProfit) + '</td></tr>';
     h += '<tr><td>订单总收入</td><td class="n">' + y(r.revenue) + '</td></tr>';
     h += '<tr><td>订单总利润</td><td class="n">' + y(r.profit) + '</td></tr>';
@@ -4586,6 +4716,24 @@
   ["ordShipping", "ordCommission", "ordMarkup", "ordBulk"].forEach(function(id){
     $("#" + id).addEventListener("input", function(){ syncOrderModelFromInputs(); renderOrderBody(); markOrderDirty(); });
   });
+  /* v1.9.0 平台活动：开关切换后立即按新口径重算，名称 / 折扣边输边算 */
+  (function(){
+    var onEl = $("#ordActOn"), box = $("#actBox");
+    if(!onEl) return;
+    onEl.addEventListener("change", function(){
+      syncOrderModelFromInputs();
+      if(box) box.classList.toggle("on", onEl.checked);
+      renderOrderBody(); markOrderDirty();
+    });
+    ["ordActName", "ordActDisc"].forEach(function(id){
+      var el = $("#" + id);
+      if(el) el.addEventListener("input", function(){
+        syncOrderModelFromInputs();
+        if(box) box.classList.toggle("on", onEl.checked);
+        renderOrderBody(); markOrderDirty();
+      });
+    });
+  })();
   $("#ordTiers").addEventListener("input", function(){ syncTiersFromInputs(); renderOrderBody(); markOrderDirty(); });
   $("#ordTiers").addEventListener("change", function(){ syncTiersFromInputs(); renderOrderBody(); markOrderDirty(); });
   $("#shareSave").addEventListener("click", saveShareImage);
