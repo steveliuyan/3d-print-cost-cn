@@ -2,7 +2,7 @@
 
 > **新对话请先读完这一篇再动手。** 本文档面向「没有上下文的新 AI / 新协作者」，
 > 目标是让接手者在不翻聊天记录的情况下，也能知道**做了什么、在哪、怎么改、怎么验证、怎么发版**。
-> 最后更新：2026-10-13（v1.8.2 已发布）
+> 最后更新：2026-10-19（v1.9.0 已发布；本次修正了文档与真实代码/环境的全部偏差）
 
 ---
 
@@ -14,11 +14,11 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.8.2**（versionCode 15） |
-| 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.8.2` → `37de7ac16ef356f364fb741051e682dc036d1529`**（v1.8.1 / v1.8.0 / v1.5.1 保留） |
-| 回归测试 | **366/366 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `823abb51e3e5ea2a19a5b20affe5f5ad`（227,022 B，逐字节一致） |
-| 最新 Release | **v1.8.2 安卓图标尺寸修正**（tag 共 13 个） |
+| 当前版本 | **v1.9.0**（versionCode 17） |
+| 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
+| 回归测试 | **444/444 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `1ae37c077ade73083b27c50c929140eb`（258,163 B，逐字节一致） |
+| 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
@@ -45,7 +45,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（366 项断言）
+├─ test-presets.js         ← jsdom 回归测试（444 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
@@ -66,19 +66,24 @@ H:\3d-print-cost-calculator\
 ```bash
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
-"C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-2/node.exe" test-presets.js
-# 期望：结果: 366/366 通过
+"C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe" test-presets.js
+# 期望：结果: 444/444 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
 > （`C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules`），
 > 不在本项目里。不带就会 `Cannot find module 'jsdom'`。
+>
+> ⚠️ **本机 `git` 不在 PATH**：裸写 `git` 会报「无法识别」，必须用绝对路径
+> `C:\Users\steveliuyan\.workbuddy\binaries\PortableGit\versions\1.2.0\cmd\git.exe`。
+> Node 的版本目录名也会随托管环境变（当前 **22.22.2-6**；旧文档写的 22.22.2-2 已不存在），跑不通先列 `.../node/versions`。
 
 ### 4.2 剥离调试属性 + 同步三份副本
 
 ```bash
 "C:/Users/steveliuyan/.workbuddy/binaries/python/versions/3.13.12/python.exe" _sync_clean.py
 # 输出三行 md5 + 字节数，三份必须完全一致
+# 该脚本只用标准库：系统 python（本机 3.14.7）直接跑也行
 ```
 
 ### 4.3 重新打包
@@ -227,6 +232,12 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **更新体验（v1.5.1）** | **应用内更新弹窗**（三端统一）：发布说明轻量 Markdown 渲染、四态（检查中 / 发现新版 / 已是最新 / 失败+重试）、头部版本徽标 `v当前 → v新版`、平台产物行（按端显示 web.html / .apk / .exe + 体积）；**历史更新日志面板**（页脚「更新日志」，可翻看所有版本） |
 | **分享长图（v1.8.1）** | 分享框有 **「客户版（默认）/ 内部版」** 切换。**客户版**（给客户）：标题「3D 打印报价单」，只呈现**报价**；`quoteBreakdown()` 把成本分项按比例**上调到加总 = 报价总额**（利润揉进分项，无成本/利润/毛利率行），其中 **`QUOTE_LOCKED = ["电费","运费 / 包装"]` 保持真实值不上调**，尾差并入末个非锁定项。**内部版**保留成本构成 + 成本/售价/收入/利润/毛利率。**打印 / 保存 PDF 恒为内部明细**，不受切换影响。canvas 品牌标 `drawBrandMark()` 与打印头 `BRAND_SVG` 同几何（纯立方体，无 ¥） |
 | **交互增强（v1.8.0）** | **A 档**：① **行项就地编辑**（订单视图内点「编辑」展开 6 项快速表单：数量 / 打印时长 / 耗材用量 / 材料单价 / 损耗率 / 后处理，输入即写回该行 `fields` 并**只刷数字不重建 DOM** 保住焦点）；② **历史订单工具条**（关键词搜索 + 状态分档 chips + 金额/时间排序 + 空态）；③ **草稿自动保存**（编辑 800ms 防抖落盘 `dpc_order_draft_v1`，刷新/重启恢复，界面提示「草稿已保存」，保存后自动清除 + 新建时确认丢弃）；④ **客户库**（`dpc_customers_v1`，上限 50，去重置顶，datalist 复用，选中带出联系方式）。**B 档**：⑤ **品牌标识**（矢量 SVG 内嵌 + Canvas 同构复刻，打印页/分享长图头部统一品牌头，源文件 `docs/brand/logo-mark.svg`）；⑥ **翻单/复制**（订单历史一键复制为新单，新 id/编号/时间）；⑦ **状态流转**（列表内下拉直接改 草稿·已报价·已成交·已归档 并即时持久化）；⑧ **按行覆盖**（被单独调整的行标「已调」） |
+| **经营看板（v1.8.3）** | 顶栏视图第三档「经营看板」（`body.view-dash` + `#dashMain`）。纯函数 `dashStats(orders, range, now)` 聚合：订单数 / 收入 / 成本 / 利润 / 毛利率 / 客单价 + **月度趋势** + **材料 TOP5** + **客户 TOP5**（草稿不计入；区间 `30/90/year/all` 存 `dpc_dash_v1`）；渲染 6 张 KPI（复用 `animateNum` 滚动）+ 柱状趋势 + 排行条 + 空态；看板视图下「打印 / PDF」输出**经营月报**（`brandHeadHTML` + 总览/月度/材料/客户四表） |
+| **界面动效（v1.8.3）** | Hero 蓝卡**流光**（`::before` 250% 斜向光带 `heroSheen` 8s 慢扫）；环图弧段 `segIn` **交错画入**（`renderDonut` 每段 `--d=idx*70ms`）；图例行 `lgIn` 错峰入场；数字滚动。全部带 `prefers-reduced-motion` 兜底（无限动画显式 `animation:none`） |
+| **横屏 / 平板适配（v1.8.3）** | `viewport-fit=cover`；三档 `@media screen`：① 横屏手机 `(orientation:landscape) and (max-height:560px)`——顶栏收紧、输入区/结果区**左右分栏**；② 平板竖屏 `820–1080px`——两栏 + `.side` 吸顶；③ `≥1200px`——容器 1440px 居中放大。Android `themes.xml` 开 `windowLayoutInDisplayCutoutMode=shortEdges`，页面用 `env(safe-area-inset-*)` 让开打孔屏 |
+| **弹窗滚动锁（v1.8.3）** | 遮罩打开时 `body.modal-open{overflow:hidden;padding-right:var(--sbw)}` 防背景穿透滚动；`.ov-body/.modal-body/.pk-body` 加 `overscroll-behavior:contain`；JS 用 `MutationObserver` 监听 body 子树 class 统一同步（所有 open/close 入口无需逐个改），打印样式里解除锁避免只印一页 |
+| **平台活动报名（v1.9.0）** | 订单级 `.actbox`：开关 `#ordActOn` + 活动名 `#ordActName` + 活动折扣 `#ordActDisc`；存 `orderLevel.activity={on,name,disc}`（老订单无字段按未报名兼容）。**折扣口径 `effDisc = max(阶梯, 整单, 活动)`，取大不叠加**，上限 90%。`computeOrder` 输出 `discTotal` / `activity` / 每行 `actApplied`；透出到订单汇总活动条、报价单抬头与汇总「活动优惠」、长图 info 行、CSV 三字段、行项折扣列「活动」 |
+| **建议零售价主视觉（v1.9.0）** | `#sellPrice` 从小 KPI（19px）移入独立 `.retail` 主视觉：36px 靛蓝数字 + 左色条 + 毛利率 / 单件利润副指标；打印与长图文案统一「建议零售价」 |
 
 ## 9. 版本时间线（做了什么）
 
@@ -247,6 +258,8 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.8.0** | **交互增强（A/B 档）+ 品牌标识**：**A 档**——A1 行项就地编辑（6 项表单，输入即写回 `ln.fields` 并 `refreshLineNumbers()` 只刷数字不重建 DOM）、A2 历史订单工具条（搜索 + 状态 chips + 排序 + 空态）、A3 草稿自动保存（`dpc_order_draft_v1`，800ms 防抖 / 恢复 / 保存即清 / 新建确认）、A4 客户库（`dpc_customers_v1`，去重置顶 + datalist + 带出联系方式）；**B 档**——B5 品牌标识（内嵌 `BRAND_SVG` 矢量 + Canvas `drawBrandMark()` 复刻，打印页/长图统一品牌头）、B6 翻单复制、B7 列表内状态流转、B8 按行覆盖「已调」标记。配套矢量 logo 源文件 `docs/brand/logo-mark.svg` + 预览页 `docs/brand/logo-preview.html`。版本号四处联动 1.7.0 → 1.8.0（build.gradle vc12→13）。**纯前端，零新依赖**。回归 310 → **342**。**品牌图标**：由 `_gen_icons.py` 重绘三端全套（Web/iOS/Android 自适应/Windows），后续修正**顶栏漏改 + 徽标比例失衡**（几何收归单一来源、徽标内收居中），回归 → **346** |
 | **v1.8.1** | **分享长图「客户版 / 内部版」+ 品牌标统一**：① 分享框加分段开关（默认**客户版**）；`quoteBreakdown(items,totalCost,revenue,locked)` 把成本分项按比例**上调到加总 = 报价总额**，客户版**无成本/利润/毛利率**；**`QUOTE_LOCKED=["电费","运费 / 包装"]` 锁真实值、不上调**（透明信息），尾差并入末个非锁定项；`shareSummaryRows()` 客户版只回「报价总额」一行；② 打印 / PDF **恒为内部明细**，不受切换影响；③ 分享长图顶部品牌标（旧 ¥ 徽标）重画为与打印头 `BRAND_SVG` **同几何的纯立方体**。文件：`index.html`（`drawShareImage`/`drawOrderShareImage`/`shareMode`/`shareKind`）。**纯前端，零新依赖**。回归 346 → **363** |
 | **v1.8.2** | **修复安卓桌面图标过大 + 站点更新**：① `_gen_icons.py` 自适应前景 **`safe_frac 0.31 → 0.205`**（立方体占启动器 72dp 可视区 **93% → 61.5%**，与网页/PWA tile 一致）；旧版圆形 `round 0.44 → 0.305` 同比例；② `test-presets.js` 新增 **3 条图标占比断言**（解析 `ic_launcher_foreground.xml`）。版本号四处联动 1.8.1 → 1.8.2（build.gradle vc14→15）。**纯前端 + 资源**，零新依赖。回归 363 → **366**。③ 同步更新个人站点 `myweb/project-dpc.html`（v1.4.2 → v1.8.2、换官方品牌图标 + favicon、修正失效下载链接、功能亮点补 订单化报价 / 客户版·内部版长图 / STL·3MF），站点仓库提交 `c08b7fc` |
+| **v1.8.3** | **经营看板 + 全屏动效 + 横屏/平板适配 + 弹窗滚动锁**：① 第三视图「经营看板」——纯函数 `dashStats(orders, range, now)`（订单数/收入/成本/利润/毛利率/客单价 + 月度趋势 + 材料·客户 TOP5，草稿不计入，区间存 `dpc_dash_v1`）+ 6 张 KPI 滚动卡 + 柱状趋势 + 排行条 + **经营月报打印**；顺带修 `orderCustomerName()`（`customer` 是 `{name,contact}` 对象，旧代码当字符串用会渲染 `[object Object]`）。② 全套界面动效（Hero 流光 / 环图与图例交错画入 / 数字滚动）+ `reduced-motion` 兜底。③ 横屏手机左右分栏、平板竖屏两栏、`≥1200px` 收窄居中；`shortEdges` 打孔屏铺满 + 安全区内边距。④ 弹窗滚动穿透修复（`body.modal-open` + `overscroll-behavior` + `MutationObserver` 统一同步）。版本 1.8.2 → 1.8.3（vc15→16）。回归 366 → 378（动效）→ **408**（看板 + 滚动锁）→ **421**（适配） |
+| **v1.9.0** | **平台活动报名 + 建议零售价主视觉**：① 订单级 `activity={on,name,disc}`；`effDisc = max(阶梯, 整单, 活动)` **取大不叠加**、上限 90%、未报名恒 0；`computeOrder` 增 `discTotal` / `activity` / 每行 `actApplied`；透出到汇总条、报价单抬头与「活动优惠」汇总行、长图 info 行、CSV（三字段）、行项折扣列「活动」。② `#sellPrice` 移入 `.retail` 主视觉（36px 靛蓝 + 左色条 + 毛利率/单件利润），文案统一「建议零售价」。版本 1.8.3 → 1.9.0（vc16→17）。回归 421 → **444**。发布：API 推 `173f1bb`、Release 3 附件、站点页更新 `5b3c679` |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -312,14 +325,31 @@ APK（vc14）1,186,276 B / EXE 74,270,166 B，asar 内 index.html md5 与源一�
 **真机核验**：`adb install -r -t`（vc15）后截启动器桌面，立方体留白由「几乎顶边」变为「与相邻应用一致」。
 APK 1,183,436 B（内嵌 index.html md5 = 源）；EXE 74,271,338 B（asar 内 index.html md5 = 源，version 1.8.2）。
 
+**v1.8.3（经营看板 + 动效 + 横屏/平板适配 + 滚动锁）**：看板 20 条 + 滚动锁 6 条断言先 RED（`dashStats` 不存在 → TypeError）→ GREEN **408/408**；
+变异 4 组均被捕获（去掉草稿过滤 / `MutationObserver` 的 `subtree=false` / 只认 `modal` 遮罩 等）→ 恢复。
+动效 12 条断言 RED → **378/378**（变异：8s→0.8s / 去 donut `--d` / 去 `.lg` 动画，3 组全被穿透）。
+横屏/平板 11 条断言 RED → **421/421**（变异：横屏分栏退回单栏 / 去掉 `shortEdges` / 顶栏按钮竖排）。
+三副本 md5 `e08c407ea80c6a60b5ac73b9c18f5a37`（246,725 B），适配后 `91fc5168…`（`_sync_clean.py` 输出）。
+**真机 / 模拟器实测**（M2102J2SC 1080×2340@440）：竖屏 OK；`user_rotation=1` 横屏左右分栏、无黑边；
+`wm size 1600x2560 + density 240`（≈1066dp）平板竖屏两栏 OK；`2560x1600` 大屏居中放大 OK（测完已复位）。
+
+**v1.9.0（平台活动 + 建议零售价主视觉）**：新增 `runV19Tests` 23 条断言，RED 16 条 → GREEN **444/444**（一次全绿）；
+变异 3 处（`effDisc` 去掉活动 / 汇总去掉活动条 / 零售价 36→22px）全部被捕获 → 恢复（md5 回 `44b8b1b4…`）→ 全量 444。
+**接手复核（2026-10-19 实测，逐项本机验证）**：回归 **444/444，0 FAIL，exit 0**；
+三副本 md5 `1ae37c077ade73083b27c50c929140eb`（258,163 B）；`data-page-node-id` 0 处；
+APK 内嵌 `assets/index.html` md5 = 源码（APK 1,214,616 B）；
+EXE `app.asar` 内 `index.html` / `main.js` / `preload.js` md5 全部 = 源码（含 4 文件，preload 在位）；
+Release 附件 74,275,209 / 258,163 / 1,214,616 B 与本地 `dist/release/` 完全对应、`state=uploaded`；
+Pages `built` @ `173f1bb`；线上站点页 `project-dpc.html` 已到 v1.9.0（`5b3c679`）。
+
 ## 11. 未完成 / 待办
 
 - ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
   但**仍是 classic 型且权限极大**（scopes 含 `admin:enterprise` / `admin:org` / `delete_repo` / `workflow`…），应换为 fine-grained。
   GitHub 无创建 PAT 的 API，只能网页建；建好后用 `.secrets/_rotate_token.py <新token>` 落盘校验，
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
-- ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / **v1.8.1 / v1.8.2** 均已打包 + 建 Release（各 3 附件）。
-  最新 = **v1.8.2**（提交 `37de7ac`，tag 共 13 个）；产物在 `dist/release/3d-print-cost-cn-1.8.2-{web.html,…-portable.exe,.apk}`。
+- ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
+  最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
@@ -349,8 +379,10 @@ APK 1,183,436 B（内嵌 index.html md5 = 源）；EXE 74,271,338 B（asar 内 i
 
 | 项 | 路径 |
 |---|---|
-| 托管 Node | `C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-2/node.exe`（v22.22.2） |
-| 托管 Python | `C:/Users/steveliuyan/.workbuddy/binaries/python/versions/3.13.12/python.exe` |
+| 托管 Node | `C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe`（v22.22.2；**目录名会随环境变，跑不通先列 `versions`**） |
+| 托管 Python | `C:/Users/steveliuyan/.workbuddy/binaries/python/versions/3.13.12/python.exe`（另：系统 `python` = 3.14.7，`_sync_clean.py` 只用标准库） |
+| 托管 Python（含 Pillow） | `C:/Users/steveliuyan/.workbuddy/binaries/python/envs/default/Scripts/python.exe`（`_gen_icons.py` 用） |
+| **git（不在 PATH！）** | `C:\Users\steveliuyan\.workbuddy\binaries\PortableGit\versions\1.2.0\cmd\git.exe` |
 | jsdom（NODE_PATH） | `C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules` |
 | Android SDK | `C:/adb`（`local.properties` 里 `sdk.dir=C:/adb`） |
 | 构建工具 | `C:/adb/build-tools/35.0.0/{aapt2.exe, apksigner.bat}` |
@@ -363,9 +395,10 @@ APK 1,183,436 B（内嵌 index.html md5 = 源）；EXE 74,271,338 B（asar 内 i
 
 ## 14. 被墙时如何推送 / 发版（重要）
 
-本机 `github.com:443` **直连超时**、`ssh.github.com:443` 被 **RST**，`git push/fetch` 全部不可用；
-只有 `api.github.com`（及 `codeload` / `raw` / `uploads.github.com`）可达。因此推送与发版一律走
-**GitHub Git Data API**：
+本机 `github.com:443` 的**连通性随网络/VPN 状态波动**：2026-10-13 与 2026-10-19 实测可直连
+（v1.8.2/v1.9.0 均直推成功），也曾长时间直连超时、`ssh.github.com:443` 被 RST。
+**发版前先 `git ls-remote origin main` 探一次**：通就 `git push`（天然 SHA 一致，最快）；不通再走
+**GitHub Git Data API**（只需 `api.github.com` / `uploads.github.com`）：
 
 ```bash
 PY="C:/Users/steveliuyan/.workbuddy/binaries/python/versions/3.13.12/python.exe"
@@ -394,13 +427,14 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 ├─ MEMORY.md        ← 长期稳定的事实与硬性约定（最该先看的那张「备忘卡」）
 ├─ 2026-10-11.md    ← 当天：三端初版、v1.1~v1.5 的迭代过程
 ├─ 2026-10-12.md    ← 迁移、推送、发版、更新体验重做、订单化 v1.7.0、品牌
-└─ 2026-10-13.md    ← v1.8.0 交互增强、v1.8.1 客户版/内部版长图、v1.8.2 图标修正 + 站点更新
+└─ 2026-10-13.md    ← v1.8.0 交互增强、v1.8.1 客户版/内部版长图、v1.8.2 图标修正 + 站点更新；
+                       后续未另建文件，**v1.8.3 / v1.9.0（2026-10-14 ~ 10-17）继续追加在本文件末尾**
 ```
 
 **新对话接手时的推荐动作**：
 1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 **366/366**；
+3. 跑一次 §4.1 的回归测试，确认基线是 **444/444**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），

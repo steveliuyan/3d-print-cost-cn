@@ -4,7 +4,7 @@
 > 分工：本文档 = **本次交接单**（现状 / 最近干了什么 / 怎么干活 / 启动提示词）；
 > `AGENTS.md` = **深度说明书**（技术细节 / 踩坑 / 发版方法论）；`README.md` = **面向用户**的下载与打包说明。
 
-> 最后更新：2026-10-13（v1.8.2 发布后）
+> 最后更新：2026-10-19（v1.9.0 发布后；已按真实环境修正 git / Node 路径与全部基线数字）
 
 ---
 
@@ -14,11 +14,11 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.8.2**（`APP_VERSION`，versionCode **15**） |
-| 本地 = 远端 HEAD | `37de7ac16ef356f364fb741051e682dc036d1529`（已推送，工作区干净） |
-| 回归测试 | **366/366 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `823abb51e3e5ea2a19a5b20affe5f5ad`（**227,022 B**，逐字节一致） |
-| 最新 Release | **v1.8.2 安卓图标尺寸修正**（tag 共 **13** 个，latest = v1.8.2） |
+| 当前版本 | **v1.9.0**（`APP_VERSION`，versionCode **17**） |
+| 本地 = 远端 HEAD | `173f1bbd91984ffbcb71cb96a29d6c446877bac4`（已推送，工作区干净） |
+| 回归测试 | **444/444 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `1ae37c077ade73083b27c50c929140eb`（**258,163 B**，逐字节一致） |
+| 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag **15** 个 / Release **15** 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz** |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开，MIT） |
 | **站点仓库** | **`https://github.com/steveliuyan/myweb`**（= `www.20050905.xyz`，项目页 `project-dpc.html`）⚠️ 与应用仓库是**两个仓库** |
@@ -38,12 +38,13 @@
 
 ```bash
 PY="C:/Users/steveliuyan/.workbuddy/binaries/python/envs/default/Scripts/python.exe"
-NODE="C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-2/node.exe"
+NODE="C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe"
+GIT="C:/Users/steveliuyan/.workbuddy/binaries/PortableGit/versions/1.2.0/cmd/git.exe"   # ⚠️ git 不在 PATH
 export NODE_PATH=C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules
 
 # 1) 改代码：只改根目录 index.html（唯一来源）
 
-# 2) 跑回归（基线 366/366）
+# 2) 跑回归（基线 444/444）
 "$NODE" test-presets.js
 
 # 3) 同步三副本 + 剥离调试属性（务必，否则 pre-commit 拦截）
@@ -55,8 +56,8 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
 # 网页版 = 根 index.html 本身
 
 # 5) 发版：提交 → 推送 → 建 tag/Release
-"$PY" _sync_clean.py >/dev/null && git add -A && git commit -m "..."
-git ls-remote origin main          # 先探连通性；通了直推 git push origin main
+"$PY" _sync_clean.py >/dev/null && "$GIT" add -A && "$GIT" commit -m "..."
+"$GIT" ls-remote origin main       # 先探连通性；通了直推 "$GIT" push origin main
 "$PY" .secrets/_api_push.py        # 不通时走 Git Data API（离线/被墙兜底，SHA 保持一致）
 "$PY" .secrets/_api_release.py     # 改脚本内 TAG/HEAD_SHA/ASSETS 后运行，建 tag + Release + 3 附件
 
@@ -75,6 +76,9 @@ git ls-remote origin main          # 先探连通性；通了直推 git push ori
 | **v1.8.0** | 订单视图**交互增强**：行项就地编辑 / 历史订单工具条（搜索·状态分档·排序）/ 草稿自动保存 / 客户库；翻单复制、列表内状态流转、按行覆盖「已调」标记；**品牌标识**改为「纯立方体」并收归 `_gen_icons.py` 单一来源。回归 310 → 346。 |
 | **v1.8.1** | **分享长图「客户版 / 内部版」开关**（默认客户版）：<br>· **客户版**给客户看——标题「3D 打印报价单」，只呈现**报价**，成本分项按比例上调、**加总恰好 = 报价总额**，**不显示成本 / 利润 / 毛利率**；其中 **`QUOTE_LOCKED = ["电费","运费 / 包装"]` 保持真实值不上调**（透明信息，客户会觉不合理）。<br>· **内部版**保留完整成本 + 成本/售价/利润/毛利率。<br>· 打印 / 保存 PDF 恒为内部明细，不受切换影响。<br>· 顺带把分享长图顶部的品牌标（旧 ¥ 徽标）重画为与打印头同几何的纯立方体。回归 346 → 363。 |
 | **v1.8.2** | **修复安卓桌面图标过大**：自适应图标前景层 `safe_frac 0.31 → 0.205`，立方体占启动器可视区 **93% → 61.5%**（与网页/PWA tile 一致）；旧版圆形图标 `0.44 → 0.305` 同比例；新增 3 条图标占比回归断言。回归 363 → **366**。<br>**同时更新个人站点** `myweb/project-dpc.html`：v1.4.2 → v1.8.2、换官方品牌图标（+ favicon）、修正失效的下载链接、功能亮点补 订单化报价 / 客户版·内部版长图 / STL·3MF。 |
+
+| **v1.8.3** | **经营看板 + 全屏动效 + 横屏/平板适配 + 弹窗滚动锁**：顶栏第三视图「经营看板」——纯函数 `dashStats(orders, range, now)`（订单数 / 收入 / 成本 / 利润 / 毛利率 / 客单价 + 月度趋势 + 材料·客户 TOP5，草稿不计入，区间存 `dpc_dash_v1`）+ 6 张 KPI 滚动卡 + 柱状趋势 + 排行条 + **经营月报打印**；顺带修 `orderCustomerName()`（`customer` 是对象，旧代码当字符串会渲染 `[object Object]`）。全套界面动效（Hero 流光 8s / 环图与图例交错画入 / 数字滚动）+ `reduced-motion` 兜底。横屏手机左右分栏、平板竖屏两栏、`≥1200px` 居中放大；`shortEdges` 打孔屏铺满 + 安全区内边距。弹窗滚动穿透修复（`body.modal-open` + `overscroll-behavior` + `MutationObserver`）。回归 366 → **408** → **421**。 |
+| **v1.9.0** | **平台活动报名 + 建议零售价主视觉**：订单级 `activity={on,name,disc}`（`.actbox`：开关 / 活动名 / 活动折扣）；**`effDisc = max(阶梯, 整单, 活动)` 取大不叠加**，上限 90%，未报名恒 0；`computeOrder` 增 `discTotal` / `activity` / 每行 `actApplied`，透出到汇总活动条、报价单抬头与「活动优惠」行、长图 info 行、CSV 三字段、行项折扣列「活动」。`#sellPrice` 移入独立 `.retail` 主视觉（36px 靛蓝 + 毛利率/单件利润副指标），文案统一「建议零售价」。回归 421 → **444**。 |
 
 **文件都在哪**：
 - 应用逻辑与 UI：根 `index.html`（三端唯一来源）
@@ -118,7 +122,8 @@ git ls-remote origin main          # 先探连通性；通了直推 git push ori
 - ⏳ **PAT 仍为 classic 且权限过大**（scopes 含 `admin:org` / `admin:enterprise` / `delete_repo` / `workflow`）。
   建议换成 **fine-grained**（仅本仓库 + contents / issues / releases 写权限）。GitHub 无创建 PAT 的 API，只能网页建；
   建好粘贴文本给 Agent，用 `.secrets/_rotate_token.py` 落盘校验，再去 GitHub 撤销旧的。
-- 💡 可选：站点其他页面的 favicon 尚未统一（本次只加了 `project-dpc.html`）。
+- ✅ **交接文档已对齐 v1.9.0**（2026-10-19）：AGENTS.md / HANDOFF.md 的版本、基线、证据、环境路径全部换成实测值。
+- 💡 可选：站点其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）。
 - 💡 可选：站点「应用预览」截图仍是较早版本界面，如需可重新截取。
 
 ---
@@ -148,17 +153,19 @@ git ls-remote origin main          # 先探连通性；通了直推 git push ori
 - 注意：个人站点是**另一个仓库** steveliuyan/myweb（= www.20050905.xyz），其 project-dpc.html 是本站项目页。
 
 【当前状态（接手时请以实际文件为准再核对一次）】
-- 版本 v1.8.2（versionCode 15）；回归测试 366/366 通过；三副本 md5 823abb51e3e5ea2a19a5b20affe5f5ad（227,022 B）。
-- 最新 Release：v1.8.2。最近三版做了什么：v1.8.0 订单视图交互增强 + 品牌；v1.8.1 分享长图「客户版/内部版」
-  （客户版隐藏利润、加总等于报价总额，电费/运费锁真实值）；v1.8.2 修复安卓图标过大 + 更新个人站点。
+- 版本 v1.9.0（versionCode 17）；回归测试 444/444 通过；三副本 md5 1ae37c077ade73083b27c50c929140eb（258,163 B）。
+- 最新 Release：v1.9.0。最近三版做了什么：v1.8.2 修复安卓图标过大；v1.8.3 经营看板（订单统计/月度趋势/
+  材料·客户排行/月报打印）+ 全屏动效 + 横屏/平板适配 + 弹窗滚动锁；v1.9.0 平台活动报名（活动折扣与阶梯/整单取大不叠加）
+  + 建议零售价主视觉。
 
 【请先做这三件事，然后停下来等我派活】
 1. 读 H:\3d-print-cost-calculator\HANDOFF.md（本次交接单）、.workbuddy\memory\MEMORY.md（长期约定）、
    .workbuddy\memory\2026-10-13.md（最近进展）；需要细节再看 AGENTS.md。
 2. 跑一次回归确认基线：在项目根执行
    NODE_PATH=C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules \
-   C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-2/node.exe test-presets.js
-   期望「结果: 366/366 通过」。
+   C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe test-presets.js
+   期望「结果: 444/444 通过」。
+   注意：本机 git 不在 PATH，要用 C:/Users/steveliuyan/.workbuddy/binaries/PortableGit/versions/1.2.0/cmd/git.exe。
 3. 用几句话向我复述：这个项目是什么、当前基线、一条改动的标准流程（唯一来源 index.html → 回归 →
    _sync_clean.py 同步三副本 → 打包 → 发版），以及你注意到的硬性约束。
 
