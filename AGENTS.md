@@ -14,12 +14,12 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.0**（versionCode 18；**已推送 main 并部署到 Pages（2026-10-20）**，未打 tag / 未建 Release） |
+| 当前版本 | **v1.10.2**（versionCode 20；**已上线**，未打 tag / 未建 Release） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
-| 回归测试 | **492/492 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，逐字节一致） |
+| 回归测试 | **501/501 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `ee0c0de4706d6b914e895476b71511f4`（303,767 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
-| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.0**，`index.html` md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B） |
+| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.2**，`index.html` md5 `ee0c0de4706d6b914e895476b71511f4`（303,767 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
@@ -45,7 +45,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（492 项断言）
+├─ test-presets.js         ← jsdom 回归测试（501 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
@@ -67,7 +67,7 @@ H:\3d-print-cost-calculator\
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
 "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe" test-presets.js
-# 期望：结果: 492/492 通过
+# 期望：结果: 501/501 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -262,6 +262,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.8.3** | **经营看板 + 全屏动效 + 横屏/平板适配 + 弹窗滚动锁**：① 第三视图「经营看板」——纯函数 `dashStats(orders, range, now)`（订单数/收入/成本/利润/毛利率/客单价 + 月度趋势 + 材料·客户 TOP5，草稿不计入，区间存 `dpc_dash_v1`）+ 6 张 KPI 滚动卡 + 柱状趋势 + 排行条 + **经营月报打印**；顺带修 `orderCustomerName()`（`customer` 是 `{name,contact}` 对象，旧代码当字符串用会渲染 `[object Object]`）。② 全套界面动效（Hero 流光 / 环图与图例交错画入 / 数字滚动）+ `reduced-motion` 兜底。③ 横屏手机左右分栏、平板竖屏两栏、`≥1200px` 收窄居中；`shortEdges` 打孔屏铺满 + 安全区内边距。④ 弹窗滚动穿透修复（`body.modal-open` + `overscroll-behavior` + `MutationObserver` 统一同步）。版本 1.8.2 → 1.8.3（vc15→16）。回归 366 → 378（动效）→ **408**（看板 + 滚动锁）→ **421**（适配） |
 | **v1.9.0** | **平台活动报名 + 建议零售价主视觉**：① 订单级 `activity={on,name,disc}`；`effDisc = max(阶梯, 整单, 活动)` **取大不叠加**、上限 90%、未报名恒 0；`computeOrder` 增 `discTotal` / `activity` / 每行 `actApplied`；透出到汇总条、报价单抬头与「活动优惠」汇总行、长图 info 行、CSV（三字段）、行项折扣列「活动」。② `#sellPrice` 移入 `.retail` 主视觉（36px 靛蓝 + 左色条 + 毛利率/单件利润），文案统一「建议零售价」。版本 1.8.3 → 1.9.0（vc16→17）。回归 421 → **444**。发布：API 推 `173f1bb`、Release 3 附件、站点页更新 `5b3c679` |
 | **v1.10.0** | **可选账号 + 云同步（客户端）**：顶栏账号区 + 注册/验证码/登录/2FA/退出 + 十键增量同步。`Storage.prototype.setItem` 钩子标记 dirty（不改动任何现有 34 处调用点、不改旧键名与结构）→ 3s 防抖批量推（≤20/批、逐项 `base_version`）→ `dpc_meta` 记版本；5s/15s/60s/300s 指数退避 + `online` 立即补推；登录后 `GET /sync` 逐键比对，冲突记 `dpc_conflicts` 并弹「云端/本地/两边都留」；`dpc_view_v1` 等裸字符串键按字符串往返。**来源门控**：仅 3d / 裸域启用（服务端 CORS 白名单），本地打开自动纯离线。版本 1.9.0 → 1.10.0（vc17→18）。回归 444 → **492** |
+| **v1.10.1 / v1.10.2** | **登录/注册弹窗改版**：① 密码框**眼睛切换**（登录、注册、确认密码三处，`aria-pressed` 同步）；② 注册新增**确认密码**，前端校验「两次不一致 / 不足 10 位」→ 不发请求；③ 人机验证**未拿到 token 时不发请求**，改为提示「人机验证还没完成，请稍等一下再试」并给出「重新进行人机验证」按钮（8s 上限，可重试）；④ 弹窗紧凑化（缩短标签、加提示行、面板 460px / 92vh，常规窗口无需滚动）。1.10.0 → 1.10.2（vc18→20）。回归 492 → **501** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -368,6 +369,13 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
 **未执行**：真实注册→收码→验证（生产 `MAIL_MODE=smtp`，验证码只进邮箱，本机无该邮箱访问权）；
 登录态下 DevTools 的 `sid` HttpOnly/Secure 核对与两台真机同步（需已登录账号）。
 
+**v1.10.1 / v1.10.2（登录/注册改版）**：新增 9 条断言（眼睛切换×3 / 确认密码存在 / 两次不一致不发请求 / 密码不足 10 位不发请求 /
+人机验证未完成时不发请求且有重试入口 / 三个容器同 sitekey 等），RED `496/501` → 实现后 **501/501**。
+真机 CDP 实测（线上 1.10.2）：注册步骤三字段齐全、3 个眼睛按钮、`type` 在 password↔text 间切换、`aria-pressed` 正确；
+两次不一致提示「两次输入的密码不一致」、短密码提示「密码至少 10 位（服务端要求）」；
+用 CDP 阻断 `challenges.cloudflare.com` 后点登录 → 显示「人机验证还没完成，请稍等一下再试」且「重新进行人机验证」按钮可见（不再卡在等待文案）。
+截图：`.workbuddy/ui-register-1102.png`、`.workbuddy/ui-captcha-retry.png`。
+
 ## 11. 未完成 / 待办
 
 - ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
@@ -376,8 +384,9 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ✅ **v1.10.0 已上线**（2026-10-20：`git push` `173f1bb..a104e84` → Pages `built` @ `a104e84`；线上 `index.html` md5 = 源码）。
+- ✅ **v1.10.2 已上线**（2026-10-20：`950ba12`→`e4f5ae8`，Pages `built`；线上 md5 = 源码）。
   **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
+- 💡 登录/注册后续可做：找回密码（契约里未提供接口，需服务端先加）、记住邮箱、2FA 二维码（当前展示 secret 手输）。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
@@ -462,7 +471,7 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 **新对话接手时的推荐动作**：
 1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 **492/492**；
+3. 跑一次 §4.1 的回归测试，确认基线是 **501/501**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），

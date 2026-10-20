@@ -14,10 +14,10 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.0**（`APP_VERSION`，versionCode **18**；**已上线** https://3d.20050905.xyz，未打 tag/Release） |
-| 本地 = 远端 HEAD | `a104e84fb819f4ed3c66d9dd8222248793625676`（已推送，Pages `built` @ 同 SHA） |
-| 回归测试 | **492/492 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `93cef3b2c588c2ef2aaf315b4737d8e8`（**298,017 B**，逐字节一致） |
+| 当前版本 | **v1.10.2**（`APP_VERSION`，versionCode **20**；**已上线** https://3d.20050905.xyz，未打 tag/Release） |
+| 本地 = 远端 HEAD | `e4f5ae8941939ef7b0fe3387f16d5fcedc31a5d8`（已推送，Pages `built` @ 同 SHA） |
+| 回归测试 | **501/501 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `ee0c0de4706d6b914e895476b71511f4`（**303,767 B**，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag **15** 个 / Release **15** 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz** |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开，MIT） |
@@ -44,7 +44,7 @@ export NODE_PATH=C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_mo
 
 # 1) 改代码：只改根目录 index.html（唯一来源）
 
-# 2) 跑回归（基线 492/492）
+# 2) 跑回归（基线 501/501）
 "$NODE" test-presets.js
 
 # 3) 同步三副本 + 剥离调试属性（务必，否则 pre-commit 拦截）
@@ -125,7 +125,7 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
   建议换成 **fine-grained**（仅本仓库 + contents / issues / releases 写权限）。GitHub 无创建 PAT 的 API，只能网页建；
   建好粘贴文本给 Agent，用 `.secrets/_rotate_token.py` 落盘校验，再去 GitHub 撤销旧的。
 - ✅ **交接文档已对齐 v1.9.0**（2026-10-19）：AGENTS.md / HANDOFF.md 的版本、基线、证据、环境路径全部换成实测值。
-- ✅ **v1.10.0 已上线**（2026-10-20 push `a104e84` → Pages built）；未打 tag、未建 Release、未打包三端。真实浏览器已验证 Turnstile 出 token、错误口令返回「邮箱或密码错误」。
+- ✅ **v1.10.2 已上线**（2026-10-20 push `e4f5ae8` → Pages built）；未打 tag、未建 Release、未打包三端。登录/注册已改版：密码眼睛、确认密码、人机验证未完成时的可操作重试。
 - ⚠️ **云同步只在线版可用**（`3d.20050905.xyz` / `20050905.xyz`）：服务端 CORS 白名单只有这两个来源，本地 `file://` / localhost 打开时自动纯离线。
 - 💡 可选：站点其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）。
 - 💡 可选：站点「应用预览」截图仍是较早版本界面，如需可重新截取。
@@ -157,7 +157,7 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
 - 注意：个人站点是**另一个仓库** steveliuyan/myweb（= www.20050905.xyz），其 project-dpc.html 是本站项目页。
 
 【当前状态（接手时请以实际文件为准再核对一次）】
-- 版本 v1.10.0（versionCode 18）；回归测试 492/492 通过；三副本 md5 93cef3b2c588c2ef2aaf315b4737d8e8（298,017 B）。
+- 版本 v1.10.2（versionCode 20）；回归测试 501/501 通过；三副本 md5 ee0c0de4706d6b914e895476b71511f4（303,767 B）。
 - 最新 Release：v1.9.0。最近三版做了什么：v1.8.2 修复安卓图标过大；v1.8.3 经营看板（订单统计/月度趋势/
   材料·客户排行/月报打印）+ 全屏动效 + 横屏/平板适配 + 弹窗滚动锁；v1.9.0 平台活动报名（活动折扣与阶梯/整单取大不叠加）
   + 建议零售价主视觉；v1.10.0 可选账号 + 云同步（不登录完全可用，token 不进 localStorage）。
