@@ -2542,7 +2542,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.7";
+  var APP_VERSION = "1.10.8";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5025,7 +5025,7 @@
     var MIN_PWD = 8;   /* 与服务端 security.password_problem 对齐 */
     var st = { user:null, status:"out", tries:0, timer:null, timerApi:null, fetchImpl:null,
                turnstile:"", verifyId:"", mfaToken:"", mfaSecret:"", busy:false, lastSyncAt:0,
-               turnWait:8000, stepKey:"" };
+               turnWait:8000, pendingEmail:"", stepKey:"" };
     var realTimers = {
       set: function(fn, ms){ return window.setTimeout(fn, ms); },
       clear: function(id){ window.clearTimeout(id); }
@@ -5095,6 +5095,7 @@
         });
       });
     }
+    function codeOf(r){ return (r && r.body && r.body.error && r.body.error.code) || ""; }
     function errMsg(r){
       var b = r && r.body;
       if(b && b.error && b.error.code === "captcha_failed"){
@@ -5385,7 +5386,7 @@
             st.verifyId = r.body.verify_id;
             return { ok: true, verifyId: r.body.verify_id, resendAfter: r.body.resend_after || 60 };
           }
-          return { ok: false, message: errMsg(r) };
+          return { ok: false, message: errMsg(r), code: codeOf(r), needLogin: codeOf(r) === "email_taken" };
         }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
     }
     function verifyEmail(code){
@@ -5482,6 +5483,10 @@
       ["auLogin", "auReg", "auCode", "auMfa", "auTwo"].forEach(function(id){
         var el = $(id); if(el) el.hidden = (id !== step);
       });
+      if(step === "auLogin" && st.pendingEmail){
+        var pe = $("auEmail");
+        if(pe && !pe.value){ pe.value = st.pendingEmail; }
+      }
       var titles = { auLogin:"登录", auReg:"注册", auCode:"验证邮箱", auMfa:"两步验证", auTwo:"两步验证设置" };
       var t = $("auTitle"); if(t) t.textContent = titles[step] || "账号";
       auMsg("");
@@ -5685,6 +5690,11 @@
           var m = $("auCodeMail"); if(m) m.textContent = email;
           showStep("auCode"); countdown(r.resendAfter || 60);
           auMsg("验证码已发送，请查收邮箱");
+        }else if(r.code === "email_taken"){
+          st.pendingEmail = email;
+          setErr("auEmail2", "auErrEmail2", "这个邮箱已经注册过了");
+          showRetry(false);
+          auMsg("这个邮箱已经注册过了，点下方「去登录」直接登录即可", "bad");
         }else{
           showRetry(!!r.captcha);
           auMsg(r.message || "注册失败", r.captcha ? "" : "bad");
@@ -5697,8 +5707,12 @@
       auMsg("正在验证…");
       verifyEmail(code).then(function(r){
         if(r.ok){ closeAuth(); return; }
-        auMsg(r.message || "验证失败", "bad");
-        if(r.needLogin) showStep("auLogin");
+          auMsg(r.message || "验证失败", "bad");
+          if(r.needLogin){
+            st.pendingEmail = ($("auCodeMail") && $("auCodeMail").textContent) || st.pendingEmail;
+            showStep("auLogin");
+            auMsg("这个邮箱已经注册过了，请直接登录", "bad");
+          }
       });
     }
     function doResend(){

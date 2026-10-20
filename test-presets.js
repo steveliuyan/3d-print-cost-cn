@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.7',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.8',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.7/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.8/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.7/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.8/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.7');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.8');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.7', d8.getElementById('footVer').textContent === '1.10.7',
+    ok('v1.8：版本号已升到 1.10.8', d8.getElementById('footVer').textContent === '1.10.8',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2658,6 +2658,41 @@ setTimeout(function () {
         /\.acct-btn \.acct-txt\{display:none\}/.test(cssAll));
       ok('v1.10.7 账号菜单宽度不超过视口',
         /\.acct-menu\{[^}]*width:min\(232px,calc\(100vw - 24px\)\)/.test(cssAll));
+
+      /* ---- 邮箱已注册（409 email_taken） ---- */
+      var TK = mk({ handler: function (url) {
+        if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+        if (/\/v1\/auth\/register$/.test(url)) return { status: 409, body: { error: {
+          code: 'email_taken',
+          message: '这个邮箱已经在「3D 打印成本计算器」注册过了，直接登录即可；同一邮箱可以在另一个平台单独注册账号'
+        } } };
+        return { status: 404, body: {} };
+      } });
+      await TK.tick(25);
+      TK.d.getElementById('acctBtn').click();
+      await TK.tick(15);
+      TK.d.querySelector('[data-au="toReg"]').click();
+      await TK.tick(10);
+      TK.d.getElementById('auEmail2').value = 'taken@example.com';
+      TK.d.getElementById('auPwd2').value = 'password12345';
+      TK.d.getElementById('auPwd3').value = 'password12345';
+      TK.d.querySelector('[data-au="register"]').click();
+      await TK.tick(60);
+
+      var takenMsg = TK.d.getElementById('auMsg').textContent;
+      ok('v1.10.8 注册：已注册邮箱提示「已注册/去登录」',
+        /已注册|注册过/.test(takenMsg) && !/请求失败/.test(takenMsg), takenMsg);
+      ok('v1.10.8 注册：已注册邮箱在邮箱框下红字',
+        TK.d.getElementById('auErrEmail2').hidden === false &&
+        /注册过|已注册/.test(TK.d.getElementById('auErrEmail2').textContent),
+        TK.d.getElementById('auErrEmail2').textContent);
+
+      TK.d.querySelector('[data-au="toLogin"]').click();
+      await TK.tick(10);
+      ok('v1.10.8 已注册邮箱：切到登录并自动带出邮箱',
+        !TK.d.getElementById('auLogin').hidden &&
+        TK.d.getElementById('auEmail').value === 'taken@example.com',
+        TK.d.getElementById('auEmail').value);
 
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({
