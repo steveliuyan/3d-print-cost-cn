@@ -738,16 +738,6 @@
     .pp-page table{font-size:11.5px}
     .pp-page th,.pp-page td{padding:4px 6px}
   }
-  /* ============ v1.10.7 手机竖屏：账号入口固定顶栏右上（原来被挤到「重置」下方） ============ */
-  @media screen and (max-width:560px){
-    .acct{position:absolute; right:2px; top:9px; margin:0; z-index:6}
-    .acct-btn{width:38px; height:38px; padding:0; gap:0; border-radius:50%; justify-content:center}
-    .acct-btn .acct-txt{display:none}
-    .acct-btn .av{width:24px; height:24px}
-    .acct-dot{right:-3px; top:-3px}
-    .brand{padding-right:46px}
-    .acct-menu{top:calc(100% + 6px)}
-  }
   /* ============ v1.8.4 横屏 / 平板适配 ============
      目标：横屏手机不变成「一条长柱」，平板竖屏也把结果放到输入旁边，大屏不铺满整条超宽显示器。
      全部只作用于屏幕（@media screen），打印样式不受影响。 */
@@ -865,6 +855,16 @@
 #authModal .au-lb input{height:42px}
 #authModal .au-go{height:42px}
 #authModal .cf-turnstile{margin:0 0 8px}
+  /* ============ v1.10.7 手机竖屏：账号入口固定顶栏右上（原来被挤到「重置」下方） ============ */
+  @media screen and (max-width:560px){
+    .acct{position:absolute; right:2px; top:9px; margin:0; z-index:6}
+    .acct-btn{width:38px; height:38px; padding:0; gap:0; border-radius:50%; justify-content:center}
+    .acct-btn .acct-txt{display:none}
+    .acct-btn .av{width:24px; height:24px}
+    .acct-dot{right:-3px; top:-3px}
+    .brand{padding-right:46px}
+    .acct-menu{top:calc(100% + 6px)}
+  }
 .au-hint{margin:-2px 0 12px; font-size:11.5px; color:var(--text3); line-height:1.5}
 .au-err{margin:-4px 0 9px; font-size:11.5px; line-height:1.45; color:#e5484d; font-weight:550}
 .au-err[hidden]{display:none}

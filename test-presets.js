@@ -2647,8 +2647,12 @@ setTimeout(function () {
       var cssAll = Array.prototype.map.call(UT.d.querySelectorAll('style'), function (n) {
         return n.textContent || '';
       }).join('\n');
+      var iAcctBase = cssAll.indexOf('.acct{position:relative');
+      var iMob560 = cssAll.indexOf('@media screen and (max-width:560px)', iAcctBase);
       ok('v1.10.7 手机竖屏：账号入口吸附顶栏右上（absolute）',
-        /@media screen and \(max-width:560px\)[\s\S]{0,400}\.acct\{position:absolute; right:2px; top:9px/.test(cssAll));
+        iAcctBase >= 0 && iMob560 > iAcctBase &&
+        /@media screen and \(max-width:560px\)[\s\S]{0,400}\.acct\{position:absolute; right:2px; top:9px/.test(cssAll),
+        'base@' + iAcctBase + ' mob@' + iMob560);
       ok('v1.10.7 手机竖屏：账号按钮收成圆形头像、隐藏文字',
         /\.acct-btn\{width:38px; height:38px;[^}]*border-radius:50%/.test(cssAll) &&
         /\.acct-btn \.acct-txt\{display:none\}/.test(cssAll));
