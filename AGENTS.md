@@ -14,12 +14,12 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.5**（versionCode 23；**已上线**，未打 tag / 未建 Release） |
+| 当前版本 | **v1.10.6**（versionCode 24；**已上线**，未打 tag / 未建 Release） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
 | 回归测试 | **512/512 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `ce150f1a07a138b5eb658ac2c9e32fab`（309,684 B，逐字节一致） |
+| 三副本 md5 | `8fde52746fb295efdcc688a198c87e7d`（309,837 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
-| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.5**，`index.html` md5 `ce150f1a07a138b5eb658ac2c9e32fab`（309,684 B） |
+| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.6**，`index.html` md5 `8fde52746fb295efdcc688a198c87e7d`（309,837 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
@@ -237,7 +237,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **横屏 / 平板适配（v1.8.3）** | `viewport-fit=cover`；三档 `@media screen`：① 横屏手机 `(orientation:landscape) and (max-height:560px)`——顶栏收紧、输入区/结果区**左右分栏**；② 平板竖屏 `820–1080px`——两栏 + `.side` 吸顶；③ `≥1200px`——容器 1440px 居中放大。Android `themes.xml` 开 `windowLayoutInDisplayCutoutMode=shortEdges`，页面用 `env(safe-area-inset-*)` 让开打孔屏 |
 | **弹窗滚动锁（v1.8.3）** | 遮罩打开时 `body.modal-open{overflow:hidden;padding-right:var(--sbw)}` 防背景穿透滚动；`.ov-body/.modal-body/.pk-body` 加 `overscroll-behavior:contain`；JS 用 `MutationObserver` 监听 body 子树 class 统一同步（所有 open/close 入口无需逐个改），打印样式里解除锁避免只印一页 |
 | **平台活动报名（v1.9.0）** | 订单级 `.actbox`：开关 `#ordActOn` + 活动名 `#ordActName` + 活动折扣 `#ordActDisc`；存 `orderLevel.activity={on,name,disc}`（老订单无字段按未报名兼容）。**折扣口径 `effDisc = max(阶梯, 整单, 活动)`，取大不叠加**，上限 90%。`computeOrder` 输出 `discTotal` / `activity` / 每行 `actApplied`；透出到订单汇总活动条、报价单抬头与汇总「活动优惠」、长图 info 行、CSV 三字段、行项折扣列「活动」 |
-| **可选账号 / 云同步（v1.10.0）** | 顶栏账号区（未登录「登录 / 注册」，登录后邮箱首字母 + 下拉菜单）。**不登录时一切功能照旧、数据只存本机**。注册（邮箱验证码）/ 登录 / 两步验证（TOTP，展示 secret + otpauth 链接）/ 退出；**认证只靠 HttpOnly cookie，前端不接触也不存储任何 token**。同步对象是**下述 10 个既有键**（一个不多一个不少），`value` 是该键原样解析后的值（裸字符串键按字符串传）；每键版本与 dirty 记在 `dpc_meta`（**不参与同步**）。写 `localStorage` 走 `Storage.prototype.setItem` 钩子打 dirty → **3 秒防抖** → `POST /sync/batch`（≤20 项/批，每项带 `base_version`）→ 成功写回版本。失败保留 dirty 并按 **5s→15s→60s→300s** 退避（最多 10 次），`online` 事件立即补推。登录后 `GET /sync` 逐键比对：服务端更新且本地干净 → 覆盖并**调用页面现有渲染函数**重绘；本地有未推送改动 → 记 `dpc_conflicts` + 红点 + 三选一对话框（用云端 / 用本地 / 两边都留→云端另存 `key.conflict.<ts>`）。409 一律不静默覆盖。**仅在 `3d.20050905.xyz` / `20050905.xyz` 启用**（服务端 CORS 白名单），`file://` 或 localhost 打开自动纯离线，`?cloud=1` 可临时调试。**人机验证**：注册 / 登录 / 重发验证码三处各渲染一个 Turnstile 控件（sitekey `0x4AAAAAAFcfg4zaO7N3n25b`），请求必须携带真实 `turnstile_token`（服务端开启后空 token 一律 `400 captcha_failed`）；令牌一次性，请求返回后 `turnstile.reset()` 重新挑战，脚本加载失败时静默降级并给出「重新验证」提示 |
+| **可选账号 / 云同步（v1.10.0）** | 顶栏账号区（未登录「登录 / 注册」，登录后邮箱首字母 + 下拉菜单）。**不登录时一切功能照旧、数据只存本机**。注册（邮箱验证码，密码 ≥8 位）/ 登录 / 两步验证（TOTP，展示 secret + otpauth 链接）/ 退出；**认证只靠 HttpOnly cookie，前端不接触也不存储任何 token**。同步对象是**下述 10 个既有键**（一个不多一个不少），`value` 是该键原样解析后的值（裸字符串键按字符串传）；每键版本与 dirty 记在 `dpc_meta`（**不参与同步**）。写 `localStorage` 走 `Storage.prototype.setItem` 钩子打 dirty → **3 秒防抖** → `POST /sync/batch`（≤20 项/批，每项带 `base_version`）→ 成功写回版本。失败保留 dirty 并按 **5s→15s→60s→300s** 退避（最多 10 次），`online` 事件立即补推。登录后 `GET /sync` 逐键比对：服务端更新且本地干净 → 覆盖并**调用页面现有渲染函数**重绘；本地有未推送改动 → 记 `dpc_conflicts` + 红点 + 三选一对话框（用云端 / 用本地 / 两边都留→云端另存 `key.conflict.<ts>`）。409 一律不静默覆盖。**仅在 `3d.20050905.xyz` / `20050905.xyz` 启用**（服务端 CORS 白名单），`file://` 或 localhost 打开自动纯离线，`?cloud=1` 可临时调试。**人机验证**：注册 / 登录 / 重发验证码三处各渲染一个 Turnstile 控件（sitekey `0x4AAAAAAFcfg4zaO7N3n25b`），请求必须携带真实 `turnstile_token`（服务端开启后空 token 一律 `400 captcha_failed`）；令牌一次性，请求返回后 `turnstile.reset()` 重新挑战，脚本加载失败时静默降级并给出「重新验证」提示 |
 | **建议零售价主视觉（v1.9.0）** | `#sellPrice` 从小 KPI（19px）移入独立 `.retail` 主视觉：36px 靛蓝数字 + 左色条 + 毛利率 / 单件利润副指标；打印与长图文案统一「建议零售价」 |
 
 ## 9. 版本时间线（做了什么）
@@ -265,6 +265,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.10.1 / v1.10.2** | **登录/注册弹窗改版**：① 密码框**眼睛切换**（登录、注册、确认密码三处，`aria-pressed` 同步）；② 注册新增**确认密码**，前端校验「两次不一致 / 不足 10 位」→ 不发请求；③ 人机验证**未拿到 token 时不发请求**，改为提示「人机验证还没完成，请稍等一下再试」并给出「重新进行人机验证」按钮（8s 上限，可重试）；④ 弹窗紧凑化（缩短标签、加提示行、面板 460px / 92vh，常规窗口无需滚动）。1.10.0 → 1.10.2（vc18→20）。回归 492 → **501** |
 | **v1.10.3 / v1.10.4** | **表单校验与按钮视觉**：① 密码 / 确认密码 / 邮箱**逐字段即时红字 + 红框**（输入 4 位即显示「密码已输入 4 位，至少需要 10 位」，补足后自动消失；两次不一致 / 邮箱格式同样就地提示，并聚焦到出错项）；② 弹窗内「注册 / 去登录 / 重新进行人机验证」补上链接按钮样式（原来只继承浏览器原生按钮外观，发灰带框）；③ 顶栏账号区改为**有框按钮 + 手绘头像**（未登录显示人像，登录后显示邮箱首字母并转为绿色）。1.10.2 → 1.10.4（vc20→22）。回归 501 → **509** |
 | **v1.10.5** | **邮箱可投递性前置校验**：注册/登录输入 `*.local / *.test / *.invalid / *.example / *.localhost / *.lan / *.internal` 等保留域名时**即时红字拦截**（提示「这个域名收不到邮件（保留测试域名），请换成真实邮箱」），提交时也不再发请求 —— 避免验证码发往不存在域名后被 SMTP 退回（实测 `resendtest@test.local` 会收到 QQ 邮箱退信）。回归 509 → **512** |
+| **v1.10.6** | **密码下限对齐服务端 8 位**：服务端 `security.password_problem` 为 `len(password) < 8`，客户端抽 `MIN_PWD = 8` 常量（红字「密码已输入 N 位，至少需要 8 位」、占位符「至少 8 位」、提交校验与提示同步），8 位即可通过、7 位仍即时拦截。回归保持 **512**（改下限与断言正则）。 |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -380,6 +381,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
 
 **v1.10.3 / v1.10.4（即时校验 + 按钮视觉）**：新增 8 条断言（4 位密码即时红字 / 补足后消失 / 确认密码不一致即时红字 / 一致后消失 /顶栏按钮不再是 ghost / 含头像与文字节点 / 弹窗链接为链接样式），RED `507/509` → 实现后 **509/509**。线上 CDP 实测（1.10.4，Edge 1000×760）：`#auErrPwd2` 文案「密码已输入 4 位，至少需要 10 位」、颜色 `rgb(229,72,77)`、输入框带 `invalid`；确认密码红字同步；顶栏按钮 `class="btn acct-btn"`、`border 1px solid rgb(221,225,231)`、尺寸 120×40、头像节点存在；「去登录」计算样式 `border 0px none`、`color rgb(79,70,229)`。截图 `.workbuddy/ui-red-4pwd.png`、`.workbuddy/ui-link-1104.png`、`.workbuddy/ui-chip-1104.png`。
 **v1.10.5（保留域名拦截）**：新增 3 条断言（`test.local` 即时红字 / 提交不发请求 / 换 `me@qq.com` 后自动清除），RED `510/512` → 实现后 **512/512**。线上 CDP 实测（1.10.5）：输入 `resendtest@test.local` → `#auErrEmail2` 文案「这个域名收不到邮件（保留测试域名），请换成真实邮箱（如 xxx@qq.com）」、输入框 `invalid`；改 `1050745037@qq.com` 后错误自动消失。截图 `.workbuddy/ui-domain-guard.png`。
+**v1.10.6（8 位下限）**：服务端源码 `docker/apps/api/security.py` 的 `password_problem()` 为 `len(password) < 8` → 「密码至少 8 个字符」；客户端改 `MIN_PWD = 8` 后线上 CDP 实测（1.10.6）：占位符「至少 8 位，别用弱密码」、7 位输入红字「密码已输入 7 位，至少需要 8 位」、8 位输入无红字且无 `invalid`。回归 **512/512**。
 
 ## 11. 未完成 / 待办
 
@@ -389,7 +391,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ✅ **v1.10.5 已上线**（2026-10-20：`ecae4d6`→`0a45521`，Pages `built`；线上 md5 = 源码）。
+- ✅ **v1.10.6 已上线**（2026-10-20：`0a45521`→`6de7c86`，Pages `built`；线上 md5 = 源码）。
   **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
 - 💡 登录/注册后续可做：找回密码（契约里未提供接口，需服务端先加）、记住邮箱、2FA 二维码（当前展示 secret 手输）。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
