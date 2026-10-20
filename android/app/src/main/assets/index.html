@@ -1061,6 +1061,7 @@
           <div class="am-stat" id="amStat">数据仅保存在本机</div>
           <button type="button" data-am="sync">立即同步</button>
           <button type="button" data-am="forcepush">强制全量推送</button>
+          <button type="button" data-am="notify">通知<span id="amNotiDot" hidden></span></button>
           <button type="button" data-am="diag">同步诊断</button>
           <button type="button" data-am="mfa">两步验证</button>
           <button type="button" data-am="avatar">更换头像</button>
@@ -2657,7 +2658,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.15.0";
+  var APP_VERSION = "1.16.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5342,9 +5343,113 @@
 
 
 
+
+    /* ---------- 应用内通知 ---------- */
+    var NT = { items: [], unread: 0, box: null };
+
+    function ntBadge(){
+      var dot = document.getElementById("amNotiDot");
+      var btn = document.querySelector('[data-am="notify"]');
+      if(dot){
+        dot.hidden = !NT.unread;
+        dot.textContent = NT.unread > 9 ? "9+" : String(NT.unread || "");
+      }
+      if(btn) btn.style.color = NT.unread ? "#fbbf24" : "";
+    }
+
+    function loadNotifications(){
+      if(!st.user || !ENABLED) return Promise.resolve(false);
+      return api("/notifications").then(function(r){
+        if(!r.ok){ return false; }
+        NT.items = (r.body && r.body.items) || [];
+        NT.unread = (r.body && r.body.unread) || 0;
+        ntBadge();
+        return true;
+      }).catch(function(){ return false; });
+    }
+
+    function openNotify(){
+      if(!st.user){ bkToast("请先登录账号"); return; }
+      if(!NT.box){
+        NT.box = document.createElement("div");
+        NT.box.id = "ntOverlay";
+        NT.box.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);" +
+          "z-index:95;display:none;align-items:center;justify-content:center;padding:16px";
+        NT.box.innerHTML =
+          '<div style="background:#141a24;color:#e6ebf2;border:1px solid #2a3446;border-radius:14px;' +
+          'max-width:480px;width:100%;max-height:84vh;overflow:auto;padding:18px;font-size:14px;text-align:left">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
+              '<b style="font-size:15px">通知</b>' +
+              '<button type="button" id="ntClose" style="background:none;border:0;color:#8b96a8;' +
+              'font-size:22px;line-height:1;cursor:pointer">×</button></div>' +
+            '<div id="ntList"></div></div>';
+        document.body.appendChild(NT.box);
+        NT.box.addEventListener("click", function(e){ if(e.target === NT.box) NT.box.style.display = "none"; });
+        document.getElementById("ntClose").addEventListener("click", function(){
+          NT.box.style.display = "none";
+        });
+      }
+      var list = document.getElementById("ntList");
+      list.innerHTML = '<div style="color:#8b96a8;font-size:13px;padding:10px 0">加载中…</div>';
+      NT.box.style.display = "flex";
+      loadNotifications().then(function(){
+        if(!NT.items.length){
+          list.innerHTML = '<div style="color:#8b96a8;font-size:13px;padding:14px 0">暂时没有新通知</div>';
+          return;
+        }
+        var colors = { important: "#f87171", warn: "#fbbf24", info: "#60a5fa" };
+        var html = "";
+        NT.items.forEach(function(it){
+          var c = colors[it.level] || colors.info;
+          html += '<div style="padding:11px 0;border-top:1px solid #232c3c">' +
+            '<div style="font-size:13.5px;font-weight:600;color:' + (it.read ? "#c8d2e0" : "#e6ebf2") + '">' +
+            '<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:' + c +
+            ';margin-right:7px;vertical-align:middle"></span>' + escapeHtml(it.title) + '</div>' +
+            (it.body ? '<div style="font-size:12.5px;color:#8b96a8;margin-top:5px;line-height:1.7;' +
+              'white-space:pre-wrap">' + escapeHtml(it.body) + '</div>' : '') +
+            '<div style="font-size:11px;color:#5c6675;margin-top:5px">' +
+              new Date(it.created_at).toLocaleString() + '</div>' +
+            (it.url ? '<div style="margin-top:6px"><a href="' + escapeHtml(it.url) +
+              '" target="_blank" rel="noopener" style="color:#60a5fa;font-size:12.5px">查看详情 →</a></div>' : '') +
+            '</div>';
+        });
+        list.innerHTML = html;
+        var ids = NT.items.filter(function(x){ return !x.read; }).map(function(x){ return x.id; });
+        if(ids.length){
+          api("/notifications/read", { method:"POST", body:{ ids: ids } }).then(function(){
+            NT.items.forEach(function(x){ x.read = true; });
+            NT.unread = 0;
+            ntBadge();
+          }).catch(function(){});
+        }
+      });
+    }
+
+    function escapeHtml(v){
+      return String(v == null ? "" : v).replace(/[&<>"']/g, function(c){
+        return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
+      });
+    }
+
     /* ---------- 强制全量推送 ---------- */
     function forcePushAll(){
       if(!st.user){ bkToast("请先登录账号"); return; }
+      /* 正确的「强制」语义：先把服务端当前版本读回来，再以它作为 base_version 覆盖，
+         这样不会被当成并发修改、也就不会弹「保留云端/本地」。 */
+      setStatus("syncing");
+      return api("/sync").then(function(r){
+        var sv = {};
+        if(r.ok && r.body && r.body.items){
+          Object.keys(r.body.items).forEach(function(k){
+            var it = r.body.items[k];
+            sv[k] = (it && it.version) || 0;
+          });
+        }
+        return forcePushWith(sv);
+      }).catch(function(){ return forcePushWith({}); });
+    }
+
+    function forcePushWith(sv){
       var keys = KEYS.slice();
       var chunks = [], i;
       for(i = 0; i < keys.length; i += BATCH_MAX) chunks.push(keys.slice(i, i + BATCH_MAX));
@@ -5356,8 +5461,8 @@
           var meta = metaAll();
           var changes = chunk.map(function(k){
             var v = readVal(k);
-            return { key: k, value: (v === undefined ? null : v),
-                     base_version: (meta[k] && meta[k].version) || 0 };
+            var base = (sv && sv[k] !== undefined) ? sv[k] : ((meta[k] && meta[k].version) || 0);
+            return { key: k, value: (v === undefined ? null : v), base_version: base };
           });
           return api("/sync/batch", { method:"POST", body:{ changes: changes } }).then(function(r){
             if(!r.ok || !r.body || !Array.isArray(r.body.results)) throw new Error("batch failed");
@@ -5418,7 +5523,7 @@
         dgBox = document.createElement("div");
         dgBox.id = "dgOverlay";
         dgBox.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);" +
-          "z-index:9999;display:none;align-items:center;justify-content:center;padding:16px";
+          "z-index:95;display:none;align-items:center;justify-content:center;padding:16px";
         dgBox.innerHTML =
           '<div style="background:#141a24;color:#e6ebf2;border:1px solid #2a3446;border-radius:14px;' +
           'max-width:460px;width:100%;max-height:84vh;overflow:auto;padding:18px;font-size:13px;text-align:left">' +
@@ -5456,14 +5561,18 @@
       var url = avatarUrl();
       var box = btn ? btn.querySelector(".av") : null;
       if(!box) return;
+      var svg = box.querySelector("svg");
       if(url){
         box.style.backgroundImage = "url(" + url + ")";
         box.style.backgroundSize = "cover";
         box.style.backgroundPosition = "center";
+        box.style.backgroundRepeat = "no-repeat";
         if(ini) ini.hidden = true;
+        if(svg) svg.style.display = "none";      /* 否则人像图标会浮在头像上面 */
       }else{
         box.style.backgroundImage = "";
         if(ini && st.user) ini.hidden = false;
+        if(svg) svg.style.display = "";
       }
     }
     function pickAvatar(){
@@ -5522,7 +5631,7 @@
       var wrap = document.createElement("div");
       wrap.id = "cpOverlay";
       wrap.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);" +
-                           "z-index:9999;display:none;align-items:center;justify-content:center;padding:16px";
+                           "z-index:95;display:none;align-items:center;justify-content:center;padding:16px";
       wrap.innerHTML =
         '<div style="background:#141a24;color:#e6ebf2;border:1px solid #2a3446;border-radius:14px;' +
         'max-width:430px;width:100%;padding:18px;font-size:14px;text-align:left">' +
@@ -5627,7 +5736,7 @@
       var wrap = document.createElement("div");
       wrap.id = "bkOverlay";
       wrap.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);" +
-                           "z-index:9999;display:none;align-items:center;justify-content:center;padding:16px";
+                           "z-index:95;display:none;align-items:center;justify-content:center;padding:16px";
       wrap.innerHTML =
         '<div style="background:#141a24;color:#e6ebf2;border:1px solid #2a3446;border-radius:14px;' +
         'max-width:520px;width:100%;max-height:84vh;overflow:auto;padding:18px;font-size:14px;text-align:left">' +
@@ -5688,10 +5797,19 @@
       for(var i = 0; i < list.length; i++) box.appendChild(bkRow(list[i]));
     }
 
+    function bkLoading(){
+      var box = document.getElementById("bkList");
+      if(!box) return;
+      box.innerHTML = '<div style="color:#8b96a8;font-size:13px;padding:14px 0;display:flex;' +
+        'align-items:center;gap:8px">' +
+        '<span style="width:14px;height:14px;border:2px solid #2a3446;border-top-color:#3b82f6;' +
+        'border-radius:50%;display:inline-block;animation:bkspin .8s linear infinite"></span>' +
+        '正在读取云端备份…</div>';
+    }
     function openBackup(){
       if(!st.user){ bkToast("请先登录账号"); return; }
       bkEnsure().style.display = "flex";
-      bkRender(null);
+      bkLoading();
       api("/backup").then(function(r){
         if(!r.ok){ bkToast(errMsg(r)); closeBackup(); return; }
         bkRender((r.body && r.body.items) || []);
@@ -5703,9 +5821,18 @@
       if(btn){ btn.disabled = true; btn.textContent = "备份中…"; }
       api("/backup/create", { method:"POST", body:{ label:"手动备份" } }).then(function(r){
         if(btn){ btn.disabled = false; btn.textContent = "立即备份一次"; }
-        if(!r.ok){ bkToast(errMsg(r)); return; }
-        bkToast("已备份 " + r.body.keys + " 项");
+        var hint = document.getElementById("bkHint");
+        if(!r.ok){
+          bkToast(errMsg(r));
+          if(hint) hint.textContent = "备份失败：" + errMsg(r);
+          return;
+        }
+        var n = (r.body && r.body.keys) || 0;
+        bkToast("已备份 " + n + " 项");
+        if(hint) hint.textContent = "✅ 已备份 " + n + " 项（" + new Date().toLocaleTimeString() + "）";
         openBackup();
+        var h2 = document.getElementById("bkHint");
+        if(h2) h2.textContent = "✅ 已备份 " + n + " 项（" + new Date().toLocaleTimeString() + "）";
       });
     }
 
@@ -5991,6 +6118,7 @@
     /* ---------- 认证 ---------- */
     function afterLogin(user){
       st.user = user; st.tries = 0; setStatus("syncing"); renderAcct();
+      try{ loadNotifications(); }catch(e){}
       pull().then(function(){ return pushNow(); }).then(function(){
         renderAcct();
         if(conflictsAll().length) showConflict();
@@ -6210,6 +6338,7 @@
         else if(act === "avatar"){ pickAvatar(); }
         else if(act === "forcepush"){ forcePushAll(); }
         else if(act === "diag"){ openDiag(); }
+        else if(act === "notify"){ openNotify(); }
         else if(act === "mfa"){ openAuth("auTwo"); doMfaSetup(); }
         else if(act === "logout"){ logout(); }
         return;
@@ -6603,6 +6732,7 @@
       markDirty: markDirty, pushNow: pushNow, pull: pull, resolve: resolve, hydrate: hydrate,
     applyAvatar: applyAvatar,   /* 测试与外部渲染用 */
     forcePushAll: forcePushAll, openDiag: openDiag, ENABLED: ENABLED, IS_APP: IS_APP,
+    loadNotifications: loadNotifications, openNotify: openNotify,
       login: login, register: register, verifyEmail: verifyEmail, resendCode: resendCode,
       mfaVerify: mfaVerify, mfaSetup: mfaSetup, mfaEnable: mfaEnable, logout: logout, me: me,
       loadOrders: loadOrders,
