@@ -837,6 +837,19 @@
   border:1px dashed var(--line3); border-radius:9px; padding:10px; margin:0 0 8px; word-break:break-all}
 .au-url{font-size:10.5px; color:var(--text3); word-break:break-all; margin:0 0 10px}
 .cf-turnstile{margin:2px 0 10px; min-height:65px}
+.au-lb .pw{position:relative; display:block; margin-top:5px}
+.au-lb .pw input{margin-top:0; padding:11px 44px 11px 12px; height:44px}
+.eye{position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px;
+  display:flex; align-items:center; justify-content:center; border:0; border-radius:8px;
+  background:transparent; color:var(--text3); cursor:pointer}
+.eye:hover{background:var(--line-soft); color:var(--text)}
+.eye svg{width:17px; height:17px}
+.eye .ion{display:none}
+.eye[aria-pressed="true"] .ioff{display:none}
+.eye[aria-pressed="true"] .ion{display:block}
+.au-lb input{height:44px}
+.au-go{height:44px; font-weight:650}
+.au-retry{margin:-4px 0 10px; font-size:12px}
 .cf-key{font-family:var(--mono); font-size:12px; color:var(--text2); margin:0 0 6px}
 </style>
 <script>
@@ -870,10 +883,11 @@
     </div>
     <div class="modal-body">
       <div class="au-msg" id="auMsg" hidden></div>
+      <div class="au-retry" id="auRetryWrap" hidden><button type="button" class="lnk" data-au="retry">重新进行人机验证</button></div>
 
       <section id="auLogin">
         <label class="au-lb">邮箱<input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
-        <label class="au-lb">密码<input id="auPwd" type="password" autocomplete="current-password" placeholder="至少 10 位"></label>
+        <label class="au-lb">密码<span class="pw"><input id="auPwd" type="password" autocomplete="current-password" placeholder="至少 10 位"><button type="button" class="eye" data-eye="auPwd" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
         <div class="cf-turnstile" id="auTurn" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="login">登录</button>
         <p class="au-alt">还没有账号？<button type="button" class="lnk" data-au="toReg">注册</button></p>
@@ -881,7 +895,8 @@
 
       <section id="auReg" hidden>
         <label class="au-lb">邮箱<input id="auEmail2" type="email" autocomplete="username" placeholder="you@example.com"></label>
-        <label class="au-lb">密码<input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位，别用常见弱密码"></label>
+        <label class="au-lb">密码（至少 10 位，别用常见弱密码）<span class="pw"><input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位"><button type="button" class="eye" data-eye="auPwd2" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <label class="au-lb">确认密码<span class="pw"><input id="auPwd3" type="password" autocomplete="new-password" placeholder="再输入一次"><button type="button" class="eye" data-eye="auPwd3" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
         <div class="cf-turnstile" id="auTurn2" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="register">注册并发送验证码</button>
         <p class="au-alt">已有账号？<button type="button" class="lnk" data-au="toLogin">去登录</button></p>
@@ -2488,7 +2503,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.0";
+  var APP_VERSION = "1.10.1";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -4969,7 +4984,8 @@
     })();
 
     var st = { user:null, status:"out", tries:0, timer:null, timerApi:null, fetchImpl:null,
-               turnstile:"", verifyId:"", mfaToken:"", mfaSecret:"", busy:false, lastSyncAt:0 };
+               turnstile:"", verifyId:"", mfaToken:"", mfaSecret:"", busy:false, lastSyncAt:0,
+               turnWait:8000, stepKey:"" };
     var realTimers = {
       set: function(fn, ms){ return window.setTimeout(fn, ms); },
       clear: function(id){ window.clearTimeout(id); }
@@ -5296,9 +5312,11 @@
     }
     function login(email, password){
       return requireTurn("login").then(function(tk){
+        if(!tk) return { ok: false, captcha: true, message: "人机验证还没完成，请稍等一下再试" };
         return api("/auth/login", { method: "POST", body: {
           email: email, password: password, turnstile_token: tk, product: PRODUCT } });
       }).then(function(r){
+          if(r && r.captcha) return r;
           resetTurn("login");
           if(r.ok && r.body && r.body.user){
             afterLogin(r.body.user);
@@ -5313,9 +5331,11 @@
     }
     function register(email, password){
       return requireTurn("reg").then(function(tk){
+        if(!tk) return { ok: false, captcha: true, message: "人机验证还没完成，请稍等一下再试" };
         return api("/auth/register", { method: "POST", body: {
           email: email, password: password, turnstile_token: tk, product: PRODUCT } });
       }).then(function(r){
+          if(r && r.captcha) return r;
           resetTurn("reg");
           if(r.ok && r.body && r.body.verify_id){
             st.verifyId = r.body.verify_id;
@@ -5336,9 +5356,11 @@
     }
     function resendCode(){
       return requireTurn("resend").then(function(tk){
+        if(!tk) return { ok: false, captcha: true, message: "人机验证还没完成，请稍等一下再试" };
         return api("/auth/resend-code", { method: "POST", body: {
           verify_id: st.verifyId, turnstile_token: tk } });
       }).then(function(r){
+          if(r && r.captcha) return r;
           resetTurn("resend");
           if(r.ok){ return { ok: true, resendAfter: (r.body && r.body.resend_after) || 60 }; }
           return { ok: false, message: errMsg(r) };
@@ -5412,6 +5434,8 @@
       var t = $("auTitle"); if(t) t.textContent = titles[step] || "账号";
       auMsg("");
       var tk = { auLogin:"login", auReg:"reg", auCode:"resend" }[step];
+      st.stepKey = tk || "";
+      showRetry(false);
       if(tk) ensureTurn(tk);
     }
     function openAuth(step){
@@ -5449,6 +5473,18 @@
         else if(act === "logout"){ logout(); }
         return;
       }
+      var eye = t.closest("[data-eye]");
+      if(eye){
+        var inp = document.getElementById(eye.getAttribute("data-eye"));
+        if(inp){
+          var show = inp.type === "password";
+          inp.type = show ? "text" : "password";
+          eye.setAttribute("aria-pressed", show ? "true" : "false");
+          eye.setAttribute("aria-label", show ? "隐藏密码" : "显示密码");
+          try{ inp.focus(); }catch(e){}
+        }
+        return;
+      }
       var au = t.closest("[data-au]");
       if(au){
         var a = au.getAttribute("data-au");
@@ -5458,6 +5494,7 @@
         else if(a === "register"){ doRegister(); }
         else if(a === "verify"){ doVerify(); }
         else if(a === "resend"){ doResend(); }
+        else if(a === "retry"){ doCaptchaRetry(); }
         else if(a === "mfa"){ doMfaVerify(); }
         else if(a === "twoEnable"){ doMfaEnable(); }
         return;
@@ -5474,28 +5511,49 @@
       }
     });
 
+    function showRetry(on){
+      var w = $("auRetryWrap");
+      if(w) w.hidden = !on;
+    }
+    function doCaptchaRetry(){
+      var key = st.stepKey || "login";
+      resetTurn(key);
+      showRetry(false);
+      auMsg("正在重新加载人机验证…");
+      ensureTurn(key).then(function(ok){
+        if(!ok) auMsg("人机验证加载失败，请检查网络后刷新页面", "bad");
+        else auMsg("人机验证已重新开始，完成后点按钮继续");
+      });
+    }
     function doLogin(){
       var email = ($("auEmail") && $("auEmail").value || "").trim();
       var pwd = ($("auPwd") && $("auPwd").value) || "";
       if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
-      auMsg("正在完成人机验证…");
+      auMsg("正在登录…");
       login(email, pwd).then(function(r){
         if(r.ok){ closeAuth(); return; }
         if(r.mfa){ showStep("auMfa"); auMsg(r.message || "请输入两步验证码"); return; }
-        auMsg(r.message || "登录失败", "bad");
+        showRetry(!!r.captcha);
+        auMsg(r.message || "登录失败", r.captcha ? "" : "bad");
       });
     }
     function doRegister(){
       var email = ($("auEmail2") && $("auEmail2").value || "").trim();
       var pwd = ($("auPwd2") && $("auPwd2").value) || "";
+      var pwd2 = ($("auPwd3") && $("auPwd3").value) || "";
       if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
-      auMsg("正在完成人机验证…");
+      if(pwd.length < 10){ auMsg("密码至少 10 位（服务端要求）"); return; }
+      if(pwd !== pwd2){ auMsg("两次输入的密码不一致"); return; }
+      auMsg("正在注册…");
       register(email, pwd).then(function(r){
         if(r.ok){
           var m = $("auCodeMail"); if(m) m.textContent = email;
           showStep("auCode"); countdown(r.resendAfter || 60);
           auMsg("验证码已发送，请查收邮箱");
-        }else auMsg(r.message || "注册失败", "bad");
+        }else{
+          showRetry(!!r.captcha);
+          auMsg(r.message || "注册失败", r.captcha ? "" : "bad");
+        }
       });
     }
     function doVerify(){
@@ -5509,10 +5567,10 @@
       });
     }
     function doResend(){
-      auMsg("正在完成人机验证…");
+      auMsg("正在重新发送…");
       resendCode().then(function(r){
         if(r.ok){ countdown(r.resendAfter || 60); auMsg("已重新发送"); }
-        else auMsg(r.message || "发送失败", "bad");
+        else { showRetry(!!r.captcha); auMsg(r.message || "发送失败", r.captcha ? "" : "bad"); }
       });
     }
     function doMfaVerify(){
@@ -5622,7 +5680,7 @@
           (function poll(){
             var tok = turnToken(key);
             if(tok) return resolve(tok);
-            if(Date.now() - t0 > 12000){
+            if(Date.now() - t0 > st.turnWait){
               return resolve("");     /* 静默降级：让服务端回 400，再给出可操作提示 */
             }
             window.setTimeout(poll, 200);
@@ -5659,7 +5717,8 @@
         setTimers: function(t){ st.timerApi = t; },
         setFetch: function(f){ st.fetchImpl = f; },
         csrf: csrf, readVal: readVal, writeVal: writeVal, showConflict: showConflict, installHook: installHook,
-        turnToken: turnToken, resetTurn: resetTurn, requireTurn: requireTurn
+        turnToken: turnToken, resetTurn: resetTurn, requireTurn: requireTurn,
+        setTurnWait: function(ms){ st.turnWait = ms || 8000; }
       }
     };
   })();

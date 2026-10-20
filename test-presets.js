@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.0',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.1',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.1/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.0/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.1/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.0');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.1');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.0', d8.getElementById('footVer').textContent === '1.10.0',
+    ok('v1.8：版本号已升到 1.10.1', d8.getElementById('footVer').textContent === '1.10.1',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2150,6 +2150,7 @@ setTimeout(function () {
         url: 'https://3d.20050905.xyz/',
         pretendToBeVisual: true,
         beforeParse: function (win) {
+          var noToken = !!opts.noToken;
           win.fetch = function (url, init) {
             calls.push({ url: String(url), init: init || {} });
             var r;
@@ -2167,10 +2168,13 @@ setTimeout(function () {
           win.turnstile = {
             render: function (el, o) {
               var id = 'w' + (++widSeq); widOpts[id] = o;
-              if (o && o.callback) o.callback('TEST-TKN');
+              if (o && o.callback && !noToken) o.callback('TEST-TKN');
               return id;
             },
-            reset: function (id) { var o = widOpts[id]; if (o && o.callback) o.callback('TEST-TKN'); },
+            reset: function (id) {
+              var o = widOpts[id];
+              if (o && o.callback && !noToken) o.callback('TEST-TKN');
+            },
             remove: function (id) { delete widOpts[id]; }
           };
         }
@@ -2470,6 +2474,77 @@ setTimeout(function () {
       var capRes = await capc.login('a@b.com', 'password12345');
       ok('v1.10 云同步：captcha_failed 给出「重新验证」提示',
         capRes.ok === false && /人机验证/.test(capRes.message || ''), capRes.message);
+
+      /* ---- 登录/注册交互：密码可见、确认密码、前端校验、人机验证重试 ---- */
+      var U = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+          if (/\/v1\/auth\/register$/.test(url)) return { status: 202, body: { verify_id: 'vid-x', resend_after: 60 } };
+          if (/\/v1\/auth\/login$/.test(url)) return { status: 401, body: { error: { code: 'invalid_credentials', message: '邮箱或密码错误' } } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          return { status: 404, body: {} };
+        }
+      });
+      var uc = U.cloud;
+      await U.tick(25);
+      U.d.getElementById('acctBtn').click();
+      await U.tick(20);
+      ok('v1.10 登录 UI：点账号按钮打开弹窗',
+        U.d.getElementById('authModal').classList.contains('open'));
+
+      var pwd = U.d.getElementById('auPwd');
+      ok('v1.10 登录 UI：密码默认隐藏', pwd && pwd.type === 'password');
+      U.d.querySelector('[data-eye="auPwd"]').click();
+      ok('v1.10 登录 UI：点眼睛显示明文', pwd.type === 'text' &&
+        U.d.querySelector('[data-eye="auPwd"]').getAttribute('aria-pressed') === 'true');
+      U.d.querySelector('[data-eye="auPwd"]').click();
+      ok('v1.10 登录 UI：再点眼睛恢复隐藏', pwd.type === 'password');
+
+      U.d.querySelector('[data-au="toReg"]').click();
+      await U.tick(10);
+      ok('v1.10 注册 UI：有「确认密码」输入框',
+        !!U.d.getElementById('auPwd2') && !!U.d.getElementById('auPwd3'));
+      ok('v1.10 注册 UI：确认密码也带眼睛切换',
+        !!U.d.querySelector('[data-eye="auPwd3"]'));
+
+      U.d.getElementById('auEmail2').value = 'new@example.com';
+      var p2 = U.d.getElementById('auPwd2'), p3 = U.d.getElementById('auPwd3');
+      p2.value = 'password12345'; p3.value = 'password99999';
+      U.d.querySelector('[data-au="register"]').click();
+      await U.tick(40);
+      ok('v1.10 注册 UI：两次密码不一致 → 不发请求且提示',
+        !callsTo(U, /\/auth\/register$/).length &&
+        /不一致/.test(U.d.getElementById('auMsg').textContent),
+        U.d.getElementById('auMsg').textContent);
+
+      p2.value = 'short'; p3.value = 'short';
+      U.d.querySelector('[data-au="register"]').click();
+      await U.tick(40);
+      ok('v1.10 注册 UI：密码不足 10 位 → 不发请求且提示',
+        !callsTo(U, /\/auth\/register$/).length &&
+        /10/.test(U.d.getElementById('auMsg').textContent),
+        U.d.getElementById('auMsg').textContent);
+
+      var NT = mk({ noToken: true, handler: function (url) {
+        if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+        if (/\/v1\/auth\/login$/.test(url)) return { status: 401, body: { error: { code: 'invalid_credentials' } } };
+        return { status: 404, body: {} };
+      } });
+      var nc = NT.cloud;
+      await NT.tick(25);
+      nc._test.setTurnWait(80);
+      NT.d.getElementById('acctBtn').click();
+      await NT.tick(15);
+      NT.d.getElementById('auEmail').value = 'a@b.com';
+      NT.d.getElementById('auPwd').value = 'password12345';
+      NT.d.querySelector('[data-au="login"]').click();
+      await NT.tick(400);
+      ok('v1.10 登录 UI：人机验证未完成 → 不发请求，提示并给重试入口',
+        !callsTo(NT, /\/auth\/login$/).length &&
+        /人机验证/.test(NT.d.getElementById('auMsg').textContent) &&
+        NT.d.getElementById('auRetryWrap').hidden === false,
+        NT.d.getElementById('auMsg').textContent);
 
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({
