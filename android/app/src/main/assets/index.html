@@ -2671,7 +2671,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.19.0";
+  var APP_VERSION = "1.20.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5451,19 +5451,35 @@
             '<div style="font-size:11px;color:#5c6675;margin-top:5px">' +
               new Date(it.created_at).toLocaleString() +
               (it.mode === "popup" ? ' · 弹窗提醒' : '') + '</div>' +
-            (it.url ? '<div style="margin-top:6px"><a href="' + escapeHtml(it.url) +
-              '" target="_blank" rel="noopener" style="color:#60a5fa;font-size:12.5px">查看详情 →</a></div>' : '') +
-            '</div>';
+        '<div style="margin-top:8px;display:flex;align-items:center;gap:10px">' +
+        (it.url ? '<a href="' + escapeHtml(it.url) +
+          '" target="_blank" rel="noopener" style="color:#60a5fa;font-size:12.5px">查看详情 →</a>' : '') +
+        (it.read
+          ? '<span style="font-size:11.5px;color:#5c6675">已读</span>'
+          : '<button type="button" data-ntok="' + it.id + '" style="background:#2563eb;border:0;' +
+            'color:#fff;font-size:12px;padding:4px 12px;border-radius:6px;cursor:pointer">确认</button>') +
+        '</div>' +
+        '</div>';
         });
         list.innerHTML = html;
-        var ids = NT.items.filter(function(x){ return !x.read; }).map(function(x){ return x.id; });
-        if(ids.length){
-          api("/notifications/read", { method:"POST", body:{ ids: ids } }).then(function(){
-            NT.items.forEach(function(x){ x.read = true; });
-            NT.unread = 0;
-            ntBadge();
-          }).catch(function(){});
-        }
+        // 不再「打开即全部已读」：每条自己点「确认」才算读过
+        list.querySelectorAll("button[data-ntok]").forEach(function(btn){
+          btn.addEventListener("click", function(){
+            var id = Number(btn.getAttribute("data-ntok"));
+            if(!id) return;
+            btn.disabled = true;
+            btn.textContent = "…";
+            api("/notifications/read", { method:"POST", body:{ ids: [id] } }).then(function(){
+              NT.items.forEach(function(x){ if(x.id === id) x.read = true; });
+              NT.unread = Math.max(0, (NT.unread || 1) - 1);
+              ntBadge();
+              btn.outerHTML = '<span style="font-size:11.5px;color:#5c6675">已读</span>';
+            }).catch(function(){
+              btn.disabled = false;
+              btn.textContent = "确认";
+            });
+          });
+        });
       });
     }
 
