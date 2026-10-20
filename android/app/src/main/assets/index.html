@@ -865,6 +865,7 @@
     .brand{padding-right:46px}
     .acct-menu{top:calc(100% + 6px)}
   }
+.au-sep{color:var(--text4)}
 .au-hint{margin:-2px 0 12px; font-size:11.5px; color:var(--text3); line-height:1.5}
 .au-err{margin:-4px 0 9px; font-size:11.5px; line-height:1.45; color:#e5484d; font-weight:550}
 .au-err[hidden]{display:none}
@@ -925,7 +926,7 @@
         <p class="au-err" id="auErrPwd" hidden></p>
         <div class="cf-turnstile" id="auTurn" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="login">登录</button>
-        <p class="au-alt">还没有账号？<button type="button" class="lnk" data-au="toReg">注册</button></p>
+        <p class="au-alt">还没有账号？<button type="button" class="lnk" data-au="toReg">注册</button> <span class="au-sep">·</span> <button type="button" class="lnk" data-au="toForgot">忘记密码？</button></p>
       </section>
 
       <section id="auReg" hidden>
@@ -947,6 +948,26 @@
         <button type="button" class="btn primary au-go" data-au="verify">验证并登录</button>
         <div class="cf-turnstile" id="auTurn3" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <p class="au-alt"><button type="button" class="lnk" id="auResend" data-au="resend">重新发送</button> <span id="auCount"></span></p>
+      </section>
+
+      <section id="auForgot" hidden>
+        <p class="au-note">输入注册邮箱，我们会发送 6 位重置码（10 分钟内有效）。为防探测，未注册的邮箱也会提示已发送。</p>
+        <label class="au-lb">邮箱<input id="auForgotMail" type="email" autocomplete="username" placeholder="you@example.com"></label>
+        <p class="au-err" id="auErrForgotMail" hidden></p>
+        <div class="cf-turnstile" id="auTurn4" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
+        <button type="button" class="btn primary au-go" data-au="forgot">发送重置码</button>
+        <p class="au-alt"><button type="button" class="lnk" data-au="toLogin">返回登录</button></p>
+      </section>
+
+      <section id="auReset" hidden>
+        <p class="au-note">邮件里的 6 位重置码（10 分钟有效，最多试 5 次）。重置成功后所有设备都需重新登录。</p>
+        <label class="au-lb">6 位重置码<input id="auResetCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+        <label class="au-lb">新密码<span class="pw"><input id="auNewPwd" type="password" autocomplete="new-password" placeholder="至少 8 位"><button type="button" class="eye" data-eye="auNewPwd" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <p class="au-err" id="auErrNewPwd" hidden></p>
+        <label class="au-lb">确认新密码<span class="pw"><input id="auNewPwd2" type="password" autocomplete="new-password" placeholder="至少 8 位"><button type="button" class="eye" data-eye="auNewPwd2" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <p class="au-err" id="auErrNewPwd2" hidden></p>
+        <button type="button" class="btn primary au-go" data-au="reset">重置密码</button>
+        <p class="au-alt"><button type="button" class="lnk" data-au="toForgot">重新发送</button> <span class="au-sep">·</span> <button type="button" class="lnk" data-au="toLogin">返回登录</button></p>
       </section>
 
       <section id="auMfa" hidden>
@@ -2542,7 +2563,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.8";
+  var APP_VERSION = "1.10.9";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5025,7 +5046,7 @@
     var MIN_PWD = 8;   /* 与服务端 security.password_problem 对齐 */
     var st = { user:null, status:"out", tries:0, timer:null, timerApi:null, fetchImpl:null,
                turnstile:"", verifyId:"", mfaToken:"", mfaSecret:"", busy:false, lastSyncAt:0,
-               turnWait:8000, pendingEmail:"", stepKey:"" };
+               turnWait:8000, pendingEmail:"", resetId:"", stepKey:"" };
     var realTimers = {
       set: function(fn, ms){ return window.setTimeout(fn, ms); },
       clear: function(id){ window.clearTimeout(id); }
@@ -5399,6 +5420,30 @@
           return { ok: false, message: errMsg(r) };
         }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
     }
+    function forgotPassword(email){
+      return requireTurn("forgot").then(function(tk){
+        if(!tk) return { ok: false, captcha: true, message: "人机验证还没完成，请稍等一下再试" };
+        return api("/auth/password/forgot", { method: "POST", body: {
+          email: email, product: PRODUCT, turnstile_token: tk } });
+      }).then(function(r){
+        if(r && r.captcha) return r;
+        resetTurn("forgot");
+        if(r.ok && r.body && r.body.reset_id){
+          st.resetId = r.body.reset_id;
+          return { ok: true, resetId: r.body.reset_id };
+        }
+        return { ok: false, message: errMsg(r), code: codeOf(r), rateLimited: r.status === 429 };
+      });
+    }
+    function resetPassword(code, pwd){
+      /* 成功是 204 + 空响应体：只看 status */
+      return api("/auth/password/reset", { method: "POST", body: {
+        reset_id: st.resetId, code: code, new_password: pwd } })
+        .then(function(r){
+          if(r.status === 204) return { ok: true };
+          return { ok: false, message: errMsg(r), code: codeOf(r), rateLimited: r.status === 429 };
+        });
+    }
     function resendCode(){
       return requireTurn("resend").then(function(tk){
         if(!tk) return { ok: false, captcha: true, message: "人机验证还没完成，请稍等一下再试" };
@@ -5480,17 +5525,21 @@
       });
     }
     function showStep(step){
-      ["auLogin", "auReg", "auCode", "auMfa", "auTwo"].forEach(function(id){
+      ["auLogin", "auReg", "auCode", "auMfa", "auTwo", "auForgot", "auReset"].forEach(function(id){
         var el = $(id); if(el) el.hidden = (id !== step);
       });
+      if(step === "auForgot"){
+        var fm = $("auForgotMail");
+        if(fm && !fm.value){ fm.value = (($("auEmail") && $("auEmail").value) || st.pendingEmail || ""); }
+      }
       if(step === "auLogin" && st.pendingEmail){
         var pe = $("auEmail");
         if(pe && !pe.value){ pe.value = st.pendingEmail; }
       }
-      var titles = { auLogin:"登录", auReg:"注册", auCode:"验证邮箱", auMfa:"两步验证", auTwo:"两步验证设置" };
+      var titles = { auLogin:"登录", auReg:"注册", auCode:"验证邮箱", auForgot:"找回密码", auReset:"设置新密码", auMfa:"两步验证", auTwo:"两步验证设置" };
       var t = $("auTitle"); if(t) t.textContent = titles[step] || "账号";
       auMsg("");
-      var tk = { auLogin:"login", auReg:"reg", auCode:"resend" }[step];
+      var tk = { auLogin:"login", auReg:"reg", auCode:"resend", auForgot:"forgot" }[step];
       st.stepKey = tk || "";
       showRetry(false);
       clearAuthErrs();
@@ -5554,6 +5603,9 @@
         else if(a === "verify"){ doVerify(); }
         else if(a === "resend"){ doResend(); }
         else if(a === "retry"){ doCaptchaRetry(); }
+          else if(a === "toForgot"){ st.pendingEmail = ($("auEmail") && $("auEmail").value) || st.pendingEmail; showStep("auForgot"); }
+          else if(a === "forgot"){ doForgot(); }
+          else if(a === "reset"){ doReset(); }
         else if(a === "mfa"){ doMfaVerify(); }
         else if(a === "twoEnable"){ doMfaEnable(); }
         return;
@@ -5612,6 +5664,14 @@
       });
       var c = $("auPwd3");
       if(c) c.addEventListener("input", checkConfirm);
+      var np = $("auNewPwd");
+      if(np) np.addEventListener("input", function(){ checkPwd("auNewPwd", "auErrNewPwd"); });
+      var np2 = $("auNewPwd2");
+      if(np2) np2.addEventListener("input", function(){
+        var a = $("auNewPwd");
+        if(np2.value && a && np2.value !== a.value) setErr("auNewPwd2", "auErrNewPwd2", "两次输入的密码不一致");
+        else setErr("auNewPwd2", "auErrNewPwd2", "");
+      });
       ["auEmail", "auEmail2"].forEach(function(id){
         var i = $(id); if(!i) return;
         i.addEventListener("input", function(){
@@ -5715,6 +5775,53 @@
           }
       });
     }
+    function doForgot(){
+      bindPwValidation();
+      var email = ($("auForgotMail") && $("auForgotMail").value || "").trim();
+      setErr("auForgotMail", "auErrForgotMail", emailProblem(email) ? emailProblem(email) : "");
+      if(emailProblem(email)){ auMsg(emailProblem(email), "bad"); return; }
+      auMsg("正在发送重置码…");
+      forgotPassword(email).then(function(r){
+        if(r.ok){
+          st.pendingEmail = email;
+          showStep("auReset");
+          auMsg("重置码已发送，请查收邮箱（10 分钟内有效）");
+          return;
+        }
+        showRetry(!!r.captcha);
+        auMsg(r.captcha ? r.message : (r.rateLimited ? "操作太频繁，请稍后再试" : (r.message || "发送失败")),
+              r.captcha ? "" : "bad");
+      });
+    }
+    function doReset(){
+      bindPwValidation();
+      var code = ($("auResetCode") && $("auResetCode").value || "").trim();
+      var pwd = ($("auNewPwd") && $("auNewPwd").value) || "";
+      var pwd2 = ($("auNewPwd2") && $("auNewPwd2").value) || "";
+      if(!/^\d{6}$/.test(code)){ auMsg("请输入 6 位数字重置码", "bad"); return; }
+      if(pwd.length < MIN_PWD){
+        setErr("auNewPwd", "auErrNewPwd", "密码至少 " + MIN_PWD + " 位，当前 " + pwd.length + " 位");
+        auMsg("密码至少 " + MIN_PWD + " 位", "bad"); $("auNewPwd").focus(); return;
+      }
+      if(pwd !== pwd2){
+        setErr("auNewPwd2", "auErrNewPwd2", "两次输入的密码不一致");
+        auMsg("两次输入的密码不一致", "bad"); $("auNewPwd2").focus(); return;
+      }
+      auMsg("正在重置…");
+      resetPassword(code, pwd).then(function(r){
+        if(r.ok){
+          if($("auResetCode")) $("auResetCode").value = "";
+          if($("auNewPwd")) $("auNewPwd").value = "";
+          if($("auNewPwd2")) $("auNewPwd2").value = "";
+          st.resetId = "";
+          showStep("auLogin");
+          auMsg("密码已重置，请用新密码登录");
+          var pe = $("auEmail"); if(pe && !pe.value && st.pendingEmail) pe.value = st.pendingEmail;
+          return;
+        }
+        auMsg(r.rateLimited ? "重置码错误次数过多，请重新获取" : (r.message || "重置失败"), "bad");
+      });
+    }
     function doResend(){
       auMsg("正在重新发送…");
       resendCode().then(function(r){
@@ -5769,7 +5876,7 @@
 
     /* ---------- Turnstile（服务端已开启；注册/登录/重发各自一个 token） ----------
        令牌一次性、5 分钟过期：每次请求前取当前 token，请求返回后 reset 重新挑战。 */
-    var TURN = { el: { login:"auTurn", reg:"auTurn2", resend:"auTurn3" }, wid: {}, tok: {}, loading: null };
+    var TURN = { el: { login:"auTurn", reg:"auTurn2", resend:"auTurn3", forgot:"auTurn4" }, wid: {}, tok: {}, loading: null };
     function turnstileReady(){
       return new Promise(function(resolve){
         if(window.turnstile) return resolve(true);

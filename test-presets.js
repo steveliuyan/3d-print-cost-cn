@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.8',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.9',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.8/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.9/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.8/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.9/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.8');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.9');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.8', d8.getElementById('footVer').textContent === '1.10.8',
+    ok('v1.8：版本号已升到 1.10.9', d8.getElementById('footVer').textContent === '1.10.9',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2447,10 +2447,11 @@ setTimeout(function () {
       var resBody = bodyOf(callsTo(R, /\/auth\/resend-code$/)[0] || {});
       ok('v1.10 云同步：重发验证码也带 turnstile_token',
         resBody.turnstile_token === 'TEST-TKN' && resBody.verify_id === 'vid-1', resBody.turnstile_token);
-      ok('v1.10 云同步：注册/登录/重发三个容器各带同一 sitekey',
+      ok('v1.10 云同步：注册/登录/重发/找回四个容器各带同一 sitekey',
         (function () {
           var els = R.d.querySelectorAll('.cf-turnstile[data-sitekey]');
-          if (els.length !== 3) return false;
+          if (els.length !== 4) return false;
+          if (!R.d.getElementById('auTurn4')) return false;
           for (var i = 0; i < els.length; i++) {
             if (els[i].getAttribute('data-sitekey') !== '0x4AAAAAAFcfg4zaO7N3n25b') return false;
           }
@@ -2693,6 +2694,69 @@ setTimeout(function () {
         !TK.d.getElementById('auLogin').hidden &&
         TK.d.getElementById('auEmail').value === 'taken@example.com',
         TK.d.getElementById('auEmail').value);
+
+      /* ---- 找回密码：forgot → reset（204 空响应） ---- */
+      var FP = mk({ handler: function (url, init) {
+        if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+        if (/\/v1\/auth\/password\/forgot$/.test(url)) return { status: 202, body: { reset_id: 'rid-1', resend_after: 60 } };
+        if (/\/v1\/auth\/password\/reset$/.test(url)) return { status: 204, body: null };
+        return { status: 404, body: {} };
+      } });
+      await FP.tick(25);
+      FP.d.getElementById('acctBtn').click();
+      await FP.tick(15);
+      FP.d.querySelector('[data-au="toForgot"]').click();
+      await FP.tick(10);
+      ok('v1.10.9 找回密码：登录页有入口且能切到找回步骤',
+        !FP.d.getElementById('auForgot').hidden && !!FP.d.querySelector('[data-au="toForgot"]'));
+
+      FP.d.getElementById('auForgotMail').value = 'me@qq.com';
+      FP.d.querySelector('[data-au="forgot"]').click();
+      await FP.tick(60);
+      var fc = callsTo(FP, /\/auth\/password\/forgot$/)[0];
+      var fb = bodyOf(fc);
+      ok('v1.10.9 找回密码：请求带 email + product + turnstile_token',
+        !!fc && fb.email === 'me@qq.com' && fb.product === 'dpc' && !!fb.turnstile_token,
+        JSON.stringify(fb));
+      ok('v1.10.9 找回密码：202 后切到设置新密码步骤',
+        !FP.d.getElementById('auReset').hidden);
+
+      FP.d.getElementById('auResetCode').value = '123456';
+      FP.d.getElementById('auNewPwd').value = 'newpassword1';
+      FP.d.getElementById('auNewPwd2').value = 'newpassword1';
+      FP.d.querySelector('[data-au="reset"]').click();
+      await FP.tick(60);
+      var rc = callsTo(FP, /\/auth\/password\/reset$/)[0];
+      var rb = bodyOf(rc);
+      ok('v1.10.9 重置密码：请求带 reset_id + code + new_password，204 视为成功',
+        !!rc && rb.reset_id === 'rid-1' && rb.code === '123456' && rb.new_password === 'newpassword1' &&
+        !FP.d.getElementById('auLogin').hidden &&
+        /已重置/.test(FP.d.getElementById('auMsg').textContent),
+        (rc ? JSON.stringify(rb) : 'no-call') + ' / ' + FP.d.getElementById('auMsg').textContent);
+      ok('v1.10.9 重置密码：登录页带出邮箱',
+        FP.d.getElementById('auEmail').value === 'me@qq.com',
+        FP.d.getElementById('auEmail').value);
+
+      /* 429：验证码错误次数过多 */
+      var R429 = mk({ handler: function (url) {
+        if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+        if (/\/v1\/auth\/password\/forgot$/.test(url)) return { status: 202, body: { reset_id: 'rid-2', resend_after: 60 } };
+        if (/\/v1\/auth\/password\/reset$/.test(url)) return { status: 429, body: { error: { code: 'rate_limited', message: '太频繁' }, retry_after: 300 } };
+        return { status: 404, body: {} };
+      } });
+      await R429.tick(25);
+      R429.d.getElementById('acctBtn').click(); await R429.tick(15);
+      R429.d.querySelector('[data-au="toForgot"]').click(); await R429.tick(10);
+      R429.d.getElementById('auForgotMail').value = 'me2@qq.com';
+      R429.d.querySelector('[data-au="forgot"]').click(); await R429.tick(50);
+      R429.d.getElementById('auResetCode').value = '000000';
+      R429.d.getElementById('auNewPwd').value = 'newpassword1';
+      R429.d.getElementById('auNewPwd2').value = 'newpassword1';
+      R429.d.querySelector('[data-au="reset"]').click();
+      await R429.tick(60);
+      ok('v1.10.9 重置密码：429 给「次数过多，请重新获取」',
+        /次数过多/.test(R429.d.getElementById('auMsg').textContent),
+        R429.d.getElementById('auMsg').textContent);
 
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({
