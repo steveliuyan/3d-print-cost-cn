@@ -16,8 +16,8 @@
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
 | 当前版本 | **v1.10.0**（`APP_VERSION`，versionCode **18**；已本地提交，**未推送 / 未发版**） |
 | 本地 = 远端 HEAD | `173f1bbd91984ffbcb71cb96a29d6c446877bac4`（已推送，工作区干净） |
-| 回归测试 | **487/487 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `b3c5baabe9c0ec98cd8b244a85d3af57`（**294,888 B**，逐字节一致） |
+| 回归测试 | **492/492 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `93cef3b2c588c2ef2aaf315b4737d8e8`（**298,017 B**，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag **15** 个 / Release **15** 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz** |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开，MIT） |
@@ -44,7 +44,7 @@ export NODE_PATH=C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_mo
 
 # 1) 改代码：只改根目录 index.html（唯一来源）
 
-# 2) 跑回归（基线 487/487）
+# 2) 跑回归（基线 492/492）
 "$NODE" test-presets.js
 
 # 3) 同步三副本 + 剥离调试属性（务必，否则 pre-commit 拦截）
@@ -80,7 +80,7 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
 | **v1.8.3** | **经营看板 + 全屏动效 + 横屏/平板适配 + 弹窗滚动锁**：顶栏第三视图「经营看板」——纯函数 `dashStats(orders, range, now)`（订单数 / 收入 / 成本 / 利润 / 毛利率 / 客单价 + 月度趋势 + 材料·客户 TOP5，草稿不计入，区间存 `dpc_dash_v1`）+ 6 张 KPI 滚动卡 + 柱状趋势 + 排行条 + **经营月报打印**；顺带修 `orderCustomerName()`（`customer` 是对象，旧代码当字符串会渲染 `[object Object]`）。全套界面动效（Hero 流光 8s / 环图与图例交错画入 / 数字滚动）+ `reduced-motion` 兜底。横屏手机左右分栏、平板竖屏两栏、`≥1200px` 居中放大；`shortEdges` 打孔屏铺满 + 安全区内边距。弹窗滚动穿透修复（`body.modal-open` + `overscroll-behavior` + `MutationObserver`）。回归 366 → **408** → **421**。 |
 | **v1.9.0** | **平台活动报名 + 建议零售价主视觉**：订单级 `activity={on,name,disc}`（`.actbox`：开关 / 活动名 / 活动折扣）；**`effDisc = max(阶梯, 整单, 活动)` 取大不叠加**，上限 90%，未报名恒 0；`computeOrder` 增 `discTotal` / `activity` / 每行 `actApplied`，透出到汇总活动条、报价单抬头与「活动优惠」行、长图 info 行、CSV 三字段、行项折扣列「活动」。`#sellPrice` 移入独立 `.retail` 主视觉（36px 靛蓝 + 毛利率/单件利润副指标），文案统一「建议零售价」。回归 421 → **444**。 |
 
-| **v1.10.0** | **可选账号 + 云同步**：顶栏账号区（不登录照常使用，数据只存本机）。注册/验证码/登录/2FA/退出；认证仅靠 HttpOnly cookie，**前端不存任何 token**。同步 10 个既有键（原样 JSON，裸字符串键按字符串），`dpc_meta` 记版本（不参与同步）；`Storage.prototype.setItem` 钩子打 dirty → 3s 防抖 → `POST /sync/batch`（≤20/批、逐项 `base_version`）；失败 5s/15s/60s/300s 退避 + `online` 立即补推；登录后 `GET /sync` 逐键比对，冲突弹「云端/本地/两边都留」并记 `dpc_conflicts`。仅在 3d / 裸域启用（CORS 白名单），`file://` 自动纯离线。回归 444 → **487**。 |
+| **v1.10.0** | **可选账号 + 云同步**：顶栏账号区（不登录照常使用，数据只存本机）。注册/验证码/登录/2FA/退出；认证仅靠 HttpOnly cookie，**前端不存任何 token**。同步 10 个既有键（原样 JSON，裸字符串键按字符串），`dpc_meta` 记版本（不参与同步）；`Storage.prototype.setItem` 钩子打 dirty → 3s 防抖 → `POST /sync/batch`（≤20/批、逐项 `base_version`）；失败 5s/15s/60s/300s 退避 + `online` 立即补推；登录后 `GET /sync` 逐键比对，冲突弹「云端/本地/两边都留」并记 `dpc_conflicts`。仅在 3d / 裸域启用（CORS 白名单），`file://` 自动纯离线。**Turnstile**：注册/登录/重发三处各一个控件（sitekey `0x4AAAAAAFcfg4zaO7N3n25b`），必须携带真实 token。回归 444 → **492**。 |
 
 **文件都在哪**：
 - 应用逻辑与 UI：根 `index.html`（三端唯一来源）
@@ -157,7 +157,7 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
 - 注意：个人站点是**另一个仓库** steveliuyan/myweb（= www.20050905.xyz），其 project-dpc.html 是本站项目页。
 
 【当前状态（接手时请以实际文件为准再核对一次）】
-- 版本 v1.10.0（versionCode 18）；回归测试 487/487 通过；三副本 md5 b3c5baabe9c0ec98cd8b244a85d3af57（294,888 B）。
+- 版本 v1.10.0（versionCode 18）；回归测试 492/492 通过；三副本 md5 93cef3b2c588c2ef2aaf315b4737d8e8（298,017 B）。
 - 最新 Release：v1.9.0。最近三版做了什么：v1.8.2 修复安卓图标过大；v1.8.3 经营看板（订单统计/月度趋势/
   材料·客户排行/月报打印）+ 全屏动效 + 横屏/平板适配 + 弹窗滚动锁；v1.9.0 平台活动报名（活动折扣与阶梯/整单取大不叠加）
   + 建议零售价主视觉；v1.10.0 可选账号 + 云同步（不登录完全可用，token 不进 localStorage）。

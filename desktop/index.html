@@ -836,6 +836,7 @@
 .au-secret{font-family:var(--mono); font-size:13px; letter-spacing:.06em; background:var(--card-2);
   border:1px dashed var(--line3); border-radius:9px; padding:10px; margin:0 0 8px; word-break:break-all}
 .au-url{font-size:10.5px; color:var(--text3); word-break:break-all; margin:0 0 10px}
+.cf-turnstile{margin:2px 0 10px; min-height:65px}
 .cf-key{font-family:var(--mono); font-size:12px; color:var(--text2); margin:0 0 6px}
 </style>
 <script>
@@ -873,7 +874,7 @@
       <section id="auLogin">
         <label class="au-lb">邮箱<input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
         <label class="au-lb">密码<input id="auPwd" type="password" autocomplete="current-password" placeholder="至少 10 位"></label>
-        <div class="au-turn" id="auTurn" hidden></div>
+        <div class="cf-turnstile" id="auTurn" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="login">登录</button>
         <p class="au-alt">还没有账号？<button type="button" class="lnk" data-au="toReg">注册</button></p>
       </section>
@@ -881,7 +882,7 @@
       <section id="auReg" hidden>
         <label class="au-lb">邮箱<input id="auEmail2" type="email" autocomplete="username" placeholder="you@example.com"></label>
         <label class="au-lb">密码<input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位，别用常见弱密码"></label>
-        <div class="au-turn" id="auTurn2" hidden></div>
+        <div class="cf-turnstile" id="auTurn2" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="register">注册并发送验证码</button>
         <p class="au-alt">已有账号？<button type="button" class="lnk" data-au="toLogin">去登录</button></p>
       </section>
@@ -890,6 +891,7 @@
         <p class="au-note">验证码已发到 <b id="auCodeMail"></b>，10 分钟内有效（同码最多试 5 次）。</p>
         <label class="au-lb">6 位验证码<input id="auCodeInput" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
         <button type="button" class="btn primary au-go" data-au="verify">验证并登录</button>
+        <div class="cf-turnstile" id="auTurn3" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <p class="au-alt"><button type="button" class="lnk" id="auResend" data-au="resend">重新发送</button> <span id="auCount"></span></p>
       </section>
 
@@ -4955,7 +4957,7 @@
     var BATCH_MAX = 20, DEBOUNCE_MS = 3000, BACKOFF = [5000, 15000, 60000, 300000], MAX_TRIES = 10;
     /* 人机验证：服务端 GET /v1/health 返回 turnstile 开关。当前生产为 false（跳过校验），
        故默认不加载 Cloudflare 脚本；服务端一旦开启，把 3d 站点的 widget sitekey 填进下面即可。 */
-    var TURNSTILE_SITEKEY = "";
+    var TURNSTILE_SITEKEY = "0x4AAAAAAFcfg4zaO7N3n25b";
     /* 只在契约允许的来源启用：服务端 CORS 白名单只有 3d.20050905.xyz / 20050905.xyz。
        file:// 或 localhost 打开时保持纯离线（不探测、不发请求），加 ?cloud=1 可临时调试。 */
     var ENABLED = (function(){
@@ -5039,6 +5041,9 @@
     }
     function errMsg(r){
       var b = r && r.body;
+      if(b && b.error && b.error.code === "captcha_failed"){
+        return "人机验证未通过或已过期，请重新验证后再试";
+      }
       if(b && b.error && b.error.message) return b.error.message;
       if(r && r.status === 401) return "登录已过期，请重新登录";
       if(r && r.status === 429) return "操作太频繁，请稍后再试";
@@ -5290,11 +5295,12 @@
       }).catch(function(){ setStatus("offline"); return null; });
     }
     function login(email, password){
-      return api("/auth/login", { method: "POST", body: {
-        email: email, password: password, turnstile_token: st.turnstile || "", product: PRODUCT } })
-        .then(function(r){
+      return requireTurn("login").then(function(tk){
+        return api("/auth/login", { method: "POST", body: {
+          email: email, password: password, turnstile_token: tk, product: PRODUCT } });
+      }).then(function(r){
+          resetTurn("login");
           if(r.ok && r.body && r.body.user){
-            st.turnstile = "";
             afterLogin(r.body.user);
             return { ok: true };
           }
@@ -5306,12 +5312,13 @@
         }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
     }
     function register(email, password){
-      return api("/auth/register", { method: "POST", body: {
-        email: email, password: password, turnstile_token: st.turnstile || "", product: PRODUCT } })
-        .then(function(r){
+      return requireTurn("reg").then(function(tk){
+        return api("/auth/register", { method: "POST", body: {
+          email: email, password: password, turnstile_token: tk, product: PRODUCT } });
+      }).then(function(r){
+          resetTurn("reg");
           if(r.ok && r.body && r.body.verify_id){
             st.verifyId = r.body.verify_id;
-            st.turnstile = "";
             return { ok: true, verifyId: r.body.verify_id, resendAfter: r.body.resend_after || 60 };
           }
           return { ok: false, message: errMsg(r) };
@@ -5328,9 +5335,11 @@
         }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
     }
     function resendCode(){
-      return api("/auth/resend-code", { method: "POST", body: {
-        verify_id: st.verifyId, turnstile_token: st.turnstile || "" } })
-        .then(function(r){
+      return requireTurn("resend").then(function(tk){
+        return api("/auth/resend-code", { method: "POST", body: {
+          verify_id: st.verifyId, turnstile_token: tk } });
+      }).then(function(r){
+          resetTurn("resend");
           if(r.ok){ return { ok: true, resendAfter: (r.body && r.body.resend_after) || 60 }; }
           return { ok: false, message: errMsg(r) };
         }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
@@ -5402,12 +5411,14 @@
       var titles = { auLogin:"登录", auReg:"注册", auCode:"验证邮箱", auMfa:"两步验证", auTwo:"两步验证设置" };
       var t = $("auTitle"); if(t) t.textContent = titles[step] || "账号";
       auMsg("");
+      var tk = { auLogin:"login", auReg:"reg", auCode:"resend" }[step];
+      if(tk) ensureTurn(tk);
     }
     function openAuth(step){
       var box = $("authModal");
       if(!box) return;
-      showStep(step || (st.user ? "auTwo" : "auLogin"));
       box.classList.add("open");
+      showStep(step || (st.user ? "auTwo" : "auLogin"));
       if(st.mfaToken) showStep("auMfa");
     }
     function closeAuth(){ var b = $("authModal"); if(b) b.classList.remove("open"); }
@@ -5467,7 +5478,7 @@
       var email = ($("auEmail") && $("auEmail").value || "").trim();
       var pwd = ($("auPwd") && $("auPwd").value) || "";
       if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
-      auMsg("正在登录…");
+      auMsg("正在完成人机验证…");
       login(email, pwd).then(function(r){
         if(r.ok){ closeAuth(); return; }
         if(r.mfa){ showStep("auMfa"); auMsg(r.message || "请输入两步验证码"); return; }
@@ -5478,7 +5489,7 @@
       var email = ($("auEmail2") && $("auEmail2").value || "").trim();
       var pwd = ($("auPwd2") && $("auPwd2").value) || "";
       if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
-      auMsg("正在注册…");
+      auMsg("正在完成人机验证…");
       register(email, pwd).then(function(r){
         if(r.ok){
           var m = $("auCodeMail"); if(m) m.textContent = email;
@@ -5498,6 +5509,7 @@
       });
     }
     function doResend(){
+      auMsg("正在完成人机验证…");
       resendCode().then(function(r){
         if(r.ok){ countdown(r.resendAfter || 60); auMsg("已重新发送"); }
         else auMsg(r.message || "发送失败", "bad");
@@ -5548,20 +5560,75 @@
       cdTimer = window.setInterval(tick, 1000);
     }
 
-    /* ---------- Turnstile（可选，仅在服务端开启时加载） ---------- */
-    function loadTurnstile(){
-      if(!TURNSTILE_SITEKEY) return;
-      window.onTurnstile = function(token){ st.turnstile = token || ""; };
+    /* ---------- Turnstile（服务端已开启；注册/登录/重发各自一个 token） ----------
+       令牌一次性、5 分钟过期：每次请求前取当前 token，请求返回后 reset 重新挑战。 */
+    var TURN = { el: { login:"auTurn", reg:"auTurn2", resend:"auTurn3" }, wid: {}, tok: {}, loading: null };
+    function turnstileReady(){
+      return new Promise(function(resolve){
+        if(window.turnstile) return resolve(true);
+        if(!TURNSTILE_SITEKEY) return resolve(false);
+        if(TURN.loading) return TURN.loading.then(resolve);
+        TURN.loading = new Promise(function(res){
+          var done = false;
+          function fin(ok){ if(done) return; done = true; res(!!ok); }
+          try{
+            var sc = document.createElement("script");
+            sc.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+            sc.async = true; sc.defer = true;
+            sc.onload = function(){ fin(!!window.turnstile); };
+            sc.onerror = function(){ fin(false); };
+            document.head.appendChild(sc);
+          }catch(e){ fin(false); }
+          window.setTimeout(function(){ fin(!!window.turnstile); }, 8000);
+        });
+        TURN.loading.then(resolve);
+      });
+    }
+    function renderTurn(key){
+      if(!TURNSTILE_SITEKEY || !window.turnstile || TURN.wid[key]) return;
+      var el = document.getElementById(TURN.el[key]);
+      if(!el) return;
       try{
-        var s = document.createElement("script");
-        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
-        s.async = true; s.defer = true; document.head.appendChild(s);
-        var c = $("auTurn");
-        if(c){
-          c.hidden = false;
-          c.innerHTML = '<div class="cf-turnstile" data-sitekey="' + TURNSTILE_SITEKEY + '" data-callback="onTurnstile"></div>';
+        TURN.wid[key] = window.turnstile.render(el, {
+          sitekey: TURNSTILE_SITEKEY,
+          theme: "auto",
+          callback: function(tok){ TURN.tok[key] = tok || ""; },
+          "expired-callback": function(){ TURN.tok[key] = ""; },
+          "timeout-callback": function(){ TURN.tok[key] = ""; },
+          "error-callback": function(){ TURN.tok[key] = ""; }
+        });
+      }catch(e){}
+    }
+    function resetTurn(key){
+      TURN.tok[key] = "";
+      try{
+        if(window.turnstile && TURN.wid[key] !== undefined && TURN.wid[key] !== null){
+          window.turnstile.reset(TURN.wid[key]);
         }
       }catch(e){}
+    }
+    function ensureTurn(key){
+      if(!TURNSTILE_SITEKEY) return Promise.resolve(false);
+      return turnstileReady().then(function(ok){ if(ok) renderTurn(key); return !!ok; });
+    }
+    function turnToken(key){ return TURN.tok[key] || ""; }
+    function requireTurn(key){
+      if(!TURNSTILE_SITEKEY) return Promise.resolve("");
+      if(turnToken(key)) return Promise.resolve(turnToken(key));
+      return ensureTurn(key).then(function(ok){
+        if(!ok) return "";
+        return new Promise(function(resolve){
+          var t0 = Date.now();
+          (function poll(){
+            var tok = turnToken(key);
+            if(tok) return resolve(tok);
+            if(Date.now() - t0 > 12000){
+              return resolve("");     /* 静默降级：让服务端回 400，再给出可操作提示 */
+            }
+            window.setTimeout(poll, 200);
+          })();
+        });
+      });
     }
 
     /* ---------- 启动 ---------- */
@@ -5570,7 +5637,6 @@
         installHook();
         renderAcct();
         if(!ENABLED) return;
-        loadTurnstile();
         me();
       }catch(e){}
       try{
@@ -5582,6 +5648,7 @@
 
     return {
       API_BASE: API_BASE, PRODUCT: PRODUCT, KEYS: KEYS, META_KEY: META_KEY, CONFLICTS_KEY: CONFLICT_KEY,
+      TURNSTILE_SITEKEY: TURNSTILE_SITEKEY,
       boot: boot, meta: metaAll, conflicts: conflictsAll, dirtyKeys: dirtyKeys,
       state: function(){ return { user: st.user, status: st.status, tries: st.tries, lastSyncAt: st.lastSyncAt }; },
       markDirty: markDirty, pushNow: pushNow, pull: pull, resolve: resolve, hydrate: hydrate,
@@ -5591,7 +5658,8 @@
       _test: {
         setTimers: function(t){ st.timerApi = t; },
         setFetch: function(f){ st.fetchImpl = f; },
-        csrf: csrf, readVal: readVal, writeVal: writeVal, showConflict: showConflict, installHook: installHook
+        csrf: csrf, readVal: readVal, writeVal: writeVal, showConflict: showConflict, installHook: installHook,
+        turnToken: turnToken, resetTurn: resetTurn, requireTurn: requireTurn
       }
     };
   })();

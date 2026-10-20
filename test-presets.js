@@ -2163,6 +2163,16 @@ setTimeout(function () {
           };
           win.confirm = function () { return true; };
           win.print = function () {};
+          var widSeq = 0, widOpts = {};
+          win.turnstile = {
+            render: function (el, o) {
+              var id = 'w' + (++widSeq); widOpts[id] = o;
+              if (o && o.callback) o.callback('TEST-TKN');
+              return id;
+            },
+            reset: function (id) { var o = widOpts[id]; if (o && o.callback) o.callback('TEST-TKN'); },
+            remove: function (id) { delete widOpts[id]; }
+          };
         }
       });
       var w = dom.window, d = w.document;
@@ -2234,6 +2244,10 @@ setTimeout(function () {
         if (lv.indexOf('SECRET_TOKEN_XYZ') >= 0 || lk.indexOf('SECRET_TOKEN_XYZ') >= 0) leak = true;
       }
       ok('v1.10 云同步：服务端 token 不写入任何 localStorage 键', !leak);
+      ok('v1.10 云同步：Turnstile 站点密钥为生产值',
+        bc.TURNSTILE_SITEKEY === '0x4AAAAAAFcfg4zaO7N3n25b', bc.TURNSTILE_SITEKEY);
+      ok('v1.10 云同步：登录请求带真实 turnstile_token',
+        lbody.turnstile_token === 'TEST-TKN', lbody.turnstile_token);
 
       /* ---- 防抖 3 秒 + CSRF + 批量 + 版本回写 ---- */
       B.w.localStorage.setItem('dpc_v1', JSON.stringify({ f: { qty: '2' }, p: {} }));
@@ -2407,6 +2421,7 @@ setTimeout(function () {
         handler: function (url) {
           if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
           if (/\/v1\/auth\/register$/.test(url)) return { status: 202, body: { verify_id: 'vid-1', resend_after: 60 } };
+          if (/\/v1\/auth\/resend-code$/.test(url)) return { status: 202, body: { resend_after: 60 } };
           if (/\/v1\/auth\/verify-email$/.test(url)) return { status: 200, body: {
             user: { id: 'u2', email: 'new@example.com', mfa_enabled: false } } };
           if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
@@ -2418,14 +2433,43 @@ setTimeout(function () {
       await R.tick(25);
       var reg = await rc.register('new@example.com', 'password12345');
       var regBody = bodyOf(callsTo(R, /\/auth\/register$/)[0] || {});
-      ok('v1.10 云同步：注册带 product=dpc 且含 turnstile_token 字段',
-        reg.ok === true && regBody.product === 'dpc' && ('turnstile_token' in regBody));
+      ok('v1.10 云同步：注册带 product=dpc 且 turnstile_token 为真实 token',
+        reg.ok === true && regBody.product === 'dpc' && regBody.turnstile_token === 'TEST-TKN',
+        regBody.turnstile_token);
       var ver = await rc.verifyEmail('123456');
       var verBody = bodyOf(callsTo(R, /\/auth\/verify-email$/)[0] || {});
+      await rc.resendCode();
+      var resBody = bodyOf(callsTo(R, /\/auth\/resend-code$/)[0] || {});
+      ok('v1.10 云同步：重发验证码也带 turnstile_token',
+        resBody.turnstile_token === 'TEST-TKN' && resBody.verify_id === 'vid-1', resBody.turnstile_token);
+      ok('v1.10 云同步：注册/登录/重发三个容器各带同一 sitekey',
+        (function () {
+          var els = R.d.querySelectorAll('.cf-turnstile[data-sitekey]');
+          if (els.length !== 3) return false;
+          for (var i = 0; i < els.length; i++) {
+            if (els[i].getAttribute('data-sitekey') !== '0x4AAAAAAFcfg4zaO7N3n25b') return false;
+          }
+          return true;
+        })());
       ok('v1.10 云同步：验证码请求带 verify_id + code，成功后即为登录态',
         ver.ok === true && verBody.verify_id === 'vid-1' && verBody.code === '123456' &&
         !!rc.state().user && R.d.getElementById('acctBtn').textContent === 'N',
         R.d.getElementById('acctBtn').textContent);
+
+      /* ---- captcha_failed：服务端 400 时给出可操作提示 ---- */
+      var CAP = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+          if (/\/v1\/auth\/login$/.test(url)) return { status: 400, body: { error: {
+            code: 'captcha_failed', message: '人机验证未通过' } } };
+          return { status: 404, body: {} };
+        }
+      });
+      var capc = CAP.cloud;
+      await CAP.tick(25);
+      var capRes = await capc.login('a@b.com', 'password12345');
+      ok('v1.10 云同步：captcha_failed 给出「重新验证」提示',
+        capRes.ok === false && /人机验证/.test(capRes.message || ''), capRes.message);
 
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({
