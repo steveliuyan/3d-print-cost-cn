@@ -14,12 +14,12 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.0**（versionCode 18；已本地提交，**未推送 / 未发版**） |
+| 当前版本 | **v1.10.0**（versionCode 18；**已推送 main 并部署到 Pages（2026-10-20）**，未打 tag / 未建 Release） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
 | 回归测试 | **492/492 通过**（`test-presets.js`，jsdom） |
 | 三副本 md5 | `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
-| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
+| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.0**，`index.html` md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
@@ -359,8 +359,14 @@ M3 去掉 CSRF 头 → 1 条 FAIL；M4 拉取不写回本地 → 2 条 FAIL）�
 **Turnstile 接入（服务端开启后补齐）**：新增 5 条断言（sitekey 值 / 三个容器同 sitekey / 登录·注册·重发都带真实 token / `captcha_failed` 文案）；
 先 RED `487/492` → 实现后 GREEN **492/492**。生产实测：空 token 的 `POST /auth/register` 与 `POST /auth/login` 均
 `400 {"error":{"code":"captcha_failed","message":"缺少人机验证"}}`；`challenges.cloudflare.com/turnstile/v0/api.js` 302 可达。
+**上线与真实浏览器实测（2026-10-20）**：`git push` → Pages `built` @ `a104e84`；线上 `https://3d.20050905.xyz/index.html`
+md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_VERSION=1.10.0`、sitekey 在线上文件内。
+用 CDP 驱动本机 Edge（独立 user-data-dir，真实指纹）实测：账号弹窗打开、Turnstile 控件加载、**取到真实 token**（`1.elc24Dhv4V…`），
+用故意错误的口令提交 → 界面显示 **「邮箱或密码错误」**（服务端 `invalid_credentials`，说明 captcha 已放行，链路打通）；
+另用空 token 提交 → 服务端 `400 captcha_failed` → 界面显示「人机验证未通过或已过期，请重新验证后再试」；
+`localStorage` 中检索 `sid|token|csrf` 键名与 token 值均为空。
 **未执行**：真实注册→收码→验证（生产 `MAIL_MODE=smtp`，验证码只进邮箱，本机无该邮箱访问权）；
-真机 DevTools 的 `sid` HttpOnly 核对与两台真机同步（需已登录账号）。二者复现步骤见本次交付说明。
+登录态下 DevTools 的 `sid` HttpOnly/Secure 核对与两台真机同步（需已登录账号）。
 
 ## 11. 未完成 / 待办
 
@@ -370,7 +376,8 @@ M3 去掉 CSRF 头 → 1 条 FAIL；M4 拉取不写回本地 → 2 条 FAIL）�
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ⏳ **v1.10.0 尚未发版**：本地已提交（文档与代码），未推送、未建 Release、未打包；上线需 `git push` → Pages 构建 → 打包三端。
+- ✅ **v1.10.0 已上线**（2026-10-20：`git push` `173f1bb..a104e84` → Pages `built` @ `a104e84`；线上 `index.html` md5 = 源码）。
+  **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
