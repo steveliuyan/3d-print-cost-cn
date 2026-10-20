@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.4',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.5',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.4/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.5/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.4/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.5/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.4');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.5');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.4', d8.getElementById('footVer').textContent === '1.10.4',
+    ok('v1.8：版本号已升到 1.10.5', d8.getElementById('footVer').textContent === '1.10.5',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2609,6 +2609,39 @@ setTimeout(function () {
         !!lnk && lnk.classList.contains('lnk') && !!cs &&
         (cs.borderTopStyle === 'none' || cs.borderTopWidth === '0px' || cs.borderTopWidth === ''),
         cs ? (cs.borderTopStyle + ' / ' + cs.borderTopWidth) : '(无节点)');
+
+      /* ---- 保留/不可投递域名拦截（v1.10.5） ---- */
+      var DK = mk({ handler: function (url) {
+        if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+        if (/\/v1\/auth\/register$/.test(url)) return { status: 202, body: { verify_id: 'v', resend_after: 60 } };
+        return { status: 404, body: {} };
+      } });
+      await DK.tick(25);
+      DK.d.getElementById('acctBtn').click();
+      await DK.tick(15);
+      DK.d.querySelector('[data-au="toReg"]').click();
+      await DK.tick(10);
+
+      var de = DK.d.getElementById('auEmail2');
+      de.value = 'resendtest@test.local';
+      de.dispatchEvent(new DK.w.Event('input', { bubbles: true }));
+      await DK.tick(10);
+      var deErr = DK.d.getElementById('auErrEmail2');
+      ok('v1.10.5 注册：test.local 这类保留域名即时红字',
+        !!deErr && deErr.hidden === false && /收不到|真实邮箱|保留/.test(deErr.textContent),
+        deErr ? deErr.textContent : '(无节点)');
+
+      DK.d.getElementById('auPwd2').value = 'password12345';
+      DK.d.getElementById('auPwd3').value = 'password12345';
+      DK.d.querySelector('[data-au="register"]').click();
+      await DK.tick(40);
+      ok('v1.10.5 注册：保留域名不发请求',
+        !callsTo(DK, /\/auth\/register$/).length);
+
+      de.value = 'me@qq.com';
+      de.dispatchEvent(new DK.w.Event('input', { bubbles: true }));
+      await DK.tick(10);
+      ok('v1.10.5 注册：真实邮箱不再报错', deErr.hidden === true);
 
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({
