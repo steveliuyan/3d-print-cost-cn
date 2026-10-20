@@ -13,12 +13,12 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.12.0**（`APP_VERSION`，versionCode **30**）— 代码就绪，**产物已打，未提交/未发版** |
+| 当前版本 | **v1.12.0**（`APP_VERSION`，versionCode **30**）— **已上线且已发版** |
 | 本地 = 远端 HEAD | 以 `git log --oneline -1` 为准（发版基线 `b75f513994ca437adb97bcfd329300709f2a34f1`） |
 | 回归测试 | **541/541 通过**（`test-presets.js`，jsdom；v1.12.0 新增 5 条云端备份断言） |
 | 三副本 md5 | `fb8190405fdab47347a754d800ff42c3`（**343,119 B**）← v1.12.0 工作区 |
-| ⚠ 工作区现状 | v1.12.0 改动已全部完成（断言已补、版本已升、三端产物已打），**只剩提交 + 推送 + 发 Release** |
-| 最新 Release | **v1.11.0 账号与云同步 + 抬头模板 / 材料价格库**（tag **16** / Release **16**，latest = v1.11.0，3 附件） |
+| 本地 = 远端 HEAD | `5a4a995`（v1.12.0 已提交、推送、发版；工作区干净） |
+| 最新 Release | **v1.12.0 云端备份**（latest = v1.12.0，3 附件：web.html / portable.exe 70.83MB / apk 1.24MB） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
 | **站点仓库** | **`https://github.com/steveliuyan/myweb`**（= `www.20050905.xyz`，项目页 `project-dpc.html`）⚠️ 两个仓库，改站点要单独提交 |
@@ -255,7 +255,7 @@ P3 站点页 myweb 更新到 v1.11.0；P4 PAT 换 fine-grained；P5 两设备真
 | 新增测试断言 | ✅ **已补 5 条**（入口 / 面板+请求 / 列表渲染 / 立即备份 / 恢复后重新拉取） |
 | 版本号 | ✅ **已升 v1.12.0**（index.html / build.gradle vc30 / package.json / README / 测试断言） |
 | 三端产物 | ✅ 已打并校验：web.html 335 KB / portable.exe 70.8 MB / apk 1.24 MB，APK 内 index.html md5 与源码一致 |
-| 提交 & 发版 | ❌ **未做**（等用户确认） |
+| 提交 & 发版 | ✅ `5a4a995` 已推送；Release v1.12.0 已发（3 附件，latest 指向它） |
 
 ### 服务端接口（已上线）
 
