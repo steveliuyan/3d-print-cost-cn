@@ -13,10 +13,11 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.11.0**（`APP_VERSION`，versionCode **29**）— 已上线且已发版 |
+| 当前版本 | **v1.12.0**（`APP_VERSION`，versionCode **30**）— 代码就绪，**产物已打，未提交/未发版** |
 | 本地 = 远端 HEAD | 以 `git log --oneline -1` 为准（发版基线 `b75f513994ca437adb97bcfd329300709f2a34f1`） |
-| 回归测试 | **536/536 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `830f827f299113603009760c22967fec`（**330,797 B**，逐字节一致） |
+| 回归测试 | **541/541 通过**（`test-presets.js`，jsdom；v1.12.0 新增 5 条云端备份断言） |
+| 三副本 md5 | `fb8190405fdab47347a754d800ff42c3`（**343,119 B**）← v1.12.0 工作区 |
+| ⚠ 工作区现状 | v1.12.0 改动已全部完成（断言已补、版本已升、三端产物已打），**只剩提交 + 推送 + 发 Release** |
 | 最新 Release | **v1.11.0 账号与云同步 + 抬头模板 / 材料价格库**（tag **16** / Release **16**，latest = v1.11.0，3 附件） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
@@ -59,6 +60,7 @@
 | 可选账号 | 注册（邮箱验证码 + Turnstile）/ 登录 / **找回密码** / 2FA（TOTP）/ 退出，全部可用 |
 | 云同步 | **12 个键**：`dpc_v1`、`dpc_cats_v1`、`dpc_presets_v3`、`dpc_quotes_v1`、`dpc_customers_v1`、`dpc_profile_v1`、`dpc_prices_v1`、`dpc_orders_v1`、`dpc_order_draft_v1`、`dpc_dash_v1`、`dpc_theme_v1`、`dpc_view_v1`；`dpc_meta` / `dpc_conflicts` 不同步 |
 | 抬头模板 / 默认参数 / 材料价格库 | v1.11.0 新增，页脚「抬头与默认值」入口 |
+| **云端备份（账户页）** | **2026-10-20 新增**：账号菜单 →「云端备份」→ 面板里「立即备份一次」+ 备份列表（自动/手动）+ 恢复/删除。调用服务端 `/v1/backup/*`；恢复后自动 `pull()` 重新拉取。已补 5 条断言、版本号升到 v1.12.0，三端产物已打，详见 §十二 |
 | 服务端后台 | 已有「云同步数据」页（`/v1/admin/sync*`），可看/改/删/导出/回滚，旧值进 `sync_item_history`；客户端已对齐其改/删语义 |
 | 未完成 | 见 §五 |
 
@@ -162,6 +164,7 @@ cd ../desktop && ELECTRON_MIRROR=https://npmmirror.com/mirrors/electron/ npm run
 - 认证：注册要 `turnstile_token`；已注册邮箱 → `409 email_taken`；找回密码 `POST /auth/password/forgot`（202，未注册也 202）与 `POST /auth/password/reset`（**204 空响应体**）；`resend-code` 也强制 Turnstile。
 - 同步：任意键名；单键 ≤2MB / 500 键 / 50MB，超限 `413 quota_exceeded`；`GET /sync` 每键带 `value/version/updated_at`；推送带 `base_version` 冲突 → `409`（批量里是 `results[].status="conflict"` 且带 `server`）。
 - 键不存在但 `base_version != 0` → `conflict{value:null,version:0}`（客户端据此重建，见 v1.10.10）。
+- 备份：`POST /backup/create`、`GET /backup`、`GET /backup/{id}/download`、`POST /backup/{id}/restore`、`DELETE /backup/{id}`（只能访问自己的，越权 404；恢复后每项 version+1）。
 - 管理后台：`/admin` 页 + `/v1/admin/sync*`（列表 `prefix` 过滤、详情、编辑带 `expected_version` 走乐观锁、`DELETE` 带 JSON body、导出、历史、回滚）。非管理员一律 **404**。
 
 ---
@@ -228,3 +231,52 @@ P3 站点页 myweb 更新到 v1.11.0；P4 PAT 换 fine-grained；P5 两设备真
 ---
 
 > 每次发版后请顺手刷新：§一 速览（版本/回归/md5/HEAD/Release）、§四 状态表、§五 待办（做完的划掉）。
+
+---
+
+## 十二、云端备份（2026-10-20 服务端负责人改动）
+
+> 这一节记录**服务端那边直接改本仓库**做的一次改动，接手时先确认是否要纳入正式发版。
+
+### 改了什么
+
+- `index.html`：账号菜单新增 `<button data-am="cloudbackup">云端备份</button>`；
+  `data-am` 分支新增 `else if(act === "cloudbackup"){ openBackup(); }`；
+  Cloud 模块新增 `bkEnsure / openBackup / doBackupNow / doRestore / doDelete / bkRender`
+  （纯 ES5，自建轻量 overlay，不依赖任何库，不改动现有 DOM 结构与 localStorage 键名）。
+- 三副本已用 `_sync_clean.py` 同步（md5 一致）。
+
+### 质量状态
+
+| 项 | 结果 |
+|---|---|
+| 回归 | **536/536 通过**（改前改后各跑一次） |
+| git diff | 每份文件 **+126 行 / 0 删除** |
+| 新增测试断言 | ✅ **已补 5 条**（入口 / 面板+请求 / 列表渲染 / 立即备份 / 恢复后重新拉取） |
+| 版本号 | ✅ **已升 v1.12.0**（index.html / build.gradle vc30 / package.json / README / 测试断言） |
+| 三端产物 | ✅ 已打并校验：web.html 335 KB / portable.exe 70.8 MB / apk 1.24 MB，APK 内 index.html md5 与源码一致 |
+| 提交 & 发版 | ❌ **未做**（等用户确认） |
+
+### 服务端接口（已上线）
+
+```
+POST   /v1/backup/create  {label?}       → {"id","keys","bytes","created_at","label"}
+GET    /v1/backup                        → {"items":[{id,kind,kind_label,label,keys,bytes,created_at}],
+                                            "limits":{"auto_keep":3,"manual_keep":10}}
+GET    /v1/backup/{id}/download          → JSON 附件
+POST   /v1/backup/{id}/restore {reason?} → {"account_id","keys","restored"}
+DELETE /v1/backup/{id}                   → 204
+```
+
+- 只能访问自己的备份，别人的一律 **404**；限流 10 次/小时/账号。
+- 还没同步过数据时 `create` 返回 **422**（面板提示"还没有可备份的云端数据"）。
+- 恢复会让每项 `version +1`，其它设备下次同步即可看到；本机恢复后会自动 `pull()`。
+- 服务端自动备份每天 03:30，保留「当前 1 + 历史 2」共 3 份；手动备份最多 10 份。
+
+### 接手后只剩发版动作
+
+1. `_sync_clean.py` 已在改动后跑过（三副本 md5 一致，无调试属性残留）。
+2. 提交前后都跑一遍 `test-presets.js`，期望 **541/541**。
+3. 提交 → 推送（`git ls-remote` 探连通性，不通走 `.secrets/_api_push.py`）→
+   把 `dist/release/` 里三个 `3d-print-cost-cn-1.12.0-*` 发 Release（`.secrets/_api_release.py`）。
+4. 发完顺手更新 `myweb` 站点页（HANDOFF §五 P3 仍未做）。
