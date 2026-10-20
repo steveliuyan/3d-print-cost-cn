@@ -910,6 +910,10 @@
              border-radius:8px; background:#ef4444; color:#fff; font-size:10px; font-weight:700;
              line-height:16px; text-align:center}
   #amNotiDot.on{display:inline-block}
+  /* 所有弹窗统一：面板不超屏，内容区滚动，底部按钮留在安全区 */
+  .ov.open{display:block; overflow-y:auto; -webkit-overflow-scrolling:touch}
+  .ov-panel{margin:10px auto; max-height:calc(100vh - 20px); max-height:calc(100dvh - 20px)}
+  .ov-foot{padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px))}
 </style>
 <script>
 /* 主题：尽早应用，避免刷新瞬间闪白（FOUC）。
@@ -1522,7 +1526,7 @@
 <!-- ===== 报价历史 ===== -->
 <div class="ov" id="histBox" role="dialog" aria-modal="true" aria-label="报价历史">
   <div class="ov-bg" data-hisclose></div>
-  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:10vh">
+  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px))">
     <div class="ov-head">
       <h3>订单历史</h3>
       <button class="x" data-hisclose aria-label="关闭">×</button>
@@ -1542,7 +1546,7 @@
 <!-- ===== 分享长图 ===== -->
 <div class="ov" id="shareBox" role="dialog" aria-modal="true" aria-label="报价长图">
   <div class="ov-bg" data-shclose></div>
-  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:6vh">
+  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px))">
     <div class="ov-head">
       <h3>报价长图</h3>
       <button class="x" data-shclose aria-label="关闭">×</button>
@@ -1569,7 +1573,7 @@
 <!-- ===== 软件更新 ===== -->
 <div class="ov" id="updBox" role="dialog" aria-modal="true" aria-label="软件更新">
   <div class="ov-bg" data-upclose></div>
-  <div class="ov-panel" style="width:min(460px,calc(100vw - 28px)); margin-top:16vh">
+  <div class="ov-panel" style="width:min(460px,calc(100vw - 28px))">
     <div class="ov-head">
       <h3>软件更新</h3>
       <span class="upd-ver" id="updVerBadge"></span>
@@ -1589,7 +1593,7 @@
 <!-- ===== 更新日志（可翻看历史版本） ===== -->
 <div class="ov" id="clBox" role="dialog" aria-modal="true" aria-label="更新日志">
   <div class="ov-bg" data-clclose></div>
-  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px)); margin-top:8vh">
+  <div class="ov-panel" style="width:min(560px,calc(100vw - 28px))">
     <div class="ov-head">
       <h3>更新日志</h3>
       <button class="x" data-clclose aria-label="关闭">×</button>
@@ -2667,7 +2671,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.17.0";
+  var APP_VERSION = "1.18.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
