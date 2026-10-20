@@ -14,12 +14,12 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.10**（versionCode 28；**已上线**，未打 tag / 未建 Release） |
+| 当前版本 | **v1.11.0**（versionCode 29；**已上线**，未打 tag / 未建 Release） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
-| 回归测试 | **528/528 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `c39519e558b5f7d07e8654b826e21d3a`（320,200 B，逐字节一致） |
+| 回归测试 | **536/536 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `830f827f299113603009760c22967fec`（330,797 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
-| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.10**，`index.html` md5 `c39519e558b5f7d07e8654b826e21d3a`（320,200 B） |
+| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.11.0**，`index.html` md5 `830f827f299113603009760c22967fec`（330,797 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
@@ -45,7 +45,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（528 项断言）
+├─ test-presets.js         ← jsdom 回归测试（536 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
@@ -67,7 +67,7 @@ H:\3d-print-cost-calculator\
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
 "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe" test-presets.js
-# 期望：结果: 528/528 通过
+# 期望：结果: 536/536 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -270,6 +270,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.10.8** | **已注册邮箱引导登录**：服务端 `/auth/register` 对同平台同邮箱返回 `409 email_taken`（带中文原因）；客户端现在把它单独处理——邮箱框下红字「这个邮箱已经注册过了」、消息区提示「点下方「去登录」直接登录即可」，点「去登录」切换步骤并**自动带出刚才的邮箱**（`st.pendingEmail`）；验证阶段并发冲突（`needLogin`）同样切登录并带出邮箱。1.10.7 → 1.10.8（vc25→26）。回归 515 → **518** |
 | **v1.10.9** | **找回密码（客户端闭环）**：登录页「忘记密码？」→ `auForgot`（邮箱 + 第 4 个 Turnstile `#auTurn4`）→ `POST /auth/password/forgot`（`email+product+turnstile_token`）→ `auReset`（6 位码 + 新密码 + 确认新密码，带眼睛切换）→ `POST /auth/password/reset`（**成功是 204 空响应，只判 `status===204`，不解析 JSON**）→ 回登录页并带出邮箱。429 提示「重置码错误次数过多，请重新获取」；未注册邮箱按服务端防枚举策略同样提示「已发送」。另：`/auth/resend-code` 现在强制 Turnstile，客户端原本就带 `turnstile_token`（有断言守着）。1.10.8 → 1.10.9（vc26→27）。回归 518 → **524** |
 | **v1.10.10** | **对齐后台改/删语义**：① 管理员在后台**删除**某键后，客户端带着旧 `base_version` 推送会收到 `conflict{value:null,version:0}`——现在识别为「云端已删除」，自动把本地版本归 0 并**重推一次**重建（不弹冲突框）；② 管理员**编辑**后触发冲突，记录里补 `updatedAt`，冲突弹窗显示「云端版本 v5（云端更新于 2026-10-20 15:30）」。1.10.9 → 1.10.10（vc27→28）。回归 524 → **528** |
+| **v1.11.0** | **抬头模板 + 账号级默认参数 + 材料价格库（新增 2 个同步键）**：新增 `dpc_profile_v1`（`company{name,contact,pay}` / `quote{prefix,days}` / `defaults{elecPrice,laborRate,failRate,markup,commission}`）与 `dpc_prices_v1`（`[{n,p}]` 材料 ¥/kg），同步键 10 → **12**。页脚「抬头与默认值」弹窗：① 打印/长图抬头改用模板公司名 + 联系方式（`BRAND_NAME` 作兜底）；② 报价单编号用模板前缀（默认仍 `DPC`）并接着流水；③ 新建订单时按 `quote.days` 自动填有效期；④「默认参数填进单件页」一次写回 5 个字段；⑤「按库价填当前材料单价」按材料名匹配价格库（包含匹配）写 `spoolPrice`。另：`errMsg` 增 413 `quota_exceeded` 可操作文案。1.10.10 → 1.11.0（vc28→29）。回归 528 → **536** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -390,6 +391,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
 **v1.10.8（已注册邮箱引导登录）**：新增 3 条断言（提示含「已注册/去登录」且无「请求失败」/ 邮箱框红字 / 切登录自动带出邮箱），RED `516/518` → 实现后 **518/518**。线上 CDP 实测（1.10.8，430×900，`Fetch` 拦截 `/auth/register` 返回服务端同款 409、并把 Turnstile 脚本打桩以即时出 token）：消息「这个邮箱已经注册过了，点下方「去登录」直接登录即可」、`#auErrEmail2` = 「这个邮箱已经注册过了」且可见、点「去登录」后 `#auEmail` = `taken@example.com`。截图 `.workbuddy/taken-msg.png` / `taken-login.png`。
 **v1.10.9（找回密码）**：新增 6 条断言（入口可切换 / forgot 请求体含 email+product+turnstile_token / 202 后进入重置步骤 / reset 请求体含 reset_id+code+new_password 且 **204 视为成功**并回登录 / 登录页带出邮箱 / 429 文案），RED `511/512`（缺入口直接抛错）→ 实现后 **524/524**；同时把「三个 Turnstile 容器」断言更新为四个（含 `#auTurn4`）。未执行：真实收信重置（需要邮箱访问权）；线上 forgot 的 202 分支未跑通（仿真环境 Turnstile 未出 token，见下方复现步骤）。
 **v1.10.10（对齐后台改/删语义）**：新增 4 条断言（删除后 base_version=0 重建且两次 batch 调用 / 重建成功后版本写回且无冲突记录 / 管理员改键时冲突记录带 version+updated_at / 弹窗显示「云端更新于」），RED `524/528` → 实现后 **528/528**。服务端 `store.sync_put` 已核实：键不存在且 `base_version != 0` → `conflict{value:null,version:0,updated_at:null}`，客户端据此分支。未执行：真实后台编辑/删除的端到端（需要管理员口令登录 `/v1/admin/login`）。
+**v1.11.0（抬头模板 + 默认参数 + 价格库）**：新增 8 条断言（同步键含两新键 / 12 键一次批量 / 抬头用公司名与联系方式 / 编号用前缀且接着流水 / 价格库读写 / 弹窗回填已保存值 / 默认参数填单件页 / 按库价填单价 / 413 文案），RED `520/523` → 实现后 **536/536**（含把契约键数断言由 10 改为 12）。线上 CDP 实测（1.11.0，1000×860）：点击页脚「抬头与默认值」弹窗打开、保存后 `dpc_profile_v1` = `{"company":{"name":"星辰 3D 工坊","contact":"微信 star3d"},"quote":{"prefix":"XC","days":10},…}`、`dpc_prices_v1` = `[{"n":"PLA","p":75},{"n":"PETG","p":95}]`，打印预览抬头为「星辰 3D 工坊 / 微信 star3d」。截图 `.workbuddy/tpl-modal.png` / `tpl-print.png`。未执行：两设备真实同步（需登录态两窗口）。
 
 ## 11. 未完成 / 待办
 
@@ -399,10 +401,10 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ✅ **v1.10.10 已上线**（2026-10-20：`5350abd`→`fe5e2df`，Pages `built`；线上 md5 = 源码）。
+- ✅ **v1.11.0 已上线**（2026-10-20：`fe5e2df`→`fb707fe`，Pages `built`；线上 md5 = 源码）。
   **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
 - 💡 登录/注册后续可做：记住邮箱、2FA 二维码（当前展示 secret 手输）。
-- 💡 服务端已放开同步键白名单（500 键 / 50MB / 单键 2MB），`GET /sync` 带 `updated_at`，并已上线后台「云同步数据」页（`/v1/admin/sync*`，可看/编辑/删除/导出/回滚，旧值快照进 `sync_item_history`）。待做：`dpc_profile_v1`（报价单模板 + 账号级默认参数）、`dpc_prices_v1`（材料价格库）；订单键注意 2MB 上限（约 1200+ 单需分片）。
+- 💡 服务端已放开同步键白名单（500 键 / 50MB / 单键 2MB），`GET /sync` 带 `updated_at`，并已上线后台「云同步数据」页（`/v1/admin/sync*`，可看/编辑/删除/导出/回滚，旧值快照进 `sync_item_history`）。已做：`dpc_profile_v1`（抬头模板 + 账号级默认参数）、`dpc_prices_v1`（材料价格库）。待做：订单键 2MB 分片（约 1200+ 单）、冲突提示接 `updated_at`（v1.10.10 已在冲突弹窗显示云端更新时间）。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
@@ -487,7 +489,7 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 **新对话接手时的推荐动作**：
 1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 **528/528**；
+3. 跑一次 §4.1 的回归测试，确认基线是 **536/536**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），
