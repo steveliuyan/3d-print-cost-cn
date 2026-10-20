@@ -14,12 +14,12 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.8**（versionCode 26；**已上线**，未打 tag / 未建 Release） |
+| 当前版本 | **v1.10.9**（versionCode 27；**已上线**，未打 tag / 未建 Release） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
-| 回归测试 | **518/518 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `f5eea8b8bdf3ab6cb310ea51e264340c`（311,193 B，逐字节一致） |
+| 回归测试 | **524/524 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `04c9386f5aa1cba8c834c2ad590704ee`（318,897 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
-| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.8**，`index.html` md5 `f5eea8b8bdf3ab6cb310ea51e264340c`（311,193 B） |
+| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.9**，`index.html` md5 `04c9386f5aa1cba8c834c2ad590704ee`（318,897 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
@@ -45,7 +45,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（518 项断言）
+├─ test-presets.js         ← jsdom 回归测试（524 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
@@ -67,7 +67,7 @@ H:\3d-print-cost-calculator\
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
 "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe" test-presets.js
-# 期望：结果: 518/518 通过
+# 期望：结果: 524/524 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -268,6 +268,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.10.6** | **密码下限对齐服务端 8 位**：服务端 `security.password_problem` 为 `len(password) < 8`，客户端抽 `MIN_PWD = 8` 常量（红字「密码已输入 N 位，至少需要 8 位」、占位符「至少 8 位」、提交校验与提示同步），8 位即可通过、7 位仍即时拦截。回归保持 **512**（改下限与断言正则）。 |
 | **v1.10.7** | **手机竖屏账号入口改位**：`.acct` 原为顶栏弹性子项，窄屏换行后被挤到「重置」下方左侧；现改为 `@media (max-width:560px)` 下 `position:absolute; right:2px; top:9px` 吸附顶栏右上、按钮收成 38px 圆形头像（文字隐藏、`.brand` 留 46px 右边距防压字），账号菜单 `width:min(232px,calc(100vw - 24px))` 不再向左溢出。1.10.6 → 1.10.7（vc24→25）。回归 512 → **515**（含「移动端规则必须排在 `.acct` 基础规则之后」的顺序断言）。 |
 | **v1.10.8** | **已注册邮箱引导登录**：服务端 `/auth/register` 对同平台同邮箱返回 `409 email_taken`（带中文原因）；客户端现在把它单独处理——邮箱框下红字「这个邮箱已经注册过了」、消息区提示「点下方「去登录」直接登录即可」，点「去登录」切换步骤并**自动带出刚才的邮箱**（`st.pendingEmail`）；验证阶段并发冲突（`needLogin`）同样切登录并带出邮箱。1.10.7 → 1.10.8（vc25→26）。回归 515 → **518** |
+| **v1.10.9** | **找回密码（客户端闭环）**：登录页「忘记密码？」→ `auForgot`（邮箱 + 第 4 个 Turnstile `#auTurn4`）→ `POST /auth/password/forgot`（`email+product+turnstile_token`）→ `auReset`（6 位码 + 新密码 + 确认新密码，带眼睛切换）→ `POST /auth/password/reset`（**成功是 204 空响应，只判 `status===204`，不解析 JSON**）→ 回登录页并带出邮箱。429 提示「重置码错误次数过多，请重新获取」；未注册邮箱按服务端防枚举策略同样提示「已发送」。另：`/auth/resend-code` 现在强制 Turnstile，客户端原本就带 `turnstile_token`（有断言守着）。1.10.8 → 1.10.9（vc26→27）。回归 518 → **524** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -386,6 +387,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
 **v1.10.6（8 位下限）**：服务端源码 `docker/apps/api/security.py` 的 `password_problem()` 为 `len(password) < 8` → 「密码至少 8 个字符」；客户端改 `MIN_PWD = 8` 后线上 CDP 实测（1.10.6）：占位符「至少 8 位，别用弱密码」、7 位输入红字「密码已输入 7 位，至少需要 8 位」、8 位输入无红字且无 `invalid`。回归 **512/512**。
 **v1.10.7（手机端账号入口 + 菜单）**：390×844 移动仿真复现：修复前 `#acct` 位于 (20,215)（「重置」下方），菜单 `x=-166` 越出屏幕左侧；修复后 `#acct` = (320,9) 顶栏右上、菜单 `x=134..366` 完全在 390 视口内、登录弹窗 `x=14 w=362` 居中，`scrollX=0`、无横向溢出。回归 **515/515**（新增 3 条 + 1 条顺序断言）。截图 `.workbuddy/mob-before-header.png` / `mob-after-header.png` / `mob-after-modal.png`。
 **v1.10.8（已注册邮箱引导登录）**：新增 3 条断言（提示含「已注册/去登录」且无「请求失败」/ 邮箱框红字 / 切登录自动带出邮箱），RED `516/518` → 实现后 **518/518**。线上 CDP 实测（1.10.8，430×900，`Fetch` 拦截 `/auth/register` 返回服务端同款 409、并把 Turnstile 脚本打桩以即时出 token）：消息「这个邮箱已经注册过了，点下方「去登录」直接登录即可」、`#auErrEmail2` = 「这个邮箱已经注册过了」且可见、点「去登录」后 `#auEmail` = `taken@example.com`。截图 `.workbuddy/taken-msg.png` / `taken-login.png`。
+**v1.10.9（找回密码）**：新增 6 条断言（入口可切换 / forgot 请求体含 email+product+turnstile_token / 202 后进入重置步骤 / reset 请求体含 reset_id+code+new_password 且 **204 视为成功**并回登录 / 登录页带出邮箱 / 429 文案），RED `511/512`（缺入口直接抛错）→ 实现后 **524/524**；同时把「三个 Turnstile 容器」断言更新为四个（含 `#auTurn4`）。未执行：真实收信重置（需要邮箱访问权）；线上 forgot 的 202 分支未跑通（仿真环境 Turnstile 未出 token，见下方复现步骤）。
 
 ## 11. 未完成 / 待办
 
@@ -395,9 +397,10 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ✅ **v1.10.8 已上线**（2026-10-20：`6612b43`→`c99b3c7`，Pages `built`；线上 md5 = 源码）。
+- ✅ **v1.10.9 已上线**（2026-10-20：`c99b3c7`→`5350abd`，Pages `built`；线上 md5 = 源码）。
   **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
-- 💡 登录/注册后续可做：找回密码（契约里未提供接口，需服务端先加）、记住邮箱、2FA 二维码（当前展示 secret 手输）。
+- 💡 登录/注册后续可做：记住邮箱、2FA 二维码（当前展示 secret 手输）。
+- 💡 服务端已放开同步键白名单（配额 500 键 / 50MB，超限 413 quota_exceeded）且 `GET /sync` 每键带 `updated_at`：可做 `dpc_profile_v1`（报价单模板 / 账号级默认参数）与更精确的冲突提示。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
@@ -482,7 +485,7 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 **新对话接手时的推荐动作**：
 1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 **518/518**；
+3. 跑一次 §4.1 的回归测试，确认基线是 **524/524**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），
