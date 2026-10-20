@@ -13,12 +13,12 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.13.0**（`APP_VERSION`，versionCode **31**）— **已上线且已发版** |
+| 当前版本 | **v1.14.0**（`APP_VERSION`，versionCode **32**）— **已上线且已发版** |
 | 本地 = 远端 HEAD | 以 `git log --oneline -1` 为准（发版基线 `b75f513994ca437adb97bcfd329300709f2a34f1`） |
-| 回归测试 | **545/545 通过**（`test-presets.js`，jsdom；v1.12 云端备份 5 条 + v1.13 改密码 4 条） |
-| 三副本 md5 | `0bfff145df7db962b59ec0e5f3d0ae96`（**348,668 B**）← v1.13.0 |
-| 本地 = 远端 HEAD | `1d6dd2f`（v1.13.0 已提交、推送、发版；工作区干净） |
-| 最新 Release | **v1.13.0 修改密码**（latest = v1.13.0，3 附件：web.html / portable.exe 70.83MB / apk 1.24MB） |
+| 回归测试 | **551/551 通过**（v1.12 云端备份 5 + v1.13 改密码 4 + v1.14 头像 3 / 弹窗 3） |
+| 三副本 md5 | `2ad07d0401ba9513aac293945af88f99`（**352,971 B**）← v1.14.0 |
+| 本地 = 远端 HEAD | `4c9cdb0`（v1.14.0 已提交、推送、发版；工作区干净） |
+| 最新 Release | **v1.14.0 头像 / 弹窗修复 / App 免验证**（latest = v1.14.0，3 附件） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
 | **站点仓库** | **`https://github.com/steveliuyan/myweb`**（= `www.20050905.xyz`，项目页 `project-dpc.html`）⚠️ 两个仓库，改站点要单独提交 |
@@ -293,3 +293,45 @@ DELETE /v1/backup/{id}                   → 204
 - 已发版 v1.13.0（tag/Release 已创建，3 附件，线上 3d.20050905.xyz 已是 1.13.0）。
 - 另外服务端新增了浏览器版「账号中心」`https://api.20050905.xyz/account`，
   不想要客户端内置面板时也可以直接引导用户去那里改。
+
+---
+
+## 十四、v1.14.0（2026-10-20 晚）
+
+### 1. 账号头像
+
+- 账号菜单 `data-am="avatar"` →「更换头像」→ 选图 → canvas 裁成 128×128 JPEG（约 10–20KB）
+- 存 localStorage `dpc_avatar_v1`（第 13 个同步键），登录后随 `/v1/sync` 走，未登录也能用
+- 渲染：`applyAvatar()` 写 `background-image` 到 `.av`，并隐藏首字母
+- 已导出 `applyAvatar` 到 `__DPC.cloud`，供测试直接触发
+
+### 2. 修复：手机端弹窗划不动 / 底部按钮被裁
+
+根因：`.ov-body` 是 flex 子项，默认 `min-height:auto`，内容长了会把面板撑高、
+被 `.ov-panel{overflow:hidden}` 裁掉，且 `overflow:auto` 不生效。
+修法：`.ov-body` 加 `min-height:0`；手机端面板高度改 `calc(100dvh - 20px)`；`.ov` 允许纵向滚动。
+**影响所有弹窗**（更新 / 预设管理 / 抬头模板 / 登录）。
+
+### 3. 修复：APK 内人机验证报「无法连接到网站」
+
+两个独立原因：
+
+1. **Turnstile 域名不匹配**：APK 页面源是 `https://appassets.androidplatform.net`（WebViewAssetLoader），
+   而 sitekey 只允许 `3d.20050905.xyz` → 验证框必然失败。
+2. **CORS 白名单没这个源**：即使过了验证，接口请求也会被浏览器拦掉。
+
+修法：
+
+- 客户端：`IS_APP` 检测该源 → 不加载 Turnstile，`requireTurn()` 返回占位 `"app"`，
+  所有请求带 `X-App-Key`
+- 服务端：`APP_CLIENT_KEY`（api.env）+ `verify_turnstile(..., headers)` 识别该头后跳过；
+  `CORS_ORIGINS` 加入 `https://appassets.androidplatform.net`；`Allow-Headers` 加 `X-App-Key`
+
+⚠ 权衡：App 内嵌入的 key 可以被逆向拿到，等于 App 侧没有机器人防护。
+兜底仍在：注册需邮箱验证码、IP 限流 5 次/小时，登录要密码 + 10 次/小时。
+要更强就得上 Cloudflare 的 Turnstile hostname 白名单（把 `appassets.androidplatform.net` 加进去）。
+
+### 4. 服务端配套改动
+
+- `docker/apps/api/app.py`：`APP_CLIENT_KEY` / `verify_turnstile(headers)` / CORS 白名单与允许头
+- `api.env`：新增 `APP_CLIENT_KEY`，`CORS_ORIGINS` 增加 APK 源
