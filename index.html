@@ -738,6 +738,16 @@
     .pp-page table{font-size:11.5px}
     .pp-page th,.pp-page td{padding:4px 6px}
   }
+  /* ============ v1.10.7 手机竖屏：账号入口固定顶栏右上（原来被挤到「重置」下方） ============ */
+  @media screen and (max-width:560px){
+    .acct{position:absolute; right:2px; top:9px; margin:0; z-index:6}
+    .acct-btn{width:38px; height:38px; padding:0; gap:0; border-radius:50%; justify-content:center}
+    .acct-btn .acct-txt{display:none}
+    .acct-btn .av{width:24px; height:24px}
+    .acct-dot{right:-3px; top:-3px}
+    .brand{padding-right:46px}
+    .acct-menu{top:calc(100% + 6px)}
+  }
   /* ============ v1.8.4 横屏 / 平板适配 ============
      目标：横屏手机不变成「一条长柱」，平板竖屏也把结果放到输入旁边，大屏不铺满整条超宽显示器。
      全部只作用于屏幕（@media screen），打印样式不受影响。 */
@@ -823,7 +833,7 @@
 .acct-dot{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 5px; border-radius:9px;
   background:var(--danger); color:#fff; font-size:10.5px; line-height:17px; text-align:center; font-weight:700; cursor:pointer}
 .acct-dot[hidden]{display:none}
-.acct-menu{position:absolute; right:0; top:calc(100% + 8px); z-index:70; width:232px; padding:8px;
+.acct-menu{position:absolute; right:0; top:calc(100% + 8px); z-index:70; width:min(232px,calc(100vw - 24px)); padding:8px;
   background:var(--surface); border:1px solid var(--line2); border-radius:12px; box-shadow:var(--sh-2)}
 .acct-menu[hidden]{display:none}
 .am-head{font-size:12.5px; font-weight:650; padding:6px 8px 2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
@@ -2532,7 +2542,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.6";
+  var APP_VERSION = "1.10.7";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
