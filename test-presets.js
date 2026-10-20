@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.9',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.10',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.9/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.10/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.9/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.10/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.9');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.10');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.9', d8.getElementById('footVer').textContent === '1.10.9',
+    ok('v1.8：版本号已升到 1.10.10', d8.getElementById('footVer').textContent === '1.10.10',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2757,6 +2757,67 @@ setTimeout(function () {
       ok('v1.10.9 重置密码：429 给「次数过多，请重新获取」',
         /次数过多/.test(R429.d.getElementById('auMsg').textContent),
         R429.d.getElementById('auMsg').textContent);
+
+      /* ---- 管理员删除键：客户端以 version 0 重建（v1.10.10） ---- */
+      function mkLoggedIn(handler) {
+        return mk({ me: { status: 200, body: { id: 'u1', email: 'adm@x.com', mfa_enabled: false } },
+                    handler: handler });
+      }
+      function markDirty(ctx, key, ver) {
+        ctx.w.localStorage.setItem('dpc_meta', JSON.stringify(
+          (function () { var o = {}; o[key] = { version: ver, dirtyAt: 0 }; return o; })()));
+        ctx.w.localStorage.setItem(key, key === 'dpc_view_v1' ? 'order' : JSON.stringify({ a: 1 }));
+      }
+
+      var AD = mkLoggedIn(function (url, init) {
+        if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'adm@x.com', mfa_enabled: false } };
+        if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+        if (/\/v1\/sync\/batch$/.test(url)) {
+          var ch = JSON.parse(init.body).changes[0];
+          if (ch.base_version !== 0) {
+            return { status: 200, body: { results: [{ key: ch.key, status: 'conflict',
+              server: { value: null, version: 0, updated_at: null } }] } };
+          }
+          return { status: 200, body: { results: [{ key: ch.key, status: 'ok', version: 1 }] } };
+        }
+        return { status: 404, body: {} };
+      });
+      await AD.tick(40);
+      markDirty(AD, 'dpc_view_v1', 3);
+      AD.flush(); await AD.tick(60);
+
+      var adCalls = callsTo(AD, /\/v1\/sync\/batch$/);
+      var adLast = adCalls.length ? bodyOf(adCalls[adCalls.length - 1]).changes[0] : null;
+      ok('v1.10.10 云端已删除该键：客户端改为 base_version=0 重建',
+        adCalls.length === 2 && adLast && adLast.base_version === 0,
+        'calls=' + adCalls.length + ' base=' + (adLast && adLast.base_version));
+      ok('v1.10.10 重建成功后版本写回、不产生冲突记录',
+        (metaOf(AD, 'dpc_view_v1') || {}).version === 1 &&
+        !JSON.parse(AD.w.localStorage.getItem('dpc_conflicts') || '[]').length,
+        JSON.stringify(metaOf(AD, 'dpc_view_v1')));
+
+      /* ---- 管理员改了键：冲突带版本 + updated_at，弹窗显示时间 ---- */
+      var AE = mkLoggedIn(function (url, init) {
+        if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'adm@x.com', mfa_enabled: false } };
+        if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+        if (/\/v1\/sync\/batch$/.test(url)) {
+          var k = JSON.parse(init.body).changes[0].key;
+          return { status: 200, body: { results: [{ key: k, status: 'conflict',
+            server: { value: { from: 'admin' }, version: 5, updated_at: '2026-10-20T07:30:00+00:00' } }] } };
+        }
+        return { status: 404, body: {} };
+      });
+      await AE.tick(40);
+      markDirty(AE, 'dpc_view_v1', 3);
+      AE.flush(); await AE.tick(60);
+
+      var aeCf = JSON.parse(AE.w.localStorage.getItem('dpc_conflicts') || '[]');
+      ok('v1.10.10 管理员改键：冲突记录带云端版本与更新时间',
+        aeCf.length === 1 && aeCf[0].version === 5 && /2026-10-20T07:30:00/.test(aeCf[0].updatedAt || ''),
+        JSON.stringify(aeCf));
+      ok('v1.10.10 冲突弹窗显示「云端更新于」',
+        /云端更新于/.test((AE.d.getElementById('cfSummary') || {}).textContent || ''),
+        (AE.d.getElementById('cfSummary') || {}).textContent);
 
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({

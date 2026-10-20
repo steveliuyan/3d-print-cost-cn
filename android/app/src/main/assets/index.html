@@ -2563,7 +2563,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.9";
+  var APP_VERSION = "1.10.10";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5046,7 +5046,7 @@
     var MIN_PWD = 8;   /* 与服务端 security.password_problem 对齐 */
     var st = { user:null, status:"out", tries:0, timer:null, timerApi:null, fetchImpl:null,
                turnstile:"", verifyId:"", mfaToken:"", mfaSecret:"", busy:false, lastSyncAt:0,
-               turnWait:8000, pendingEmail:"", resetId:"", stepKey:"" };
+               turnWait:8000, pendingEmail:"", resetId:"", recreated:false, stepKey:"" };
     var realTimers = {
       set: function(fn, ms){ return window.setTimeout(fn, ms); },
       clear: function(id){ window.clearTimeout(id); }
@@ -5191,7 +5191,7 @@
       var keys = dirtyKeys();
       if(!keys.length){ st.lastSyncAt = now(); setStatus("synced"); return Promise.resolve(true); }
       setStatus("syncing");
-      var chunks = [], i;
+      var chunks = [], i, recreate = [];
       for(i = 0; i < keys.length; i += BATCH_MAX) chunks.push(keys.slice(i, i + BATCH_MAX));
       var chain = Promise.resolve(true);
       chunks.forEach(function(chunk){
@@ -5212,8 +5212,17 @@
                 m[res.key].dirtyAt = 0;
               }else if(res.status === "conflict"){
                 var srv = res.server || {};
-                cl = upsertConflict(cl, { key: res.key, local: readVal(res.key),
-                                          server: srv.value, version: srv.version || 0, at: now() });
+                /* 云端没有这个键（管理员删除，或从未成功落库）：按新键重建，版本回到 0 */
+                if(srv.value === null || srv.value === undefined || !srv.version){
+                  m[res.key] = m[res.key] || {};
+                  m[res.key].version = 0;
+                  m[res.key].dirtyAt = now();
+                  recreate.push(res.key);
+                }else{
+                  cl = upsertConflict(cl, { key: res.key, local: readVal(res.key),
+                                            server: srv.value, version: srv.version || 0,
+                                            updatedAt: srv.updated_at || "", at: now() });
+                }
               }
             });
             metaSave(m);
@@ -5224,6 +5233,11 @@
       });
       return chain.then(function(){
         st.tries = 0; st.lastSyncAt = now();
+        if(recreate.length && !st.recreated){
+          st.recreated = true;                 /* 只重建一次，避免反复冲突 */
+          return pushNow();
+        }
+        st.recreated = false;
         setStatus(dirtyKeys().length ? "pending" : "synced");
         if(conflictsAll().length) showConflict();
         return true;
@@ -5248,7 +5262,8 @@
           if(srv && srv.value !== undefined){
             if(meta && meta.dirtyAt > 0){
               cl = upsertConflict(cl, { key: k, local: readVal(k), server: srv.value,
-                                        version: srv.version || 0, at: now() });
+                                        version: srv.version || 0,
+                                        updatedAt: srv.updated_at || "", at: now() });
             }else if(!meta || (srv.version || 0) > (meta.version || 0)){
               writeVal(k, srv.value);
               m[k] = { version: srv.version || 0, dirtyAt: 0 };
@@ -5270,6 +5285,15 @@
     }
 
     /* ---------- 冲突三选一 ---------- */
+    function fmtWhen(iso){
+      if(!iso) return "";
+      var t = Date.parse(iso);
+      if(isNaN(t)) return "";
+      var d = new Date(t);
+      function p(n){ return (n < 10 ? "0" : "") + n; }
+      return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate()) + " " +
+             p(d.getHours()) + ":" + p(d.getMinutes());
+    }
     function showConflict(){
       var list = conflictsAll();
       var box = document.getElementById("conflictModal");
@@ -5278,7 +5302,11 @@
       var c = list[0];
       var keyEl = document.getElementById("cfKey"), sumEl = document.getElementById("cfSummary");
       if(keyEl) keyEl.textContent = c.key;
-      if(sumEl) sumEl.textContent = "云端版本 v" + (c.version || 0) + "，本地也有未推送的改动。请选择保留哪一份。";
+      if(sumEl){
+        var when = fmtWhen(c.updatedAt);
+        sumEl.textContent = "云端版本 v" + (c.version || 0) + (when ? "（云端更新于 " + when + "）" : "") +
+                            "，本地也有未推送的改动。请选择保留哪一份。";
+      }
       box.classList.add("open");
     }
     function resolve(key, how){
