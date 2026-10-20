@@ -14,10 +14,10 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.5**（`APP_VERSION`，versionCode **23**；**已上线** https://3d.20050905.xyz，未打 tag/Release） |
-| 本地 = 远端 HEAD | `0a45521656a9bdfa7bbf14fb88fb83a8d0d8e6b4`（已推送，Pages `built` @ 同 SHA） |
+| 当前版本 | **v1.10.6**（`APP_VERSION`，versionCode **24**；**已上线** https://3d.20050905.xyz，未打 tag/Release） |
+| 本地 = 远端 HEAD | `6de7c86ffed64afeed9ddaaf28d3ebf122609350`（已推送，Pages `built` @ 同 SHA） |
 | 回归测试 | **512/512 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `ce150f1a07a138b5eb658ac2c9e32fab`（**309,684 B**，逐字节一致） |
+| 三副本 md5 | `8fde52746fb295efdcc688a198c87e7d`（**309,837 B**，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag **15** 个 / Release **15** 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz** |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开，MIT） |
@@ -157,7 +157,7 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
 - 注意：个人站点是**另一个仓库** steveliuyan/myweb（= www.20050905.xyz），其 project-dpc.html 是本站项目页。
 
 【当前状态（接手时请以实际文件为准再核对一次）】
-- 版本 v1.10.5（versionCode 23）；回归测试 512/512 通过；三副本 md5 ce150f1a07a138b5eb658ac2c9e32fab（309,684 B）。
+- 版本 v1.10.6（versionCode 24）；回归测试 512/512 通过；三副本 md5 8fde52746fb295efdcc688a198c87e7d（309,837 B）。
 - 最新 Release：v1.9.0。最近三版做了什么：v1.8.2 修复安卓图标过大；v1.8.3 经营看板（订单统计/月度趋势/
   材料·客户排行/月报打印）+ 全屏动效 + 横屏/平板适配 + 弹窗滚动锁；v1.9.0 平台活动报名（活动折扣与阶梯/整单取大不叠加）
   + 建议零售价主视觉；v1.10.0 可选账号 + 云同步（不登录完全可用，token 不进 localStorage）。
