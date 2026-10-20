@@ -14,10 +14,10 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.10**（`APP_VERSION`，versionCode **28**；**已上线** https://3d.20050905.xyz，未打 tag/Release） |
-| 本地 = 远端 HEAD | `fe5e2df4214e69a185f6d8482d454aeeb3039373`（已推送，Pages `built` @ 同 SHA） |
-| 回归测试 | **528/528 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `c39519e558b5f7d07e8654b826e21d3a`（**320,200 B**，逐字节一致） |
+| 当前版本 | **v1.11.0**（`APP_VERSION`，versionCode **29**；**已上线** https://3d.20050905.xyz，未打 tag/Release） |
+| 本地 = 远端 HEAD | `28b8edfb56e8835184c4bae658bd915a29e011f4`（已推送，Pages `built` @ 同 SHA） |
+| 回归测试 | **536/536 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `830f827f299113603009760c22967fec`（**330,797 B**，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag **15** 个 / Release **15** 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz** |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开，MIT） |
@@ -44,7 +44,7 @@ export NODE_PATH=C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_mo
 
 # 1) 改代码：只改根目录 index.html（唯一来源）
 
-# 2) 跑回归（基线 528/528）
+# 2) 跑回归（基线 536/536）
 "$NODE" test-presets.js
 
 # 3) 同步三副本 + 剥离调试属性（务必，否则 pre-commit 拦截）
@@ -157,7 +157,7 @@ cd desktop && node build-win.js && npm run dist   # 产物 dist/desktop/3D打印
 - 注意：个人站点是**另一个仓库** steveliuyan/myweb（= www.20050905.xyz），其 project-dpc.html 是本站项目页。
 
 【当前状态（接手时请以实际文件为准再核对一次）】
-- 版本 v1.10.10（versionCode 28）；回归测试 528/528 通过；三副本 md5 c39519e558b5f7d07e8654b826e21d3a（320,200 B）。
+- 版本 v1.11.0（versionCode 29）；回归测试 536/536 通过；三副本 md5 830f827f299113603009760c22967fec（330,797 B）。
 - 最新 Release：v1.9.0。最近三版做了什么：v1.8.2 修复安卓图标过大；v1.8.3 经营看板（订单统计/月度趋势/
   材料·客户排行/月报打印）+ 全屏动效 + 横屏/平板适配 + 弹窗滚动锁；v1.9.0 平台活动报名（活动折扣与阶梯/整单取大不叠加）
   + 建议零售价主视觉；v1.10.0 可选账号 + 云同步（不登录完全可用，token 不进 localStorage）。
