@@ -1,7 +1,7 @@
 {
   "name": "print-cost-calculator",
   "productName": "3D打印成本计算器",
-  "version": "1.16.0",
+  "version": "1.17.0",
   "description": "3D 打印成本计算器：材料、设备折旧、电费、人工、后处理与失败率摊销，算出单件成本、建议售价与利润",
   "main": "main.js",
   "author": "刘焱",
@@ -37,7 +37,7 @@
       "icon": "build/icon.ico"
     },
     "portable": {
-      "artifactName": "3D打印成本计算器-1.16.0-便携版.exe"
+      "artifactName": "3D打印成本计算器-1.17.0-便携版.exe"
     }
   }
 }

@@ -100,7 +100,7 @@
   .brand p{margin:2px 0 0; font-size:12px; color:var(--text3);
            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw}
   .hd-r{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
-.acct-btn{border-color:var(--line2); background:var(--surface); font-weight:600; padding:0 11px; gap:7px}
+.acct-btn{position:relative; border-color:var(--line2); background:var(--surface); font-weight:600; padding:0 11px; gap:7px}
 .acct-btn:hover{border-color:var(--accent); color:var(--accent)}
 .acct-btn .av{width:22px; height:22px; border-radius:50%; flex:none; display:inline-flex; align-items:center;
   justify-content:center; color:#fff; font-size:11px; font-weight:700; line-height:1;
@@ -901,6 +901,15 @@
 .au-go{height:44px; font-weight:650}
 .au-retry{margin:-4px 0 10px; font-size:12px}
 .cf-key{font-family:var(--mono); font-size:12px; color:var(--text2); margin:0 0 6px}
+  @keyframes bkspin{to{transform:rotate(360deg)}}
+  /* 未读通知红点：账号按钮上的小圆点 + 菜单里的数字角标 */
+  #acctNotiDot{position:absolute; top:-1px; right:-1px; width:8px; height:8px; border-radius:50%;
+               background:#ef4444; border:2px solid var(--surface); display:none; pointer-events:none}
+  #acctNotiDot.on{display:block}
+  #amNotiDot{display:none; min-width:16px; height:16px; padding:0 4px; margin-left:6px;
+             border-radius:8px; background:#ef4444; color:#fff; font-size:10px; font-weight:700;
+             line-height:16px; text-align:center}
+  #amNotiDot.on{display:inline-block}
 </style>
 <script>
 /* 主题：尽早应用，避免刷新瞬间闪白（FOUC）。
@@ -1054,7 +1063,7 @@
       <button class="btn ghost" id="btnReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3.2-6.9"/><path d="M3 4v5h5"/></svg>重置</button>
     </div>
       <div class="acct" id="acct">
-        <button type="button" class="btn acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false" title="账号与云同步（可选）"><span class="av" aria-hidden="true"><svg class="av-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.8 20c.6-3.6 3.6-5.6 7.2-5.6s6.6 2 7.2 5.6"/></svg><span class="av-ini" id="acctIni" hidden></span></span><span class="acct-txt" id="acctLabel">登录 / 注册</span></button>
+        <button type="button" class="btn acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false" title="账号与云同步（可选）"><span id="acctNotiDot" aria-hidden="true"></span><span class="av" aria-hidden="true"><svg class="av-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.8 20c.6-3.6 3.6-5.6 7.2-5.6s6.6 2 7.2 5.6"/></svg><span class="av-ini" id="acctIni" hidden></span></span><span class="acct-txt" id="acctLabel">登录 / 注册</span></button>
         <span class="acct-dot" id="acctDot" hidden title="有同步冲突待处理">0</span>
         <div class="acct-menu" id="acctMenu" hidden>
           <div class="am-head" id="amMail">未登录</div>
@@ -2658,7 +2667,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.16.0";
+  var APP_VERSION = "1.17.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5351,9 +5360,12 @@
       var dot = document.getElementById("amNotiDot");
       var btn = document.querySelector('[data-am="notify"]');
       if(dot){
-        dot.hidden = !NT.unread;
         dot.textContent = NT.unread > 9 ? "9+" : String(NT.unread || "");
+        dot.className = NT.unread ? "on" : "";
+        dot.hidden = false;
       }
+      var accDot = document.getElementById("acctNotiDot");
+      if(accDot) accDot.className = NT.unread ? "on" : "";
       if(btn) btn.style.color = NT.unread ? "#fbbf24" : "";
     }
 
@@ -5364,6 +5376,7 @@
         NT.items = (r.body && r.body.items) || [];
         NT.unread = (r.body && r.body.unread) || 0;
         ntBadge();
+        try{ ntPopupIfAny(); }catch(e){}
         return true;
       }).catch(function(){ return false; });
     }
@@ -5408,7 +5421,8 @@
             (it.body ? '<div style="font-size:12.5px;color:#8b96a8;margin-top:5px;line-height:1.7;' +
               'white-space:pre-wrap">' + escapeHtml(it.body) + '</div>' : '') +
             '<div style="font-size:11px;color:#5c6675;margin-top:5px">' +
-              new Date(it.created_at).toLocaleString() + '</div>' +
+              new Date(it.created_at).toLocaleString() +
+              (it.mode === "popup" ? ' · 弹窗提醒' : '') + '</div>' +
             (it.url ? '<div style="margin-top:6px"><a href="' + escapeHtml(it.url) +
               '" target="_blank" rel="noopener" style="color:#60a5fa;font-size:12.5px">查看详情 →</a></div>' : '') +
             '</div>';
@@ -5429,6 +5443,68 @@
       return String(v == null ? "" : v).replace(/[&<>"']/g, function(c){
         return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#39;" }[c];
       });
+    }
+
+
+    /* ---------- 重要通知：打开就弹窗 ---------- */
+    var NT_SHOWN_KEY = "dpc_nt_shown";
+
+    function ntShownIds(){
+      try{
+        var raw = lsGet(NT_SHOWN_KEY);
+        var arr = raw ? JSON.parse(raw) : [];
+        return Array.isArray(arr) ? arr : [];
+      }catch(e){ return []; }
+    }
+    function ntRememberShown(id){
+      try{
+        var arr = ntShownIds();
+        if(arr.indexOf(id) < 0) arr.push(id);
+        if(arr.length > 300) arr = arr.slice(-300);
+        writeVal(NT_SHOWN_KEY, JSON.stringify(arr));
+      }catch(e){}
+    }
+
+    function ntPopupIfAny(){
+      if(!st.user) return;
+      var shown = ntShownIds();
+      var hit = null;
+      for(var i = 0; i < NT.items.length; i++){
+        var it = NT.items[i];
+        if(it.mode === "popup" && !it.read && shown.indexOf(it.id) < 0){ hit = it; break; }
+      }
+      if(!hit) return;
+      ntRememberShown(hit.id);
+      var colors = { important:"#f87171", warn:"#fbbf24", info:"#60a5fa" };
+      var c = colors[hit.level] || colors.info;
+      var box = document.createElement("div");
+      box.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.6);" +
+        "z-index:96;display:flex;align-items:center;justify-content:center;padding:20px";
+      box.innerHTML =
+        '<div style="background:#141a24;color:#e6ebf2;border:1px solid ' + c + '55;border-radius:16px;' +
+        'max-width:440px;width:100%;max-height:80vh;overflow:auto;padding:20px;font-size:14px;text-align:left;' +
+        'box-shadow:0 24px 60px rgba(0,0,0,.5)">' +
+          '<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">' +
+            '<span style="width:9px;height:9px;border-radius:50%;background:' + c + '"></span>' +
+            '<b style="font-size:15.5px">' + escapeHtml(hit.title) + '</b></div>' +
+          (hit.body ? '<div style="font-size:13.5px;line-height:1.75;color:#c8d2e0;white-space:pre-wrap">' +
+            escapeHtml(hit.body) + '</div>' : '') +
+          (hit.url ? '<div style="margin-top:10px"><a href="' + escapeHtml(hit.url) +
+            '" target="_blank" rel="noopener" style="color:#60a5fa;font-size:13px">查看详情 →</a></div>' : '') +
+          '<button type="button" id="ntOk" style="width:100%;margin-top:16px;padding:11px;border-radius:10px;' +
+          'border:0;background:#2563eb;color:#fff;font-size:14.5px;cursor:pointer">我知道了</button>' +
+        '</div>';
+      document.body.appendChild(box);
+      function close(){
+        try{ box.remove(); }catch(e){}
+        api("/notifications/read", { method:"POST", body:{ ids:[hit.id] } }).then(function(){
+          hit.read = true;
+          NT.unread = Math.max(0, NT.unread - 1);
+          ntBadge();
+        }).catch(function(){});
+      }
+      document.getElementById("ntOk").addEventListener("click", close);
+      box.addEventListener("click", function(e){ if(e.target === box) close(); });
     }
 
     /* ---------- 强制全量推送 ---------- */
