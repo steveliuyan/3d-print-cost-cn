@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.5',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.6',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.5/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.6/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.5/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.6/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.5');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.6');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.5', d8.getElementById('footVer').textContent === '1.10.5',
+    ok('v1.8：版本号已升到 1.10.6', d8.getElementById('footVer').textContent === '1.10.6',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2522,9 +2522,9 @@ setTimeout(function () {
       p2.value = 'short'; p3.value = 'short';
       U.d.querySelector('[data-au="register"]').click();
       await U.tick(40);
-      ok('v1.10 注册 UI：密码不足 10 位 → 不发请求且提示',
+      ok('v1.10 注册 UI：密码不足 8 位 → 不发请求且提示',
         !callsTo(U, /\/auth\/register$/).length &&
-        /10/.test(U.d.getElementById('auMsg').textContent),
+        /8/.test(U.d.getElementById('auMsg').textContent),
         U.d.getElementById('auMsg').textContent);
 
       var NT = mk({ noToken: true, handler: function (url) {
@@ -2562,15 +2562,15 @@ setTimeout(function () {
       lp.dispatchEvent(new UT.w.Event('input', { bubbles: true }));
       await UT.tick(5);
       var lpErr = UT.d.getElementById('auErrPwd');
-      ok('v1.10.3 登录：密码不足 10 位即时红字',
-        !!lpErr && lpErr.hidden === false && /10/.test(lpErr.textContent) &&
+      ok('v1.10.3 登录：密码不足 8 位即时红字',
+        !!lpErr && lpErr.hidden === false && /8/.test(lpErr.textContent) &&
         lp.classList.contains('invalid'),
         lpErr ? lpErr.textContent : '(无错误节点)');
 
-      lp.value = 'abcdefghij';
+      lp.value = 'abcdefgh';   /* 正好 8 位：服务端新下限 */
       lp.dispatchEvent(new UT.w.Event('input', { bubbles: true }));
       await UT.tick(5);
-      ok('v1.10.3 登录：补足 10 位后红字自动消失',
+      ok('v1.10.3 登录：补足 8 位后红字自动消失',
         lpErr.hidden === true && !lp.classList.contains('invalid'));
 
       UT.d.querySelector('[data-au="toReg"]').click();
@@ -2580,7 +2580,7 @@ setTimeout(function () {
       r2.dispatchEvent(new UT.w.Event('input', { bubbles: true }));
       await UT.tick(5);
       var e2 = UT.d.getElementById('auErrPwd2');
-      ok('v1.10.3 注册：密码 4 位即时红字', !!e2 && e2.hidden === false && /10/.test(e2.textContent),
+      ok('v1.10.3 注册：密码 4 位即时红字', !!e2 && e2.hidden === false && /8/.test(e2.textContent),
         e2 ? e2.textContent : '(无节点)');
 
       r2.value = 'password12345';
