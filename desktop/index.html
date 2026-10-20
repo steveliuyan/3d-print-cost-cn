@@ -866,6 +866,16 @@
     .acct-menu{top:calc(100% + 6px)}
   }
 .au-sep{color:var(--text4)}
+.tpl-h{margin:14px 0 8px;font-size:13px;font-weight:700;color:var(--text2)}
+.tpl-row{display:flex;align-items:center;gap:8px;margin:0 0 8px;font-size:12.5px;color:var(--text3)}
+.tpl-row>input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text1);font-size:13px}
+.tpl-grid{display:grid;grid-template-columns:1fr 1fr;gap:0 12px}
+.tpl-rows{display:flex;flex-direction:column;gap:6px}
+.tpl-prow{display:flex;gap:6px;align-items:center}
+.tpl-prow>input{flex:1;min-width:0;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--text1);font-size:12.5px}
+.tpl-prow>input.p{max-width:110px}
+.tpl-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 4px}
+@media screen and (max-width:560px){ .tpl-grid{grid-template-columns:1fr} }
 .au-hint{margin:-2px 0 12px; font-size:11.5px; color:var(--text3); line-height:1.5}
 .au-err{margin:-4px 0 9px; font-size:11.5px; line-height:1.45; color:#e5484d; font-weight:550}
 .au-err[hidden]{display:none}
@@ -1329,8 +1339,45 @@
   <footer class="foot">
     <span>本地运行 · 参数与预设仅保存在浏览器 localStorage</span>
     <span>预设价格为 2026-10 电商参考价，请按实际购入价修改</span>
-    <span>v<span id="footVer">…</span> · <button type="button" class="lnk" id="btnCheckUpd">检查更新</button> · <button type="button" class="lnk" id="btnChangelog">更新日志</button></span>
+    <span>v<span id="footVer">…</span> · <button type="button" class="lnk" id="btnTpl">抬头与默认值</button> · <button type="button" class="lnk" id="btnCheckUpd">检查更新</button> · <button type="button" class="lnk" id="btnChangelog">更新日志</button></span>
   </footer>
+</div>
+
+<!-- ===== 抬头与默认值 ===== -->
+<div class="modal" id="tplModal">
+  <div class="modal-bg" data-tplclose></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="抬头与默认值" style="width:min(560px,calc(100vw - 28px))">
+    <div class="modal-head">
+      <h3>抬头与默认值</h3>
+      <button class="x" data-tplclose aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="au-note">这些设置属于「账号级」，登录后会在多台设备之间同步；不登录时只存本机。</p>
+      <h2 class="tpl-h">报价单抬头</h2>
+      <label class="tpl-row">公司 / 工作室名<input id="tpName" type="text" placeholder="留空则用默认品牌名"></label>
+      <label class="tpl-row">联系方式<input id="tpContact" type="text" placeholder="电话 / 微信"></label>
+      <label class="tpl-row">收款信息<input id="tpPay" type="text" placeholder="如：微信 / 支付宝 138xxxx"></label>
+      <label class="tpl-row">编号前缀<input id="tpPrefix" type="text" placeholder="DPC"></label>
+      <label class="tpl-row">报价有效期（天）<input id="tpDays" type="number" min="0" step="1" placeholder="留空则不限"></label>
+      <h2 class="tpl-h">默认参数</h2>
+      <div class="tpl-grid">
+        <label class="tpl-row">电价 ¥/kWh<input id="tpElec" type="number" min="0" step="0.01"></label>
+        <label class="tpl-row">人工 ¥/小时<input id="tpLabor" type="number" min="0" step="0.1"></label>
+        <label class="tpl-row">失败率 %<input id="tpFail" type="number" min="0" step="0.1"></label>
+        <label class="tpl-row">加价倍率<input id="tpMarkup" type="number" min="0" step="0.1"></label>
+        <label class="tpl-row">平台佣金 %<input id="tpComm" type="number" min="0" step="0.1"></label>
+      </div>
+      <h2 class="tpl-h">材料价格库（¥/kg）</h2>
+      <div class="tpl-rows" id="tpPriceRows"></div>
+      <p class="au-alt"><button type="button" class="lnk" data-tpl="addPrice">+ 添加一行</button></p>
+      <div class="tpl-actions">
+        <button type="button" class="btn" data-tpl="applyDefaults">默认参数填进单件页</button>
+        <button type="button" class="btn" data-tpl="applyPrice">按库价填当前材料单价</button>
+        <button type="button" class="btn primary" data-tpl="save">保存</button>
+      </div>
+      <p class="au-note" id="tpMsg"></p>
+    </div>
+  </div>
 </div>
 
 <!-- ===== 预设管理 ===== -->
@@ -1703,6 +1750,37 @@
   /* ================= 自定义预设存储 =================
      custom[type] 里既存"新增的自定义项"，也存"对内置项的修改覆盖"（同 id）。 */
   var PKEY = "dpc_presets_v3";
+  var PROF_KEY = "dpc_profile_v1", PRICE_KEY = "dpc_prices_v1";
+  function emptyProf(){
+    return { company:{name:"", contact:"", pay:""},
+             quote:{prefix:"", days:0},
+             defaults:{elecPrice:"", laborRate:"", failRate:"", markup:"", commission:""} };
+  }
+  function loadProf(){
+    var d = emptyProf();
+    try{
+      var p = JSON.parse(localStorage.getItem(PROF_KEY) || "null");
+      if(p && typeof p === "object"){
+        var c = p.company || {}, q = p.quote || {}, df = p.defaults || {};
+        d.company = { name: String(c.name || ""), contact: String(c.contact || ""), pay: String(c.pay || "") };
+        d.quote = { prefix: String(q.prefix || ""), days: Math.max(0, parseInt(q.days, 10) || 0) };
+        ["elecPrice", "laborRate", "failRate", "markup", "commission"].forEach(function(k){
+          d.defaults[k] = (df[k] === undefined || df[k] === null) ? "" : String(df[k]);
+        });
+      }
+    }catch(e){}
+    return d;
+  }
+  function saveProf(p){ try{ localStorage.setItem(PROF_KEY, JSON.stringify(p)); }catch(e){} }
+  function loadPrices(){
+    try{
+      var a = JSON.parse(localStorage.getItem(PRICE_KEY) || "[]");
+      if(!Array.isArray(a)) return [];
+      return a.filter(function(x){ return x && String(x.n || "").trim(); })
+              .map(function(x){ return { n: String(x.n).trim(), p: Number(x.p) || 0 }; });
+    }catch(e){ return []; }
+  }
+  function savePrices(a){ try{ localStorage.setItem(PRICE_KEY, JSON.stringify(a || [])); }catch(e){} }
   var custom = {device:[], material:[]};
   try{
     var rawP = localStorage.getItem(PKEY);
@@ -2558,12 +2636,15 @@
   var BRAND_NAME = "3D 打印成本计算器";
   /* 报价单抬头：标识 + 名称 + 主色分隔线 */
   function brandHeadHTML(sub){
+    var p = loadProf(), cn = p.company.name, cc = p.company.contact;
+    var title = cn || BRAND_NAME;
+    var line2 = (cc ? cc + " \u00b7 " : "") + (sub || "");
     return '<div class="pp-brand">' + BRAND_SVG +
-      '<div class="bn"><b>' + esc(BRAND_NAME) + '</b><span>' + sub + "</span></div></div>" +
+      '<div class="bn"><b>' + esc(title) + '</b><span>' + esc(line2) + "</span></div></div>" +
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.10";
+  var APP_VERSION = "1.11.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -3477,7 +3558,7 @@
   /* 当日流水编号 DPC-YYYYMMDD-NNN */
   function assignNo(list){
     var d = new Date(), p2 = function(v){ return (v < 10 ? "0" : "") + v; };
-    var dpre = "DPC-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-";
+    var dpre = (loadProf().quote.prefix || "DPC") + "-" + d.getFullYear() + p2(d.getMonth() + 1) + p2(d.getDate()) + "-";
     var max = 0;
     (list || []).forEach(function(o){
       if(o && o.no && o.no.indexOf(dpre) === 0){
@@ -3994,6 +4075,11 @@
     if(!confirmDiscard()) return;
     curOrder = null;
     ensureCurrentOrder();
+    var pd = loadProf().quote.days || 0;
+    if(pd > 0 && $("#ordValid") && !$("#ordValid").value){
+      var dv = new Date(Date.now() + pd * 86400000), p2v = function(v){ return (v < 10 ? "0" : "") + v; };
+      $("#ordValid").value = dv.getFullYear() + "-" + p2v(dv.getMonth() + 1) + "-" + p2v(dv.getDate());
+    }
     clearDraft();
     renderOrder();
     toast("已新建订单");
@@ -4763,6 +4849,109 @@
   }
 
   $("#ppPrint").addEventListener("click", doPrint);
+  /* ===== 抬头与默认值 ===== */
+  function tplPriceRowsRender(list){
+    var box = $("#tpPriceRows"); if(!box) return;
+    box.innerHTML = "";
+    (list || []).forEach(function(it){
+      var row = document.createElement("div");
+      row.className = "tpl-prow";
+      var a = document.createElement("input"); a.type = "text"; a.value = it.n || ""; a.placeholder = "材料名，如 PLA";
+      var b = document.createElement("input"); b.type = "number"; b.min = "0"; b.step = "0.1";
+      b.className = "p"; b.value = (it.p ? it.p : ""); b.placeholder = "¥/kg";
+      var del = document.createElement("button");
+      del.type = "button"; del.className = "lnk"; del.textContent = "删除";
+      del.addEventListener("click", function(){ if(row.parentNode) row.parentNode.removeChild(row); });
+      row.appendChild(a); row.appendChild(b); row.appendChild(del);
+      box.appendChild(row);
+    });
+  }
+  function tplCollectPrices(){
+    var out = [], box = $("#tpPriceRows");
+    if(!box) return out;
+    Array.prototype.forEach.call(box.children, function(row){
+      var ins = row.querySelectorAll("input");
+      if(ins.length < 2) return;
+      var n = String(ins[0].value || "").trim();
+      if(!n) return;
+      out.push({ n: n, p: Number(ins[1].value) || 0 });
+    });
+    return out;
+  }
+  function openTpl(){
+    var p = loadProf();
+    $("#tpName").value = p.company.name;
+    $("#tpContact").value = p.company.contact;
+    $("#tpPay").value = p.company.pay;
+    $("#tpPrefix").value = p.quote.prefix;
+    $("#tpDays").value = p.quote.days || "";
+    $("#tpElec").value = p.defaults.elecPrice;
+    $("#tpLabor").value = p.defaults.laborRate;
+    $("#tpFail").value = p.defaults.failRate;
+    $("#tpMarkup").value = p.defaults.markup;
+    $("#tpComm").value = p.defaults.commission;
+    tplPriceRowsRender(loadPrices());
+    $("#tpMsg").textContent = "";
+    $("#tplModal").classList.add("open");
+  }
+  function closeTpl(){ var m = $("#tplModal"); if(m) m.classList.remove("open"); }
+  function tplSave(){
+    var p = emptyProf();
+    p.company = { name: $("#tpName").value.trim(), contact: $("#tpContact").value.trim(),
+                  pay: $("#tpPay").value.trim() };
+    p.quote = { prefix: $("#tpPrefix").value.trim(), days: Math.max(0, parseInt($("#tpDays").value, 10) || 0) };
+    var idOf = { elecPrice:"tpElec", laborRate:"tpLabor", failRate:"tpFail", markup:"tpMarkup", commission:"tpComm" };
+    Object.keys(idOf).forEach(function(k){ p.defaults[k] = $("#" + idOf[k]).value.trim(); });
+    saveProf(p);
+    savePrices(tplCollectPrices());
+    $("#tpMsg").textContent = "已保存（抬头模板 + 默认参数 + 价格库）";
+    toast("已保存");
+  }
+  function tplApplyDefaults(){
+    var p = loadProf(), n = 0;
+    ["elecPrice", "laborRate", "failRate", "markup", "commission"].forEach(function(k){
+      var v = p.defaults[k];
+      if(v === "" || v === undefined || v === null) return;
+      var el = document.querySelector('[data-field="' + k + '"]');
+      if(el){ el.value = v; n++; }
+    });
+    if(typeof compute === "function") compute();
+    $("#tpMsg").textContent = n ? ("已把 " + n + " 项默认参数填进单件页") : "还没有设置默认参数";
+  }
+  function tplApplyPrice(){
+    var sel = $("#matSel"), txt = "", name = "";
+    if(sel && sel.value && sel.selectedIndex >= 0){
+      var opt = sel.options[sel.selectedIndex];
+      txt = String((opt && (opt.textContent || opt.text)) || "");
+      name = txt.split("/")[0].trim();
+    }
+    if(!txt){ $("#tpMsg").textContent = "先在单件页选一种材料"; return; }
+    var low = txt.toLowerCase(), hit = null;
+    loadPrices().forEach(function(it){
+      if(!hit && low.indexOf(it.n.toLowerCase()) >= 0) hit = it;
+    });
+    if(!hit){
+      loadPrices().forEach(function(it){ if(!hit && it.n.toLowerCase() === name.toLowerCase()) hit = it; });
+    }
+    if(!hit){ $("#tpMsg").textContent = "价格库里没有「" + name + "」"; return; }
+    var el = document.querySelector('[data-field="spoolPrice"]');
+    if(el) el.value = hit.p;
+    if(typeof compute === "function") compute();
+    $("#tpMsg").textContent = "已按库价把「" + name + "」的单价填成 ¥" + hit.p + "/kg";
+  }
+  if($("#btnTpl")) $("#btnTpl").addEventListener("click", openTpl);
+  $$("[data-tplclose]").forEach(function(el){ el.addEventListener("click", closeTpl); });
+  document.addEventListener("click", function(e){
+    var t = e.target;
+    while(t && t !== document && !(t.getAttribute && t.getAttribute("data-tpl"))) t = t.parentNode;
+    if(!t || t === document) return;
+    var a = t.getAttribute("data-tpl");
+    if(a === "save") tplSave();
+    else if(a === "addPrice") tplPriceRowsRender(tplCollectPrices().concat([{ n:"", p:0 }]));
+    else if(a === "applyDefaults") tplApplyDefaults();
+    else if(a === "applyPrice") tplApplyPrice();
+  });
+
   $("#pprev").addEventListener("click", function(e){
     if(e.target.closest && e.target.closest("[data-ppclose]")) closePrint();
   });
@@ -5027,6 +5216,7 @@
     var API_BASE = "https://api.20050905.xyz/v1";
     var PRODUCT = "dpc";            /* 服务端 DEFAULT_PRODUCT=aibox，必须显式声明产品线 */
     var KEYS = ["dpc_v1", "dpc_cats_v1", "dpc_presets_v3", "dpc_quotes_v1", "dpc_customers_v1",
+                "dpc_profile_v1", "dpc_prices_v1",
                 "dpc_orders_v1", "dpc_order_draft_v1", "dpc_dash_v1", "dpc_theme_v1", "dpc_view_v1"];
     var META_KEY = "dpc_meta", CONFLICT_KEY = "dpc_conflicts";
     var BATCH_MAX = 20, DEBOUNCE_MS = 3000, BACKOFF = [5000, 15000, 60000, 300000], MAX_TRIES = 10;
@@ -5125,6 +5315,7 @@
       if(b && b.error && b.error.message) return b.error.message;
       if(r && r.status === 401) return "登录已过期，请重新登录";
       if(r && r.status === 429) return "操作太频繁，请稍后再试";
+      if(r && r.status === 413) return "云端空间不够了（单个键上限 2MB、总计 50MB），可先在管理后台清理不需要的备份";
       return "请求失败（HTTP " + (r && r.status) + "）";
     }
 
@@ -6002,7 +6193,7 @@
         setFetch: function(f){ st.fetchImpl = f; },
         csrf: csrf, readVal: readVal, writeVal: writeVal, showConflict: showConflict, installHook: installHook,
         turnToken: turnToken, resetTurn: resetTurn, requireTurn: requireTurn,
-        setTurnWait: function(ms){ st.turnWait = ms || 8000; }
+        setTurnWait: function(ms){ st.turnWait = ms || 8000; }, errText: errMsg
       }
     };
   })();
@@ -6023,6 +6214,8 @@
       drawShareImage: drawShareImage, drawOrderShareImage: drawOrderShareImage,
       dashStats: dashStats, dashRangeStart: dashRangeStart, renderDash: renderDash,
       currentView: currentView, DASH_RANGE_LABEL: DASH_RANGE_LABEL,
+      loadProf: loadProf, saveProf: saveProf, loadPrices: loadPrices, savePrices: savePrices,
+      brandHeadHTML: brandHeadHTML, openPrint: openPrint,
       cloud: Cloud
     };
   }catch(e){}
