@@ -13,12 +13,12 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.12.0**（`APP_VERSION`，versionCode **30**）— **已上线且已发版** |
+| 当前版本 | **v1.13.0**（`APP_VERSION`，versionCode **31**）— **已上线且已发版** |
 | 本地 = 远端 HEAD | 以 `git log --oneline -1` 为准（发版基线 `b75f513994ca437adb97bcfd329300709f2a34f1`） |
-| 回归测试 | **541/541 通过**（`test-presets.js`，jsdom；v1.12.0 新增 5 条云端备份断言） |
-| 三副本 md5 | `fb8190405fdab47347a754d800ff42c3`（**343,119 B**）← v1.12.0 工作区 |
-| 本地 = 远端 HEAD | `5a4a995`（v1.12.0 已提交、推送、发版；工作区干净） |
-| 最新 Release | **v1.12.0 云端备份**（latest = v1.12.0，3 附件：web.html / portable.exe 70.83MB / apk 1.24MB） |
+| 回归测试 | **545/545 通过**（`test-presets.js`，jsdom；v1.12 云端备份 5 条 + v1.13 改密码 4 条） |
+| 三副本 md5 | `0bfff145df7db962b59ec0e5f3d0ae96`（**348,668 B**）← v1.13.0 |
+| 本地 = 远端 HEAD | `1d6dd2f`（v1.13.0 已提交、推送、发版；工作区干净） |
+| 最新 Release | **v1.13.0 修改密码**（latest = v1.13.0，3 附件：web.html / portable.exe 70.83MB / apk 1.24MB） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
 | **站点仓库** | **`https://github.com/steveliuyan/myweb`**（= `www.20050905.xyz`，项目页 `project-dpc.html`）⚠️ 两个仓库，改站点要单独提交 |
@@ -280,3 +280,16 @@ DELETE /v1/backup/{id}                   → 204
 3. 提交 → 推送（`git ls-remote` 探连通性，不通走 `.secrets/_api_push.py`）→
    把 `dist/release/` 里三个 `3d-print-cost-cn-1.12.0-*` 发 Release（`.secrets/_api_release.py`）。
 4. 发完顺手更新 `myweb` 站点页（HANDOFF §五 P3 仍未做）。
+
+---
+
+## 十三、修改密码（v1.13.0，2026-10-20）
+
+- 账号菜单新增 `data-am="chpwd"`「修改密码」；Cloud 模块新增
+  `cpEnsure / openChangePwd / cpSend / cpSubmit`（纯 ES5，自建 overlay）。
+- 两步：`POST /v1/me/password/request` 发码 → `POST /v1/me/password/confirm`
+  `{change_id, code, new_password}`。改完**其它设备被登出，本机保留**。
+- 断言：4 条（入口 / 面板 / 发码 / 确认参数），全量 **545/545**。
+- 已发版 v1.13.0（tag/Release 已创建，3 附件，线上 3d.20050905.xyz 已是 1.13.0）。
+- 另外服务端新增了浏览器版「账号中心」`https://api.20050905.xyz/account`，
+  不想要客户端内置面板时也可以直接引导用户去那里改。

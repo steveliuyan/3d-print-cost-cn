@@ -682,6 +682,7 @@
   }
   /* ===== 覆盖层：打印预览 / 导出兜底 ===== */  .ov{position:fixed; inset:0; z-index:var(--z-modal); display:none}
   .ov.open{display:block}
+  .ov.open{overflow-y:auto; -webkit-overflow-scrolling:touch}
   .ov-bg{position:absolute; inset:0; background:rgba(14,16,21,.5); animation:fadeIn .18s var(--ease);
          backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px)}
   .ov-panel{position:relative; margin:4vh auto; width:min(880px,calc(100vw - 28px)); max-height:92vh; background:var(--surface);
@@ -692,7 +693,10 @@
   .ov-head .x{margin-left:auto; border:0; background:transparent; font-size:19px; line-height:1; color:var(--text3);
               cursor:pointer; width:30px; height:30px; border-radius:9px; transition:.16s}
   .ov-head .x:hover{color:var(--text); background:var(--line-soft)}
-  .ov-body{overflow:auto; flex:1; background:var(--overlay-bg)}
+  /* flex 子项默认 min-height:auto，会撑高面板把底部按钮挤出可视区；
+     必须显式 min-height:0 内容区才能滚动、底部按钮才留在原地 */
+  .ov-body{overflow:auto; flex:1 1 auto; min-height:0; -webkit-overflow-scrolling:touch;
+           overscroll-behavior:contain; background:var(--overlay-bg)}
   .ov-foot{display:flex; align-items:center; gap:8px; justify-content:flex-end; padding:12px 18px;
            border-top:1px solid var(--line); flex:none; background:var(--surface)}
   .ov-foot .pp-hint{margin-right:auto; font-size:12px; color:var(--text3); line-height:1.45; max-width:52%}
@@ -728,7 +732,9 @@
   .pp-rule{height:3px; background:#4f46e5; border-radius:2px; margin:10px 0 12px}
   /* 窄屏（手机）：A4 固定 210mm 会横向溢出且留白过大 → 降级为流式宽度（仅影响屏幕，不影响打印） */
   @media screen and (max-width:900px){
-    .ov-panel{margin:2vh auto; max-height:96vh; width:calc(100vw - 16px)}
+    .ov-panel{margin:10px auto; width:calc(100vw - 16px);
+            max-height:calc(100vh - 20px);
+            max-height:calc(100dvh - 20px)}
     .ov-head{padding:12px 14px}
     .ov-foot{flex-wrap:wrap; padding:10px 14px}
     .ov-foot .pp-hint{max-width:100%; flex:1 1 100%; order:3; margin:0 0 8px; font-size:11.5px}
@@ -849,6 +855,7 @@
   border:1px dashed var(--line3); border-radius:9px; padding:10px; margin:0 0 8px; word-break:break-all}
 .au-url{font-size:10.5px; color:var(--text3); word-break:break-all; margin:0 0 10px}
 .cf-turnstile{margin:2px 0 10px; min-height:65px}
+  html.app-client .cf-turnstile{display:none}   /* App 内不需要人机验证 */
 #authModal .modal-panel{width:min(460px,calc(100vw - 28px)); max-height:92vh}
 #authModal .modal-body{padding:2px 22px 12px}
 #authModal .au-lb{margin:0 0 9px}
@@ -914,6 +921,7 @@
   }catch(e){}
 })();
 </script>
+<script>(function(){try{if(/(^|\.)appassets\.androidplatform\.net$/i.test(location.hostname||""))document.documentElement.className+=" app-client";}catch(e){}})();</script>
 </head>
 <body>
 <!-- ===== v1.10.0 可选账号 / 云同步 ===== -->
@@ -1053,6 +1061,7 @@
           <div class="am-stat" id="amStat">数据仅保存在本机</div>
           <button type="button" data-am="sync">立即同步</button>
           <button type="button" data-am="mfa">两步验证</button>
+          <button type="button" data-am="avatar">更换头像</button>
           <button type="button" data-am="chpwd">修改密码</button>
           <button type="button" data-am="cloudbackup">云端备份</button>
           <button type="button" data-am="logout">退出登录</button>
@@ -2646,7 +2655,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.13.0";
+  var APP_VERSION = "1.14.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5219,12 +5228,17 @@
     var PRODUCT = "dpc";            /* 服务端 DEFAULT_PRODUCT=aibox，必须显式声明产品线 */
     var KEYS = ["dpc_v1", "dpc_cats_v1", "dpc_presets_v3", "dpc_quotes_v1", "dpc_customers_v1",
                 "dpc_profile_v1", "dpc_prices_v1",
-                "dpc_orders_v1", "dpc_order_draft_v1", "dpc_dash_v1", "dpc_theme_v1", "dpc_view_v1"];
+                "dpc_orders_v1", "dpc_order_draft_v1", "dpc_dash_v1", "dpc_theme_v1", "dpc_view_v1",
+                "dpc_avatar_v1"];
     var META_KEY = "dpc_meta", CONFLICT_KEY = "dpc_conflicts";
     var BATCH_MAX = 20, DEBOUNCE_MS = 3000, BACKOFF = [5000, 15000, 60000, 300000], MAX_TRIES = 10;
     /* 人机验证：服务端 GET /v1/health 返回 turnstile 开关。当前生产为 false（跳过校验），
        故默认不加载 Cloudflare 脚本；服务端一旦开启，把 3d 站点的 widget sitekey 填进下面即可。 */
     var TURNSTILE_SITEKEY = "0x4AAAAAAFcfg4zaO7N3n25b";
+    /* 安卓 APK 的页面源是 https://appassets.androidplatform.net，Turnstile 不认这个域名，
+       所以 App 内改用专属请求头跳过人机验证（服务端仍有限流 + 邮箱验证 + 密码校验）。 */
+    var IS_APP = /(^|\.)appassets\.androidplatform\.net$/i.test(location.hostname || "");
+    var APP_CLIENT_KEY = "e3bf0cb7b164e650580c1981d1fc488abb872d32";
     /* 只在契约允许的来源启用：服务端 CORS 白名单只有 3d.20050905.xyz / 20050905.xyz。
        file:// 或 localhost 打开时保持纯离线（不探测、不发请求），加 ?cloud=1 可临时调试。 */
     var ENABLED = (function(){
@@ -5292,6 +5306,7 @@
       opt = opt || {};
       var method = (opt.method || "GET").toUpperCase();
       var headers = {};
+      if(IS_APP && APP_CLIENT_KEY) headers["X-App-Key"] = APP_CLIENT_KEY;
       if(method !== "GET"){
         headers["Content-Type"] = "application/json";
         headers["X-CSRF-Token"] = csrf();
@@ -5322,6 +5337,77 @@
     }
 
 
+
+
+    /* ---------- 头像 ---------- */
+    var AVATAR_KEY = "dpc_avatar_v1";
+    function avatarUrl(){
+      var v = readVal(AVATAR_KEY);
+      return (typeof v === "string" && v.indexOf("data:image") === 0) ? v : "";
+    }
+    function applyAvatar(){
+      var ini = document.getElementById("acctIni");
+      var btn = document.getElementById("acctBtn");
+      var url = avatarUrl();
+      var box = btn ? btn.querySelector(".av") : null;
+      if(!box) return;
+      if(url){
+        box.style.backgroundImage = "url(" + url + ")";
+        box.style.backgroundSize = "cover";
+        box.style.backgroundPosition = "center";
+        if(ini) ini.hidden = true;
+      }else{
+        box.style.backgroundImage = "";
+        if(ini && st.user) ini.hidden = false;
+      }
+    }
+    function pickAvatar(){
+      var inp = document.getElementById("avatarFile");
+      if(!inp){
+        inp = document.createElement("input");
+        inp.type = "file";
+        inp.accept = "image/*";
+        inp.id = "avatarFile";
+        inp.style.display = "none";
+        document.body.appendChild(inp);
+        inp.addEventListener("change", function(){
+          var f = inp.files && inp.files[0];
+          inp.value = "";
+          if(!f) return;
+          if(f.size > 8 * 1024 * 1024){ bkToast("图片太大了（请小于 8MB）"); return; }
+          shrinkAvatar(f, function(dataUrl){
+            writeVal(AVATAR_KEY, dataUrl);
+            applyAvatar();
+            markDirty(AVATAR_KEY);
+            bkToast(st.user ? "头像已更新，正在同步" : "头像已更新（登录后会自动同步）");
+          });
+        });
+      }
+      inp.click();
+    }
+    function shrinkAvatar(file, cb){
+      var fr = new FileReader();
+      fr.onload = function(){
+        var img = new Image();
+        img.onload = function(){
+          try{
+            var size = 128;
+            var cv = document.createElement("canvas");
+            cv.width = size; cv.height = size;
+            var ctx = cv.getContext && cv.getContext("2d");
+            if(!ctx){ cb(String(fr.result)); return; }   /* 不支持 canvas 时直接用原图 */
+            var s0 = Math.min(img.width || size, img.height || size);
+            ctx.drawImage(img, ((img.width || size) - s0) / 2, ((img.height || size) - s0) / 2,
+                          s0, s0, 0, 0, size, size);
+            cb(cv.toDataURL("image/jpeg", 0.82));
+          }catch(e){ cb(String(fr.result)); }
+        };
+        img.onerror = function(){ bkToast("这张图片读不了，换一张试试"); };
+        img.src = String(fr.result);
+      };
+      fr.onerror = function(){ bkToast("读取文件失败"); };
+      fr.readAsDataURL(file);
+    }
 
     /* ---------- 改密码（邮箱验证两步） ---------- */
     var cpBox = null, cpChangeId = "";
@@ -6016,6 +6102,7 @@
         if(act === "sync"){ st.tries = 0; pushNow(); }
         else if(act === "cloudbackup"){ openBackup(); }
         else if(act === "chpwd"){ openChangePwd(); }
+        else if(act === "avatar"){ pickAvatar(); }
         else if(act === "mfa"){ openAuth("auTwo"); doMfaSetup(); }
         else if(act === "logout"){ logout(); }
         return;
@@ -6361,11 +6448,13 @@
       }catch(e){}
     }
     function ensureTurn(key){
+      if(IS_APP) return Promise.resolve(false);   /* App 内不加载 Turnstile */
       if(!TURNSTILE_SITEKEY) return Promise.resolve(false);
       return turnstileReady().then(function(ok){ if(ok) renderTurn(key); return !!ok; });
     }
     function turnToken(key){ return TURN.tok[key] || ""; }
     function requireTurn(key){
+      if(IS_APP) return Promise.resolve("app");    /* 占位令牌，服务端凭 X-App-Key 放行 */
       if(!TURNSTILE_SITEKEY) return Promise.resolve("");
       if(turnToken(key)) return Promise.resolve(turnToken(key));
       return ensureTurn(key).then(function(ok){
@@ -6405,6 +6494,7 @@
       boot: boot, meta: metaAll, conflicts: conflictsAll, dirtyKeys: dirtyKeys,
       state: function(){ return { user: st.user, status: st.status, tries: st.tries, lastSyncAt: st.lastSyncAt }; },
       markDirty: markDirty, pushNow: pushNow, pull: pull, resolve: resolve, hydrate: hydrate,
+    applyAvatar: applyAvatar,   /* 测试与外部渲染用 */
       login: login, register: register, verifyEmail: verifyEmail, resendCode: resendCode,
       mfaVerify: mfaVerify, mfaSetup: mfaSetup, mfaEnable: mfaEnable, logout: logout, me: me,
       loadOrders: loadOrders,
