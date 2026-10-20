@@ -2671,7 +2671,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.18.1";
+  var APP_VERSION = "1.19.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5357,6 +5357,30 @@
 
 
 
+
+    /* ---------- 自动拉取：别的设备改了东西，这边不用手动点同步 ---------- */
+    var autoPullTimer = null;
+    function autoPullTick(){
+      if(!ENABLED || !st.user) return;
+      if(typeof document !== "undefined" && document.hidden) return;   /* 后台不拉 */
+      if(dirtyKeys().length) return;      /* 本地有没推上去的改动，先别拉，免得打架 */
+      if(st.status === "syncing") return;
+      pull();
+    }
+    function startAutoPull(){
+      if(!ENABLED || autoPullTimer) return;
+      /* 测试环境（jsdom）不启定时器，否则测试进程不会退出 */
+      try{ if(typeof navigator !== "undefined" && /jsdom/i.test(navigator.userAgent || "")) return; }catch(e){}
+      autoPullTimer = window.setInterval(autoPullTick, 45000);   /* 45 秒一次 */
+      try{
+        document.addEventListener("visibilitychange", function(){
+          if(!document.hidden) autoPullTick();
+        });
+      }catch(e){}
+      try{ window.addEventListener("focus", autoPullTick); }catch(e){}
+      try{ window.addEventListener("online", autoPullTick); }catch(e){}
+    }
+
     /* ---------- 应用内通知 ---------- */
     var NT = { items: [], unread: 0, box: null };
 
@@ -6067,6 +6091,25 @@
             changed = false, i;
         for(i = 0; i < KEYS.length; i++){
           var k = KEYS[i], srv = items[k], meta = m[k] || null, raw = lsGet(k);
+
+          /* 头像单独处理：不当业务数据，永远不弹冲突：
+             本地没有 → 用云端的；云端版本更高 → 用云端的；本地刚换 → 推上去 */
+          if(k === AVATAR_KEY){
+            var srvAv = (srv && srv.value !== undefined) ? srv.value : null;
+            var localAv = readVal(k);
+            var hasSrvAv = (typeof srvAv === "string" && srvAv.indexOf("data:image") === 0);
+            var hasLocalAv = (typeof localAv === "string" && localAv.indexOf("data:image") === 0);
+            var srvAvVer = (srv && srv.version) || 0;
+            var myAvVer = (meta && meta.version) || 0;
+            if(hasSrvAv && (!hasLocalAv || srvAvVer > myAvVer)){
+              suppressUp(); writeVal(k, srvAv); suppressDown();
+              m[k] = { version: srvAvVer, dirtyAt: 0 };
+              changed = true;
+            }else if(hasLocalAv && meta && meta.dirtyAt > 0 && srvAvVer <= myAvVer){
+              m[k] = { version: myAvVer, dirtyAt: meta.dirtyAt };
+            }
+            continue;
+          }
           if(srv && srv.value !== undefined){
             if(meta && meta.dirtyAt > 0){
               cl = upsertConflict(cl, { key: k, local: readVal(k), server: srv.value,
@@ -6797,6 +6840,8 @@
         renderAcct();
         if(!ENABLED) return;
         me();
+        try{ startAutoPull(); }catch(e){}
+        try{ window.setTimeout(function(){ if(st.user) loadNotifications(); }, 1500); }catch(e){}
       }catch(e){}
       try{
         window.addEventListener("online", function(){
@@ -6813,7 +6858,7 @@
       markDirty: markDirty, pushNow: pushNow, pull: pull, resolve: resolve, hydrate: hydrate,
     applyAvatar: applyAvatar,   /* 测试与外部渲染用 */
     forcePushAll: forcePushAll, openDiag: openDiag, ENABLED: ENABLED, IS_APP: IS_APP,
-    loadNotifications: loadNotifications, openNotify: openNotify,
+    loadNotifications: loadNotifications, openNotify: openNotify, autoPullTick: autoPullTick,
       login: login, register: register, verifyEmail: verifyEmail, resendCode: resendCode,
       mfaVerify: mfaVerify, mfaSetup: mfaSetup, mfaEnable: mfaEnable, logout: logout, me: me,
       loadOrders: loadOrders,
