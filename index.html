@@ -844,6 +844,9 @@
 #authModal .au-go{height:42px}
 #authModal .cf-turnstile{margin:0 0 8px}
 .au-hint{margin:-2px 0 12px; font-size:11.5px; color:var(--text3); line-height:1.5}
+.au-err{margin:-4px 0 9px; font-size:11.5px; line-height:1.45; color:#e5484d; font-weight:550}
+.au-err[hidden]{display:none}
+.au-lb input.invalid{border-color:#e5484d !important; box-shadow:0 0 0 3px rgba(229,72,77,.13)}
 .au-lb .pw{position:relative; display:block; margin-top:5px}
 .au-lb .pw input{margin-top:0; padding:11px 44px 11px 12px; height:44px}
 .eye{position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px;
@@ -895,7 +898,9 @@
       <section id="auLogin">
         <label class="au-lb">邮箱<input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
         <p class="au-hint">登录后 10 个本地数据键会自动增量同步，不登录也能正常使用。</p>
+        <p class="au-err" id="auErrEmail" hidden></p>
         <label class="au-lb">密码<span class="pw"><input id="auPwd" type="password" autocomplete="current-password" placeholder="至少 10 位"><button type="button" class="eye" data-eye="auPwd" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <p class="au-err" id="auErrPwd" hidden></p>
         <div class="cf-turnstile" id="auTurn" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="login">登录</button>
         <p class="au-alt">还没有账号？<button type="button" class="lnk" data-au="toReg">注册</button></p>
@@ -904,8 +909,11 @@
       <section id="auReg" hidden>
         <label class="au-lb">邮箱<input id="auEmail2" type="email" autocomplete="username" placeholder="you@example.com"></label>
         <p class="au-hint">注册后验证码会发到这个邮箱，10 分钟内有效。</p>
+        <p class="au-err" id="auErrEmail2" hidden></p>
         <label class="au-lb">密码<span class="pw"><input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位，别用弱密码"><button type="button" class="eye" data-eye="auPwd2" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <p class="au-err" id="auErrPwd2" hidden></p>
         <label class="au-lb">确认密码<span class="pw"><input id="auPwd3" type="password" autocomplete="new-password" placeholder="再输入一次"><button type="button" class="eye" data-eye="auPwd3" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <p class="au-err" id="auErrPwd3" hidden></p>
         <div class="cf-turnstile" id="auTurn2" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="register">注册并发送验证码</button>
         <p class="au-alt">已有账号？<button type="button" class="lnk" data-au="toLogin">去登录</button></p>
@@ -2512,7 +2520,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.2";
+  var APP_VERSION = "1.10.3";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5435,6 +5443,14 @@
       el.hidden = !text; el.textContent = text || "";
       el.className = "au-msg" + (kind ? " " + kind : "");
     }
+    function clearAuthErrs(){
+      ["auErrEmail", "auErrEmail2", "auErrPwd", "auErrPwd2", "auErrPwd3"].forEach(function(id){
+        var e = $(id); if(e){ e.hidden = true; e.textContent = ""; }
+      });
+      ["auEmail", "auEmail2", "auPwd", "auPwd2", "auPwd3"].forEach(function(id){
+        var i = $(id); if(i){ i.classList.remove("invalid"); i.removeAttribute("aria-invalid"); }
+      });
+    }
     function showStep(step){
       ["auLogin", "auReg", "auCode", "auMfa", "auTwo"].forEach(function(id){
         var el = $(id); if(el) el.hidden = (id !== step);
@@ -5445,6 +5461,8 @@
       var tk = { auLogin:"login", auReg:"reg", auCode:"resend" }[step];
       st.stepKey = tk || "";
       showRetry(false);
+      clearAuthErrs();
+      bindPwValidation();
       if(tk) ensureTurn(tk);
     }
     function openAuth(step){
@@ -5520,6 +5538,58 @@
       }
     });
 
+    function setErr(inputId, errId, msg){
+      var i = $(inputId), e = $(errId);
+      if(e){ e.textContent = msg || ""; e.hidden = !msg; }
+      if(i){
+        if(msg){ i.classList.add("invalid"); i.setAttribute("aria-invalid", "true"); }
+        else { i.classList.remove("invalid"); i.removeAttribute("aria-invalid"); }
+      }
+    }
+    var pwBound = false;
+    function pwLen(v){ return v ? v.length : 0; }
+    function checkPwd(id, errId, label){
+      var i = $(id); if(!i) return true;
+      var v = i.value || "";
+      if(v && v.length < 10){
+        setErr(id, errId, (label || "密码") + "已输入 " + v.length + " 位，至少需要 10 位");
+        return false;
+      }
+      setErr(id, errId, "");
+      return true;
+    }
+    function checkConfirm(){
+      var a = $("auPwd2"), b = $("auPwd3");
+      if(!a || !b) return true;
+      if(b.value && b.value !== a.value){
+        setErr("auPwd3", "auErrPwd3", "两次输入的密码不一致");
+        return false;
+      }
+      setErr("auPwd3", "auErrPwd3", "");
+      return true;
+    }
+    function bindPwValidation(){
+      if(pwBound) return;
+      pwBound = true;
+      ["auPwd", "auPwd2"].forEach(function(id){
+        var i = $(id); if(!i) return;
+        i.addEventListener("input", function(){
+          checkPwd(id, id === "auPwd" ? "auErrPwd" : "auErrPwd2");
+          if(id === "auPwd2") checkConfirm();
+        });
+      });
+      var c = $("auPwd3");
+      if(c) c.addEventListener("input", checkConfirm);
+      ["auEmail", "auEmail2"].forEach(function(id){
+        var i = $(id); if(!i) return;
+        i.addEventListener("input", function(){
+          var v = (i.value || "").trim();
+          setErr(id, id === "auEmail" ? "auErrEmail" : "auErrEmail2",
+            v && v.indexOf("@") < 1 ? "邮箱格式不正确" : "");
+        });
+      });
+    }
+    function emailBad(v){ return !v || v.indexOf("@") < 1 || v.indexOf(".") < 0; }
     function showRetry(on){
       var w = $("auRetryWrap");
       if(w) w.hidden = !on;
@@ -5535,9 +5605,18 @@
       });
     }
     function doLogin(){
+      bindPwValidation();
       var email = ($("auEmail") && $("auEmail").value || "").trim();
       var pwd = ($("auPwd") && $("auPwd").value) || "";
-      if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
+      setErr("auEmail", "auErrEmail", emailBad(email) ? "请填写正确的邮箱" : "");
+      if(!email || !pwd){ auMsg("请填写邮箱和密码", "bad"); return; }
+      if(emailBad(email)){ auMsg("邮箱格式不正确", "bad"); $("auEmail").focus(); return; }
+      if(pwd.length < 10){
+        setErr("auPwd", "auErrPwd", "密码至少 10 位（服务端要求），当前 " + pwd.length + " 位");
+        auMsg("密码至少 10 位", "bad");
+        $("auPwd").focus();
+        return;
+      }
       auMsg("正在登录…");
       login(email, pwd).then(function(r){
         if(r.ok){ closeAuth(); return; }
@@ -5547,12 +5626,25 @@
       });
     }
     function doRegister(){
+      bindPwValidation();
       var email = ($("auEmail2") && $("auEmail2").value || "").trim();
       var pwd = ($("auPwd2") && $("auPwd2").value) || "";
       var pwd2 = ($("auPwd3") && $("auPwd3").value) || "";
-      if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
-      if(pwd.length < 10){ auMsg("密码至少 10 位（服务端要求）"); return; }
-      if(pwd !== pwd2){ auMsg("两次输入的密码不一致"); return; }
+      setErr("auEmail2", "auErrEmail2", emailBad(email) ? "请填写正确的邮箱" : "");
+      if(!email || !pwd){ auMsg("请填写邮箱和密码", "bad"); return; }
+      if(emailBad(email)){ auMsg("邮箱格式不正确", "bad"); $("auEmail2").focus(); return; }
+      if(pwd.length < 10){
+        setErr("auPwd2", "auErrPwd2", "密码至少 10 位（服务端要求），当前 " + pwd.length + " 位");
+        auMsg("密码至少 10 位", "bad");
+        $("auPwd2").focus();
+        return;
+      }
+      if(pwd !== pwd2){
+        setErr("auPwd3", "auErrPwd3", "两次输入的密码不一致");
+        auMsg("两次输入的密码不一致", "bad");
+        $("auPwd3").focus();
+        return;
+      }
       auMsg("正在注册…");
       register(email, pwd).then(function(r){
         if(r.ok){
