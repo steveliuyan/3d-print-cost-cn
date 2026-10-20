@@ -14,12 +14,12 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.10.4**（versionCode 22；**已上线**，未打 tag / 未建 Release） |
+| 当前版本 | **v1.10.5**（versionCode 23；**已上线**，未打 tag / 未建 Release） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
-| 回归测试 | **509/509 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `8089e27eb0f96d01ce97fff6a3c567fd`（309,328 B，逐字节一致） |
+| 回归测试 | **512/512 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `ce150f1a07a138b5eb658ac2c9e32fab`（309,684 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
-| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.4**，`index.html` md5 `8089e27eb0f96d01ce97fff6a3c567fd`（309,328 B） |
+| 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.10.5**，`index.html` md5 `ce150f1a07a138b5eb658ac2c9e32fab`（309,684 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
 
@@ -45,7 +45,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（509 项断言）
+├─ test-presets.js         ← jsdom 回归测试（512 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
@@ -67,7 +67,7 @@ H:\3d-print-cost-calculator\
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
 "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe" test-presets.js
-# 期望：结果: 509/509 通过
+# 期望：结果: 512/512 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -264,6 +264,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.10.0** | **可选账号 + 云同步（客户端）**：顶栏账号区 + 注册/验证码/登录/2FA/退出 + 十键增量同步。`Storage.prototype.setItem` 钩子标记 dirty（不改动任何现有 34 处调用点、不改旧键名与结构）→ 3s 防抖批量推（≤20/批、逐项 `base_version`）→ `dpc_meta` 记版本；5s/15s/60s/300s 指数退避 + `online` 立即补推；登录后 `GET /sync` 逐键比对，冲突记 `dpc_conflicts` 并弹「云端/本地/两边都留」；`dpc_view_v1` 等裸字符串键按字符串往返。**来源门控**：仅 3d / 裸域启用（服务端 CORS 白名单），本地打开自动纯离线。版本 1.9.0 → 1.10.0（vc17→18）。回归 444 → **492** |
 | **v1.10.1 / v1.10.2** | **登录/注册弹窗改版**：① 密码框**眼睛切换**（登录、注册、确认密码三处，`aria-pressed` 同步）；② 注册新增**确认密码**，前端校验「两次不一致 / 不足 10 位」→ 不发请求；③ 人机验证**未拿到 token 时不发请求**，改为提示「人机验证还没完成，请稍等一下再试」并给出「重新进行人机验证」按钮（8s 上限，可重试）；④ 弹窗紧凑化（缩短标签、加提示行、面板 460px / 92vh，常规窗口无需滚动）。1.10.0 → 1.10.2（vc18→20）。回归 492 → **501** |
 | **v1.10.3 / v1.10.4** | **表单校验与按钮视觉**：① 密码 / 确认密码 / 邮箱**逐字段即时红字 + 红框**（输入 4 位即显示「密码已输入 4 位，至少需要 10 位」，补足后自动消失；两次不一致 / 邮箱格式同样就地提示，并聚焦到出错项）；② 弹窗内「注册 / 去登录 / 重新进行人机验证」补上链接按钮样式（原来只继承浏览器原生按钮外观，发灰带框）；③ 顶栏账号区改为**有框按钮 + 手绘头像**（未登录显示人像，登录后显示邮箱首字母并转为绿色）。1.10.2 → 1.10.4（vc20→22）。回归 501 → **509** |
+| **v1.10.5** | **邮箱可投递性前置校验**：注册/登录输入 `*.local / *.test / *.invalid / *.example / *.localhost / *.lan / *.internal` 等保留域名时**即时红字拦截**（提示「这个域名收不到邮件（保留测试域名），请换成真实邮箱」），提交时也不再发请求 —— 避免验证码发往不存在域名后被 SMTP 退回（实测 `resendtest@test.local` 会收到 QQ 邮箱退信）。回归 509 → **512** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -378,6 +379,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
 截图：`.workbuddy/ui-register-1102.png`、`.workbuddy/ui-captcha-retry.png`。
 
 **v1.10.3 / v1.10.4（即时校验 + 按钮视觉）**：新增 8 条断言（4 位密码即时红字 / 补足后消失 / 确认密码不一致即时红字 / 一致后消失 /顶栏按钮不再是 ghost / 含头像与文字节点 / 弹窗链接为链接样式），RED `507/509` → 实现后 **509/509**。线上 CDP 实测（1.10.4，Edge 1000×760）：`#auErrPwd2` 文案「密码已输入 4 位，至少需要 10 位」、颜色 `rgb(229,72,77)`、输入框带 `invalid`；确认密码红字同步；顶栏按钮 `class="btn acct-btn"`、`border 1px solid rgb(221,225,231)`、尺寸 120×40、头像节点存在；「去登录」计算样式 `border 0px none`、`color rgb(79,70,229)`。截图 `.workbuddy/ui-red-4pwd.png`、`.workbuddy/ui-link-1104.png`、`.workbuddy/ui-chip-1104.png`。
+**v1.10.5（保留域名拦截）**：新增 3 条断言（`test.local` 即时红字 / 提交不发请求 / 换 `me@qq.com` 后自动清除），RED `510/512` → 实现后 **512/512**。线上 CDP 实测（1.10.5）：输入 `resendtest@test.local` → `#auErrEmail2` 文案「这个域名收不到邮件（保留测试域名），请换成真实邮箱（如 xxx@qq.com）」、输入框 `invalid`；改 `1050745037@qq.com` 后错误自动消失。截图 `.workbuddy/ui-domain-guard.png`。
 
 ## 11. 未完成 / 待办
 
@@ -387,7 +389,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ✅ **v1.10.4 已上线**（2026-10-20：`e4f5ae8`→`ecae4d6`，Pages `built`；线上 md5 = 源码）。
+- ✅ **v1.10.5 已上线**（2026-10-20：`ecae4d6`→`0a45521`，Pages `built`；线上 md5 = 源码）。
   **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
 - 💡 登录/注册后续可做：找回密码（契约里未提供接口，需服务端先加）、记住邮箱、2FA 二维码（当前展示 secret 手输）。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
@@ -474,7 +476,7 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 **新对话接手时的推荐动作**：
 1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 **509/509**；
+3. 跑一次 §4.1 的回归测试，确认基线是 **512/512**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），
