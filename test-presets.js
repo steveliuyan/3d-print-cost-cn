@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.12.0',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.13.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.12\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.13\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.12\.0/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.13\.0/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.12.0');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.13.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.12.0', d8.getElementById('footVer').textContent === '1.12.0',
+    ok('v1.8：版本号已升到 1.13.0', d8.getElementById('footVer').textContent === '1.13.0',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2282,7 +2282,7 @@ setTimeout(function () {
       C.flush(); await C.tick(30);
       var batch = callsTo(C, /\/sync\/batch$/).pop() || {};
       var changes = bodyOf(batch).changes || [];
-      ok('v1.12.0 云同步：12 个键一次批量推（≤20 项）', changes.length === 12, changes.length);
+      ok('v1.13.0 云同步：12 个键一次批量推（≤20 项）', changes.length === 12, changes.length);
       ok('v1.10 云同步：每项都带数字 base_version', changes.every(function (x) {
         return typeof x.base_version === 'number';
       }));
@@ -2820,7 +2820,7 @@ setTimeout(function () {
         /云端更新于/.test((AE.d.getElementById('cfSummary') || {}).textContent || ''),
         (AE.d.getElementById('cfSummary') || {}).textContent);
 
-      /* ---- 抬头模板 / 默认参数 / 材料价格库（v1.12.0） ---- */
+      /* ---- 抬头模板 / 默认参数 / 材料价格库（v1.13.0） ---- */
       var T1 = mk({ me: { status: 200, body: { id: 'u1', email: 'tpl@x.com', mfa_enabled: false } },
                     handler: function (url) {
         if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'tpl@x.com', mfa_enabled: false } };
@@ -2829,7 +2829,7 @@ setTimeout(function () {
       } });
       await T1.tick(40);
 
-      ok('v1.12.0 同步键含 dpc_profile_v1 与 dpc_prices_v1',
+      ok('v1.13.0 同步键含 dpc_profile_v1 与 dpc_prices_v1',
         T1.w.__DPC.cloud.KEYS.indexOf('dpc_profile_v1') >= 0 && T1.w.__DPC.cloud.KEYS.indexOf('dpc_prices_v1') >= 0,
         T1.w.__DPC.cloud.KEYS.join(','));
 
@@ -2839,19 +2839,19 @@ setTimeout(function () {
         defaults: { elecPrice: '0.8', laborRate: '60', failRate: '3', markup: '2.2', commission: '5' }
       });
       var headHTML = T1.w.__DPC.brandHeadHTML('报价单');
-      ok('v1.12.0 打印抬头用模板里的公司名与联系方式',
+      ok('v1.13.0 打印抬头用模板里的公司名与联系方式',
         /星辰 3D 工坊/.test(headHTML) && /微信 star3d/.test(headHTML), headHTML.slice(0, 160));
 
       var tday = new Date(), tp2 = function (v) { return (v < 10 ? '0' : '') + v; };
       var tpre = 'XC-' + tday.getFullYear() + tp2(tday.getMonth() + 1) + tp2(tday.getDate()) + '-';
       var noSample = T1.w.__DPC.assignNo([{ no: tpre + '007' }]);
-      ok('v1.12.0 编号用模板前缀并接着流水',
+      ok('v1.13.0 编号用模板前缀并接着流水',
         noSample.indexOf('XC-') === 0 && /-008$/.test(noSample), noSample);
 
       T1.w.localStorage.setItem('dpc_prices_v1', JSON.stringify([
         { n: 'PLA', p: 75 }, { n: 'PETG', p: 95 }
       ]));
-      ok('v1.12.0 材料价格库可读写',
+      ok('v1.13.0 材料价格库可读写',
         T1.w.__DPC.loadPrices().length === 2 && T1.w.__DPC.loadPrices()[1].p === 95,
         JSON.stringify(T1.w.__DPC.loadPrices()));
 
@@ -2859,7 +2859,7 @@ setTimeout(function () {
       T1.d.querySelector('[data-field="elecPrice"]').value = '1';
       T1.d.querySelector('#btnTpl').click();
       await T1.tick(10);
-      ok('v1.12.0 抬头弹窗能打开并回填已保存值',
+      ok('v1.13.0 抬头弹窗能打开并回填已保存值',
         T1.d.getElementById('tplModal').classList.contains('open') &&
         T1.d.getElementById('tpName').value === '星辰 3D 工坊' &&
         T1.d.getElementById('tpPrefix').value === 'XC',
@@ -2867,7 +2867,7 @@ setTimeout(function () {
 
       T1.d.querySelector('[data-tpl="applyDefaults"]').click();
       await T1.tick(10);
-      ok('v1.12.0 默认参数填进单件页',
+      ok('v1.13.0 默认参数填进单件页',
         T1.d.querySelector('[data-field="elecPrice"]').value === '0.8' &&
         T1.d.querySelector('[data-field="laborRate"]').value === '60' &&
         T1.d.querySelector('[data-field="markup"]').value === '2.2',
@@ -2885,7 +2885,7 @@ setTimeout(function () {
           sel.selectedIndex = idx;
           T1.d.querySelector('[data-tpl="applyPrice"]').click();
           await T1.tick(10);
-          ok('v1.12.0 按价格库填当前材料单价',
+          ok('v1.13.0 按价格库填当前材料单价',
             String(T1.d.querySelector('[data-field="spoolPrice"]').value) === '75',
             T1.d.querySelector('[data-field="spoolPrice"]').value);
         }
@@ -2903,7 +2903,7 @@ setTimeout(function () {
       Q413.w.localStorage.setItem('dpc_meta', JSON.stringify({ dpc_view_v1: { version: 0, dirtyAt: 0 } }));
       Q413.w.localStorage.setItem('dpc_view_v1', 'order');
       Q413.flush(); await Q413.tick(40);
-      ok('v1.12.0 413 配额错误给可操作文案',
+      ok('v1.13.0 413 配额错误给可操作文案',
         /云端空间不够/.test(Q413.w.__DPC.cloud._test.errText
           ? Q413.w.__DPC.cloud._test.errText({ status: 413, body: { error: { code: 'quota_exceeded' } } })
           : ''),
@@ -3063,6 +3063,54 @@ setTimeout(function () {
         callsTo(BK, /\/v1\/sync$/).length > syncBefore,
         'restore=' + (restoreCall.url || 'none') + ' sync+' +
           (callsTo(BK, /\/v1\/sync$/).length - syncBefore));
+
+
+      /* ---- 修改密码：入口 / 发码 / 提交 ---- */
+      var CP = mk({
+        handler: function (url, init) {
+          var m = (init && init.method) || 'GET';
+          if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com' } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          if (/\/v1\/me\/password\/request$/.test(url) && m === 'POST') {
+            return { status: 202, body: { change_id: 'chg-123', resend_after: 60, email: 'a@b.com' } };
+          }
+          if (/\/v1\/me\/password\/confirm$/.test(url) && m === 'POST') {
+            return { status: 200, body: { ok: true, revoked_sessions: 2 } };
+          }
+          return { status: 404, body: {} };
+        }
+      });
+      await CP.tick(30);
+
+      var cpBtn = CP.d.querySelector('[data-am="chpwd"]');
+      ok('修改密码：账号菜单里有「修改密码」入口', !!cpBtn && /修改密码/.test(cpBtn.textContent),
+        cpBtn && cpBtn.textContent);
+
+      click(cpBtn);
+      await CP.tick(40);
+      var cpOverlay = CP.d.getElementById('cpOverlay');
+      ok('修改密码：点开后出现两步面板', !!cpOverlay && cpOverlay.style.display === 'flex');
+
+      click(CP.d.getElementById('cpSend'));
+      await CP.tick(40);
+      var reqCall = callsTo(CP, /\/v1\/me\/password\/request$/).pop() || {};
+      ok('修改密码：「发送验证码」调 POST /v1/me/password/request 并记下 change_id',
+        reqCall.init && reqCall.init.method === 'POST' &&
+        /已发到/.test(CP.d.getElementById('cpHint').textContent),
+        CP.d.getElementById('cpHint').textContent);
+
+      CP.d.getElementById('cpCode').value = '123456';
+      CP.d.getElementById('cpNew').value = 'NewPass2026';
+      click(CP.d.getElementById('cpSubmit'));
+      await CP.tick(40);
+      var confCall = callsTo(CP, /\/v1\/me\/password\/confirm$/).pop() || {};
+      var confBody = bodyOf(confCall);
+      ok('修改密码：确认时带 change_id + code + new_password',
+        confCall.init && confCall.init.method === 'POST' &&
+        confBody.change_id === 'chg-123' && confBody.code === '123456' &&
+        confBody.new_password === 'NewPass2026',
+        JSON.stringify(confBody));
 
       done();
     })().catch(function (e) {

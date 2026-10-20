@@ -1053,6 +1053,7 @@
           <div class="am-stat" id="amStat">数据仅保存在本机</div>
           <button type="button" data-am="sync">立即同步</button>
           <button type="button" data-am="mfa">两步验证</button>
+          <button type="button" data-am="chpwd">修改密码</button>
           <button type="button" data-am="cloudbackup">云端备份</button>
           <button type="button" data-am="logout">退出登录</button>
         </div>
@@ -2645,7 +2646,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.12.0";
+  var APP_VERSION = "1.13.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5321,6 +5322,98 @@
     }
 
 
+
+    /* ---------- 改密码（邮箱验证两步） ---------- */
+    var cpBox = null, cpChangeId = "";
+
+    function cpEnsure(){
+      if(cpBox) return cpBox;
+      var wrap = document.createElement("div");
+      wrap.id = "cpOverlay";
+      wrap.style.cssText = "position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);" +
+                           "z-index:9999;display:none;align-items:center;justify-content:center;padding:16px";
+      wrap.innerHTML =
+        '<div style="background:#141a24;color:#e6ebf2;border:1px solid #2a3446;border-radius:14px;' +
+        'max-width:430px;width:100%;padding:18px;font-size:14px;text-align:left">' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">' +
+            '<b style="font-size:15px">修改密码</b>' +
+            '<button type="button" id="cpClose" style="background:none;border:0;color:#8b96a8;font-size:22px;' +
+            'line-height:1;cursor:pointer">×</button>' +
+          '</div>' +
+          '<div style="color:#8b96a8;font-size:12px;margin-bottom:12px">' +
+            '为了安全，改密码要先验证邮箱：点下面按钮收验证码，再连同新密码一起提交。' +
+            '改完其它设备会被登出，这台保持登录。' +
+          '</div>' +
+          '<div id="cpStep1">' +
+            '<button type="button" id="cpSend" style="width:100%;padding:10px;border-radius:10px;border:0;' +
+            'background:#2563eb;color:#fff;font-size:14px;cursor:pointer">发送验证码到我的邮箱</button>' +
+            '<div id="cpHint" style="color:#8b96a8;font-size:12px;margin-top:8px"></div>' +
+          '</div>' +
+          '<div id="cpStep2" style="margin-top:14px">' +
+            '<input id="cpCode" inputmode="numeric" maxlength="6" placeholder="邮箱收到的 6 位验证码" ' +
+            'style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a3446;background:#0d121c;' +
+            'color:#e6ebf2;font-size:14px;margin-bottom:8px">' +
+            '<input id="cpNew" type="password" placeholder="新密码（至少 8 位）" ' +
+            'style="width:100%;padding:10px;border-radius:10px;border:1px solid #2a3446;background:#0d121c;' +
+            'color:#e6ebf2;font-size:14px;margin-bottom:10px">' +
+            '<button type="button" id="cpSubmit" style="width:100%;padding:10px;border-radius:10px;border:0;' +
+            'background:#16a34a;color:#fff;font-size:14px;cursor:pointer">确认修改</button>' +
+            '<div id="cpMsg" style="color:#8b96a8;font-size:12px;margin-top:8px"></div>' +
+          '</div>' +
+        '</div>';
+      document.body.appendChild(wrap);
+      wrap.addEventListener("click", function(e){ if(e.target === wrap) cpClose(); });
+      document.getElementById("cpClose").addEventListener("click", cpClose);
+      document.getElementById("cpSend").addEventListener("click", cpSend);
+      document.getElementById("cpSubmit").addEventListener("click", cpSubmit);
+      cpBox = wrap;
+      return wrap;
+    }
+
+    function cpClose(){ if(cpBox) cpBox.style.display = "none"; }
+
+    function openChangePwd(){
+      if(!st.user){ bkToast("请先登录账号"); return; }
+      cpChangeId = "";
+      cpEnsure().style.display = "flex";
+      var code = document.getElementById("cpCode"), nw = document.getElementById("cpNew"),
+          hint = document.getElementById("cpHint"), msg = document.getElementById("cpMsg"),
+          send = document.getElementById("cpSend");
+      if(code) code.value = "";
+      if(nw) nw.value = "";
+      if(hint) hint.textContent = "";
+      if(msg) msg.textContent = "";
+      if(send){ send.disabled = false; send.textContent = "发送验证码到我的邮箱"; }
+    }
+
+    function cpSend(){
+      var send = document.getElementById("cpSend"), hint = document.getElementById("cpHint");
+      if(send){ send.disabled = true; send.textContent = "发送中…"; }
+      api("/me/password/request", { method:"POST", body:{} }).then(function(r){
+        if(send){ send.disabled = false; send.textContent = "重新发送验证码"; }
+        if(!r.ok){ if(hint) hint.textContent = errMsg(r); return; }
+        cpChangeId = (r.body && r.body.change_id) || "";
+        if(hint) hint.textContent = "验证码已发到 " + ((r.body && r.body.email) || "你的邮箱") + "，10 分钟内有效";
+      });
+    }
+
+    function cpSubmit(){
+      var code = (document.getElementById("cpCode") || {}).value || "",
+          nw = (document.getElementById("cpNew") || {}).value || "",
+          msg = document.getElementById("cpMsg");
+      if(!cpChangeId){ if(msg) msg.textContent = "请先点上面的按钮收验证码"; return; }
+      if(!/^\d{6}$/.test(code)){ if(msg) msg.textContent = "请输入 6 位数字验证码"; return; }
+      if(nw.length < 8){ if(msg) msg.textContent = "新密码至少 8 位"; return; }
+      if(msg) msg.textContent = "提交中…";
+      api("/me/password/confirm", { method:"POST",
+        body:{ change_id: cpChangeId, code: code, new_password: nw } }).then(function(r){
+        if(!r.ok){ if(msg) msg.textContent = errMsg(r); return; }
+        var n = (r.body && r.body.revoked_sessions) || 0;
+        bkToast("密码已修改" + (n > 0 ? "，其它 " + n + " 个设备需要重新登录" : ""));
+        cpClose();
+      });
+    }
+
     /* ---------- 云端备份 ---------- */
     function bkToast(msg){
       try{
@@ -5922,6 +6015,7 @@
         closeMenu();
         if(act === "sync"){ st.tries = 0; pushNow(); }
         else if(act === "cloudbackup"){ openBackup(); }
+        else if(act === "chpwd"){ openChangePwd(); }
         else if(act === "mfa"){ openAuth("auTwo"); doMfaSetup(); }
         else if(act === "logout"){ logout(); }
         return;
