@@ -376,6 +376,7 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
 两次不一致提示「两次输入的密码不一致」、短密码提示「密码至少 10 位（服务端要求）」；
 用 CDP 阻断 `challenges.cloudflare.com` 后点登录 → 显示「人机验证还没完成，请稍等一下再试」且「重新进行人机验证」按钮可见（不再卡在等待文案）。
 截图：`.workbuddy/ui-register-1102.png`、`.workbuddy/ui-captcha-retry.png`。
+
 **v1.10.3 / v1.10.4（即时校验 + 按钮视觉）**：新增 8 条断言（4 位密码即时红字 / 补足后消失 / 确认密码不一致即时红字 / 一致后消失 /顶栏按钮不再是 ghost / 含头像与文字节点 / 弹窗链接为链接样式），RED `507/509` → 实现后 **509/509**。线上 CDP 实测（1.10.4，Edge 1000×760）：`#auErrPwd2` 文案「密码已输入 4 位，至少需要 10 位」、颜色 `rgb(229,72,77)`、输入框带 `invalid`；确认密码红字同步；顶栏按钮 `class="btn acct-btn"`、`border 1px solid rgb(221,225,231)`、尺寸 120×40、头像节点存在；「去登录」计算样式 `border 0px none`、`color rgb(79,70,229)`。截图 `.workbuddy/ui-red-4pwd.png`、`.workbuddy/ui-link-1104.png`、`.workbuddy/ui-chip-1104.png`。
 
 ## 11. 未完成 / 待办
