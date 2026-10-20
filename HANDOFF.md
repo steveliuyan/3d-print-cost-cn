@@ -13,12 +13,12 @@
 |---|---|
 | 项目根 | **`H:\3d-print-cost-calculator`** |
 | 唯一来源 | **`index.html`**（改只改它 → 再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.14.0**（`APP_VERSION`，versionCode **32**）— **已上线且已发版** |
+| 当前版本 | **v1.18.0**（`APP_VERSION`，versionCode **36**）— **已上线且已发版** |
 | 本地 = 远端 HEAD | 以 `git log --oneline -1` 为准（发版基线 `b75f513994ca437adb97bcfd329300709f2a34f1`） |
-| 回归测试 | **551/551 通过**（v1.12 云端备份 5 + v1.13 改密码 4 + v1.14 头像 3 / 弹窗 3） |
-| 三副本 md5 | `2ad07d0401ba9513aac293945af88f99`（**352,971 B**）← v1.14.0 |
-| 本地 = 远端 HEAD | `4c9cdb0`（v1.14.0 已提交、推送、发版；工作区干净） |
-| 最新 Release | **v1.14.0 头像 / 弹窗修复 / App 免验证**（latest = v1.14.0，3 附件） |
+| 回归测试 | **559/559 通过**（含 v1.17 红点 4 条、v1.18 布局 4 条） |
+| 三副本 md5 | `bbd9d953f88d7d545205410939fc30a5`（**369,512 B**）← v1.18.0 |
+| 本地 = 远端 HEAD | `6760c8e`（v1.18.0 已提交、推送、发版；工作区干净） |
+| 最新 Release | **v1.18.0 弹窗布局修复**（latest = v1.18.0，3 附件） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 应用仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开） |
 | **站点仓库** | **`https://github.com/steveliuyan/myweb`**（= `www.20050905.xyz`，项目页 `project-dpc.html`）⚠️ 两个仓库，改站点要单独提交 |
@@ -335,3 +335,22 @@ DELETE /v1/backup/{id}                   → 204
 
 - `docker/apps/api/app.py`：`APP_CLIENT_KEY` / `verify_turnstile(headers)` / CORS 白名单与允许头
 - `api.env`：新增 `APP_CLIENT_KEY`，`CORS_ORIGINS` 增加 APK 源
+
+---
+
+## 十五、v1.15 → v1.18（2026-10-20 深夜）
+
+| 版本 | 内容 |
+|---|---|
+| v1.15.0 | 同步诊断面板（版本/来源/开关/待推送/已存键）+ 强制全量推送 |
+| v1.16.0 | 应用内通知（列表）、备份面板加载态、头像 SVG 叠层修复、提示被弹窗遮挡修复 |
+| v1.17.0 | 通知红点（账号按钮 + 菜单角标 9+）、弹窗式通知（mode=popup，弹过不重复） |
+| v1.18.0 | 弹窗布局统一：去掉 4 处写死 `margin-top`、`dvh` 限高、底部安全区 |
+
+### 关键坑（都已加断言）
+
+- 自建浮层 `z-index:9999` > 应用 toast `--z-toast:100` → 提示被弹窗盖住，改用 `95`
+- 头像只隐藏了首字母，没隐藏那层 `<svg>` 人像 → 头像上浮着一个图标
+- `.ov-panel` 写死 `margin-top:8vh` + `max-height` → 总高超出屏幕，底部按钮被裁
+- 强制推送用本地 `base_version` 覆盖 → 服务端版本更高时被判成并发修改，弹冲突选择；
+  正确做法是先 `GET /v1/sync` 取版本再覆盖

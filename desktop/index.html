@@ -2671,7 +2671,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.18.0";
+  var APP_VERSION = "1.18.1";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5647,11 +5647,11 @@
         box.style.backgroundSize = "cover";
         box.style.backgroundPosition = "center";
         box.style.backgroundRepeat = "no-repeat";
-        if(ini) ini.hidden = true;
+        if(ini){ ini.hidden = true; ini.style.display = "none"; }   /* 双保险 */
         if(svg) svg.style.display = "none";      /* 否则人像图标会浮在头像上面 */
       }else{
         box.style.backgroundImage = "";
-        if(ini && st.user) ini.hidden = false;
+        if(ini && st.user){ ini.hidden = false; ini.style.display = ""; }
         if(svg) svg.style.display = "";
       }
     }
@@ -5975,6 +5975,7 @@
       if(out) out.style.display = st.user ? "" : "none";
       var sync = document.querySelector('[data-am="sync"]');
       if(sync) sync.style.display = st.user ? "" : "none";
+      applyAvatar();     /* 必须在最后：上面的 ini.hidden = false 会盖掉头像 */
     }
 
     /* ---------- dirty 标记 / 防抖推送 ---------- */
