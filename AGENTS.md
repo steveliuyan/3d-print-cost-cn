@@ -14,10 +14,10 @@
 |---|---|
 | 项目位置 | **`H:\3d-print-cost-calculator`**（独立项目根；2026-10-12 从工作区迁出） |
 | 唯一来源 | **`index.html`**（改只改它，再 `_sync_clean.py` 同步三副本） |
-| 当前版本 | **v1.9.0**（versionCode 17） |
+| 当前版本 | **v1.10.0**（versionCode 18；已本地提交，**未推送 / 未发版**） |
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
-| 回归测试 | **444/444 通过**（`test-presets.js`，jsdom） |
-| 三副本 md5 | `1ae37c077ade73083b27c50c929140eb`（258,163 B，逐字节一致） |
+| 回归测试 | **487/487 通过**（`test-presets.js`，jsdom） |
+| 三副本 md5 | `b3c5baabe9c0ec98cd8b244a85d3af57`（294,888 B，逐字节一致） |
 | 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
@@ -45,7 +45,7 @@
 ```
 H:\3d-print-cost-calculator\
 ├─ index.html              ← 唯一来源：改只改这个
-├─ test-presets.js         ← jsdom 回归测试（444 项断言）
+├─ test-presets.js         ← jsdom 回归测试（487 项断言）
 ├─ _sync_clean.py          ← 剥调试属性 + 同步三份副本（重要，见 §6.1）
 ├─ README.md               ← 面向用户的说明（下载 / 打包 / 签名）
 ├─ HANDOFF.md              ← 精简交接单 + 开新对话的启动提示词（新对话先看这个）
@@ -67,7 +67,7 @@ H:\3d-print-cost-calculator\
 cd H:/3d-print-cost-calculator
 export NODE_PATH="C:/Users/steveliuyan/.workbuddy/binaries/node/workspace/node_modules"
 "C:/Users/steveliuyan/.workbuddy/binaries/node/versions/22.22.2-6/node.exe" test-presets.js
-# 期望：结果: 444/444 通过
+# 期望：结果: 487/487 通过
 ```
 
 > **必须带 `NODE_PATH`**：`jsdom` 装在 WorkBuddy 托管工作区
@@ -237,6 +237,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **横屏 / 平板适配（v1.8.3）** | `viewport-fit=cover`；三档 `@media screen`：① 横屏手机 `(orientation:landscape) and (max-height:560px)`——顶栏收紧、输入区/结果区**左右分栏**；② 平板竖屏 `820–1080px`——两栏 + `.side` 吸顶；③ `≥1200px`——容器 1440px 居中放大。Android `themes.xml` 开 `windowLayoutInDisplayCutoutMode=shortEdges`，页面用 `env(safe-area-inset-*)` 让开打孔屏 |
 | **弹窗滚动锁（v1.8.3）** | 遮罩打开时 `body.modal-open{overflow:hidden;padding-right:var(--sbw)}` 防背景穿透滚动；`.ov-body/.modal-body/.pk-body` 加 `overscroll-behavior:contain`；JS 用 `MutationObserver` 监听 body 子树 class 统一同步（所有 open/close 入口无需逐个改），打印样式里解除锁避免只印一页 |
 | **平台活动报名（v1.9.0）** | 订单级 `.actbox`：开关 `#ordActOn` + 活动名 `#ordActName` + 活动折扣 `#ordActDisc`；存 `orderLevel.activity={on,name,disc}`（老订单无字段按未报名兼容）。**折扣口径 `effDisc = max(阶梯, 整单, 活动)`，取大不叠加**，上限 90%。`computeOrder` 输出 `discTotal` / `activity` / 每行 `actApplied`；透出到订单汇总活动条、报价单抬头与汇总「活动优惠」、长图 info 行、CSV 三字段、行项折扣列「活动」 |
+| **可选账号 / 云同步（v1.10.0）** | 顶栏账号区（未登录「登录 / 注册」，登录后邮箱首字母 + 下拉菜单）。**不登录时一切功能照旧、数据只存本机**。注册（邮箱验证码）/ 登录 / 两步验证（TOTP，展示 secret + otpauth 链接）/ 退出；**认证只靠 HttpOnly cookie，前端不接触也不存储任何 token**。同步对象是**下述 10 个既有键**（一个不多一个不少），`value` 是该键原样解析后的值（裸字符串键按字符串传）；每键版本与 dirty 记在 `dpc_meta`（**不参与同步**）。写 `localStorage` 走 `Storage.prototype.setItem` 钩子打 dirty → **3 秒防抖** → `POST /sync/batch`（≤20 项/批，每项带 `base_version`）→ 成功写回版本。失败保留 dirty 并按 **5s→15s→60s→300s** 退避（最多 10 次），`online` 事件立即补推。登录后 `GET /sync` 逐键比对：服务端更新且本地干净 → 覆盖并**调用页面现有渲染函数**重绘；本地有未推送改动 → 记 `dpc_conflicts` + 红点 + 三选一对话框（用云端 / 用本地 / 两边都留→云端另存 `key.conflict.<ts>`）。409 一律不静默覆盖。**仅在 `3d.20050905.xyz` / `20050905.xyz` 启用**（服务端 CORS 白名单），`file://` 或 localhost 打开自动纯离线，`?cloud=1` 可临时调试 |
 | **建议零售价主视觉（v1.9.0）** | `#sellPrice` 从小 KPI（19px）移入独立 `.retail` 主视觉：36px 靛蓝数字 + 左色条 + 毛利率 / 单件利润副指标；打印与长图文案统一「建议零售价」 |
 
 ## 9. 版本时间线（做了什么）
@@ -260,6 +261,7 @@ iOS Safari **不实现 `window.print()`**（静默无反应）。现在用 `isIO
 | **v1.8.2** | **修复安卓桌面图标过大 + 站点更新**：① `_gen_icons.py` 自适应前景 **`safe_frac 0.31 → 0.205`**（立方体占启动器 72dp 可视区 **93% → 61.5%**，与网页/PWA tile 一致）；旧版圆形 `round 0.44 → 0.305` 同比例；② `test-presets.js` 新增 **3 条图标占比断言**（解析 `ic_launcher_foreground.xml`）。版本号四处联动 1.8.1 → 1.8.2（build.gradle vc14→15）。**纯前端 + 资源**，零新依赖。回归 363 → **366**。③ 同步更新个人站点 `myweb/project-dpc.html`（v1.4.2 → v1.8.2、换官方品牌图标 + favicon、修正失效下载链接、功能亮点补 订单化报价 / 客户版·内部版长图 / STL·3MF），站点仓库提交 `c08b7fc` |
 | **v1.8.3** | **经营看板 + 全屏动效 + 横屏/平板适配 + 弹窗滚动锁**：① 第三视图「经营看板」——纯函数 `dashStats(orders, range, now)`（订单数/收入/成本/利润/毛利率/客单价 + 月度趋势 + 材料·客户 TOP5，草稿不计入，区间存 `dpc_dash_v1`）+ 6 张 KPI 滚动卡 + 柱状趋势 + 排行条 + **经营月报打印**；顺带修 `orderCustomerName()`（`customer` 是 `{name,contact}` 对象，旧代码当字符串用会渲染 `[object Object]`）。② 全套界面动效（Hero 流光 / 环图与图例交错画入 / 数字滚动）+ `reduced-motion` 兜底。③ 横屏手机左右分栏、平板竖屏两栏、`≥1200px` 收窄居中；`shortEdges` 打孔屏铺满 + 安全区内边距。④ 弹窗滚动穿透修复（`body.modal-open` + `overscroll-behavior` + `MutationObserver` 统一同步）。版本 1.8.2 → 1.8.3（vc15→16）。回归 366 → 378（动效）→ **408**（看板 + 滚动锁）→ **421**（适配） |
 | **v1.9.0** | **平台活动报名 + 建议零售价主视觉**：① 订单级 `activity={on,name,disc}`；`effDisc = max(阶梯, 整单, 活动)` **取大不叠加**、上限 90%、未报名恒 0；`computeOrder` 增 `discTotal` / `activity` / 每行 `actApplied`；透出到汇总条、报价单抬头与「活动优惠」汇总行、长图 info 行、CSV（三字段）、行项折扣列「活动」。② `#sellPrice` 移入 `.retail` 主视觉（36px 靛蓝 + 左色条 + 毛利率/单件利润），文案统一「建议零售价」。版本 1.8.3 → 1.9.0（vc16→17）。回归 421 → **444**。发布：API 推 `173f1bb`、Release 3 附件、站点页更新 `5b3c679` |
+| **v1.10.0** | **可选账号 + 云同步（客户端）**：顶栏账号区 + 注册/验证码/登录/2FA/退出 + 十键增量同步。`Storage.prototype.setItem` 钩子标记 dirty（不改动任何现有 34 处调用点、不改旧键名与结构）→ 3s 防抖批量推（≤20/批、逐项 `base_version`）→ `dpc_meta` 记版本；5s/15s/60s/300s 指数退避 + `online` 立即补推；登录后 `GET /sync` 逐键比对，冲突记 `dpc_conflicts` 并弹「云端/本地/两边都留」；`dpc_view_v1` 等裸字符串键按字符串往返。**来源门控**：仅 3d / 裸域启用（服务端 CORS 白名单），本地打开自动纯离线。版本 1.9.0 → 1.10.0（vc17→18）。回归 444 → **487** |
 
 ## 10. 验证证据（每次发版都要能给出这种证据）
 
@@ -342,6 +344,21 @@ EXE `app.asar` 内 `index.html` / `main.js` / `preload.js` md5 全部 = 源码�
 Release 附件 74,275,209 / 258,163 / 1,214,616 B 与本地 `dist/release/` 完全对应、`state=uploaded`；
 Pages `built` @ `173f1bb`；线上站点页 `project-dpc.html` 已到 v1.9.0（`5b3c679`）。
 
+**v1.10.0（可选账号 + 云同步）**：新增 `runCloudTests` **43 条**断言（jsdom + 注入 fetch + 注入定时器，真实页面代码）：
+契约 10 键、`product:"dpc"`、`credentials:"include"`、`X-CSRF-Token` 取自 csrf cookie、**token 不落任何 localStorage 键**、
+3s 防抖、≤20/批、`base_version`、版本回写、409 冲突三选一、拉取覆盖 + 现有重渲染、5s/15s 退避、`online` 补推、
+退出保留数据、断网 + 空存储计算照常、2FA setup 展示 secret、**双「设备」共享假服务端的端到端 A→B 同步**。
+RED：先只注入测试 → `444/445`（唯一新增断言失败）→ 注入实现 → `482/482` → 补端到端 3 条 → **487/487**。
+变异 **4 组全部被捕获**（M1 批量上限 20→1 → 2 条 FAIL；M2 推送成功不写版本 → 3 条 FAIL；
+M3 去掉 CSRF 头 → 1 条 FAIL；M4 拉取不写回本地 → 2 条 FAIL）→ 原样恢复 → 487/487。
+三副本 md5 `b3c5baabe9c0ec98cd8b244a85d3af57`（294,888 B），`data-page-node-id` 0 处。
+**线上接口冒烟（2026-10-20，生产）**：`GET /v1/health` 200（`turnstile:false`、`mail:smtp`）；
+`GET /v1/me`、`GET /v1/sync`、`POST /v1/sync/batch` 未登录均 **401**；
+`OPTIONS /v1/sync/dpc_v1` **204** 且 `access-control-allow-origin: https://3d.20050905.xyz`、
+`allow-credentials: true`、`allow-headers` 含 `X-CSRF-Token` —— 证明浏览器 cookie 会话 + CSRF 头链路按契约可用。
+**未执行**：真实注册→收码→验证（生产 `MAIL_MODE=smtp`，验证码只进邮箱，本机无该邮箱访问权）；
+真机 DevTools 的 `sid` HttpOnly 核对与两台真机同步（需已登录账号）。二者复现步骤见本次交付说明。
+
 ## 11. 未完成 / 待办
 
 - ⏳ **PAT 仍为 classic**：2026-10-12 已换新 token 并用 `.secrets/_rotate_token.py` 落盘校验（归属 `steveliuyan` ✓、有 push ✓、被 .gitignore 忽略），
@@ -350,6 +367,7 @@ Pages `built` @ `173f1bb`；线上站点页 `project-dpc.html` 已到 v1.9.0（`
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
+- ⏳ **v1.10.0 尚未发版**：本地已提交（文档与代码），未推送、未建 Release、未打包；上线需 `git push` → Pages 构建 → 打包三端。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
 - 💡 **订单视图**：行项**就地编辑** v1.8.0 已落地（点「编辑」展开 6 项快速表单，输入即写回并重算；「取回」仍保留，用于把该行参数搬回单件页）。
 - 💡 **报价历史「清空全部」**按钮 v1.7.0 前是**死按钮**（无事件），v1.7.0 已补上 `confirm` + 清空逻辑。
@@ -434,7 +452,7 @@ H:\3d-print-cost-calculator\.workbuddy\memory\
 **新对话接手时的推荐动作**：
 1. 读 `HANDOFF.md`（本次交接单 + 启动提示词）→ 再读本文件 §0 速览与 §8 功能清单；
 2. 读 `.workbuddy/memory/MEMORY.md`（长期约定）+ 最近一份 `YYYY-MM-DD.md`（最近改了什么、证据）；
-3. 跑一次 §4.1 的回归测试，确认基线是 **444/444**；
+3. 跑一次 §4.1 的回归测试，确认基线是 **487/487**；
 4. 需要更多历史（跨项目、或日志没写到的细节）再用**会话检索**工具回忆。
 
 > 写日志的规矩：**只记有长期价值的事实**（改了什么、为什么、证据、待办），

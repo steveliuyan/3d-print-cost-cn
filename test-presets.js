@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.9.0',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.0',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.9\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.0/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.9\.0/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.0/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.9.0');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.0');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.9.0', d8.getElementById('footVer').textContent === '1.9.0',
+    ok('v1.8：版本号已升到 1.10.0', d8.getElementById('footVer').textContent === '1.10.0',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2135,6 +2135,390 @@ setTimeout(function () {
     done();
   }
 
+  /* ================= v1.10.0 云同步回归（TDD） =================
+     用注入的 fetch 驱动真实页面代码：契约形状、token 不落盘、防抖/批量/版本/冲突/退避/离线降级。 */
+  function runCloudTests(done) {
+    var CONTRACT_KEYS = ['dpc_v1', 'dpc_cats_v1', 'dpc_presets_v3', 'dpc_quotes_v1', 'dpc_customers_v1',
+      'dpc_orders_v1', 'dpc_order_draft_v1', 'dpc_dash_v1', 'dpc_theme_v1', 'dpc_view_v1'];
+
+    function mk(opts) {
+      opts = opts || {};
+      var calls = [], timers = [], tid = 1;
+      var state = { me: opts.me || { status: 401, body: { error: { code: 'token_expired' } } }, handler: opts.handler || null };
+      var dom = new JSDOM(html, {
+        runScripts: 'dangerously',
+        url: 'https://3d.20050905.xyz/',
+        pretendToBeVisual: true,
+        beforeParse: function (win) {
+          win.fetch = function (url, init) {
+            calls.push({ url: String(url), init: init || {} });
+            var r;
+            try { r = state.handler ? state.handler(String(url), init || {}) : state.me; }
+            catch (e) { return Promise.reject(e); }
+            if (!r) return Promise.reject(new Error('offline'));
+            return Promise.resolve({
+              ok: r.status >= 200 && r.status < 300, status: r.status,
+              json: function () { return Promise.resolve(r.body); }
+            });
+          };
+          win.confirm = function () { return true; };
+          win.print = function () {};
+        }
+      });
+      var w = dom.window, d = w.document;
+      var cloud = w.__DPC && w.__DPC.cloud;
+      if (cloud) cloud._test.setTimers({
+        set: function (fn, ms) { var id = tid++; timers.push({ id: id, fn: fn, ms: ms, fired: false }); return id; },
+        clear: function (id) { timers.forEach(function (t) { if (t.id === id) t.dead = true; }); }
+      });
+      return {
+        w: w, d: d, calls: calls, timers: timers, cloud: cloud, state: state,
+        flush: function () {
+          var t = timers.filter(function (x) { return !x.fired && !x.dead; });
+          t.forEach(function (x) { x.fired = true; x.fn(); });
+          return t.length;
+        },
+        tick: function (ms) { return new Promise(function (r) { setTimeout(r, ms || 10); }); }
+      };
+    }
+    function callsTo(ctx, re) { return ctx.calls.filter(function (x) { return re.test(x.url); }); }
+    function bodyOf(call) { try { return JSON.parse((call && call.init.body) || '{}'); } catch (e) { return {}; } }
+    function metaOf(ctx, key) { try { return JSON.parse(ctx.w.localStorage.getItem('dpc_meta') || '{}')[key] || null; } catch (e) { return null; } }
+
+    var A = mk({});
+    var c = A.cloud;
+    ok('v1.10 云同步：页面暴露 __DPC.cloud', !!c);
+    if (!c) { done(); return; }
+    ok('v1.10 云同步：同步键恰为契约 10 个（不多不少）',
+      JSON.stringify(c.KEYS) === JSON.stringify(CONTRACT_KEYS), c.KEYS.length);
+    ok('v1.10 云同步：dpc_meta / dpc_conflicts 不在同步键内',
+      c.KEYS.indexOf('dpc_meta') < 0 && c.KEYS.indexOf('dpc_conflicts') < 0);
+    ok('v1.10 云同步：未登录时账号区显示「登录 / 注册」',
+      /登录 \/ 注册/.test(A.d.getElementById('acctBtn').textContent));
+
+    (async function () {
+      await A.tick(25);
+      ok('v1.10 云同步：未登录启动只探 /me，不拉 /sync',
+        callsTo(A, /\/v1\/me$/).length > 0 && callsTo(A, /\/v1\/sync/).length === 0);
+
+      /* ---- 登录请求形状 + token 不落盘 ---- */
+      var B = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+          if (/\/v1\/auth\/login$/.test(url)) return { status: 200, body: {
+            user: { id: 'u1', email: 'maker@example.com', mfa_enabled: false, plan: 'free' }, access_token: 'SECRET_TOKEN_XYZ' } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          return { status: 404, body: {} };
+        }
+      });
+      var bc = B.cloud;
+      B.d.cookie = 'csrf=csrf-abc-123; path=/';
+      var lr = await bc.login('maker@example.com', 'password12345');
+      await B.tick(30);
+      var loginCall = callsTo(B, /\/auth\/login$/)[0] || {};
+      var lbody = bodyOf(loginCall);
+      ok('v1.10 云同步：登录成功并记住用户（账号区显示首字母）',
+        lr.ok === true && bc.state().user && bc.state().user.email === 'maker@example.com' &&
+        B.d.getElementById('acctBtn').textContent === 'M', B.d.getElementById('acctBtn').textContent);
+      ok('v1.10 云同步：登录走 /v1/auth/login + credentials:include',
+        /^https:\/\/api\.20050905\.xyz\/v1\/auth\/login$/.test(loginCall.url || '') &&
+        loginCall.init.credentials === 'include');
+      ok('v1.10 云同步：登录带 product=dpc（服务端默认是 aibox）', lbody.product === 'dpc', lbody.product);
+      ok('v1.10 云同步：登录请求不带 Authorization 头',
+        !loginCall.init.headers || !loginCall.init.headers.Authorization);
+      var leak = false;
+      for (var i = 0; i < B.w.localStorage.length; i++) {
+        var lk = B.w.localStorage.key(i);
+        var lv = B.w.localStorage.getItem(lk) || '';
+        if (lv.indexOf('SECRET_TOKEN_XYZ') >= 0 || lk.indexOf('SECRET_TOKEN_XYZ') >= 0) leak = true;
+      }
+      ok('v1.10 云同步：服务端 token 不写入任何 localStorage 键', !leak);
+
+      /* ---- 防抖 3 秒 + CSRF + 批量 + 版本回写 ---- */
+      B.w.localStorage.setItem('dpc_v1', JSON.stringify({ f: { qty: '2' }, p: {} }));
+      var dT = B.timers.filter(function (x) { return !x.fired && !x.dead; }).pop();
+      ok('v1.10 云同步：本地写入后 3 秒防抖（3000ms）', !!dT && dT.ms === 3000, dT && dT.ms);
+      B.flush(); await B.tick(30);
+      var bCall = callsTo(B, /\/sync\/batch$/).pop() || {};
+      ok('v1.10 云同步：写请求带 X-CSRF-Token，值取自 csrf cookie',
+        (bCall.init.headers || {})['X-CSRF-Token'] === 'csrf-abc-123',
+        (bCall.init.headers || {})['X-CSRF-Token']);
+
+      var C = mk({
+        handler: function (url, init) {
+          if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com', mfa_enabled: false } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) {
+            var ch = bodyOf({ init: init }).changes || [];
+            return { status: 200, body: { results: ch.map(function (x) { return { key: x.key, status: 'ok', version: 7 }; }) } };
+          }
+          return { status: 404, body: {} };
+        }
+      });
+      var cc = C.cloud;
+      await C.tick(25);
+      CONTRACT_KEYS.forEach(function (k) { C.w.localStorage.setItem(k, JSON.stringify({ k: k })); });
+      C.flush(); await C.tick(30);
+      var batch = callsTo(C, /\/sync\/batch$/).pop() || {};
+      var changes = bodyOf(batch).changes || [];
+      ok('v1.10 云同步：10 个键一次批量推（≤20 项）', changes.length === 10, changes.length);
+      ok('v1.10 云同步：每项都带数字 base_version', changes.every(function (x) {
+        return typeof x.base_version === 'number';
+      }));
+      ok('v1.10 云同步：value 是该键解析后的值（不再套一层字符串）',
+        (function () {
+          var it = changes.filter(function (x) { return x.key === 'dpc_v1'; })[0];
+          return !!it && it.value && typeof it.value === 'object' && it.value.k === 'dpc_v1';
+        })());
+      ok('v1.10 云同步：推送成功后版本写回 dpc_meta 且 dirty 清零',
+        (function () { var m = metaOf(C, 'dpc_v1'); return !!m && m.version === 7 && !m.dirtyAt; })(),
+        C.w.localStorage.getItem('dpc_meta'));
+      ok('v1.10 云同步：账号区显示「已同步」', /已同步/.test(C.d.getElementById('amStat').textContent),
+        C.d.getElementById('amStat').textContent);
+
+      /* ---- 409 冲突 → 记录 + 红点 + 三选一 ---- */
+      function conflictCtx(extra) {
+        return mk({
+          handler: function (url) {
+            if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com' } };
+            if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+            if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [
+              { key: 'dpc_v1', status: 'conflict', server: { value: { f: { qty: '9' }, p: {} }, version: 4 } }] } };
+            if (extra && extra(url)) return extra(url);
+            return { status: 404, body: {} };
+          }
+        });
+      }
+      var D = conflictCtx(function (url) {
+        if (/\/v1\/sync\/dpc_v1$/.test(url)) return { status: 200, body: { version: 5 } };
+        if (/\.conflict\.\d+$/.test(url)) return { status: 200, body: { version: 1 } };
+        return null;
+      });
+      var dc = D.cloud;
+      await D.tick(25);
+      D.w.localStorage.setItem('dpc_v1', JSON.stringify({ f: { qty: '3' }, p: {} }));
+      D.flush(); await D.tick(30);
+      var conflicts = dc.conflicts();
+      ok('v1.10 云同步：409 记进 dpc_conflicts（不静默覆盖）',
+        conflicts.length === 1 && conflicts[0].key === 'dpc_v1');
+      ok('v1.10 云同步：冲突时账号区出现红点', D.d.getElementById('acctDot').hidden === false);
+      ok('v1.10 云同步：冲突弹出三选一对话框',
+        D.d.getElementById('conflictModal').classList.contains('open') &&
+        !!D.d.querySelector('[data-cf="cloud"]') && !!D.d.querySelector('[data-cf="local"]') &&
+        !!D.d.querySelector('[data-cf="both"]'));
+
+      var localBefore = D.w.localStorage.getItem('dpc_v1');
+      await dc.resolve('dpc_v1', 'local');
+      var putCall = callsTo(D, /\/sync\/dpc_v1$/).pop() || {};
+      ok('v1.10 云同步：选「用本地」→ PUT 单键且 base_version=服务端版本',
+        bodyOf(putCall).base_version === 4, bodyOf(putCall).base_version);
+      ok('v1.10 云同步：选「用本地」后本地未被改',
+        D.w.localStorage.getItem('dpc_v1') === localBefore);
+
+      var E = conflictCtx(null);
+      var ec = E.cloud;
+      await E.tick(25);
+      E.w.localStorage.setItem('dpc_v1', JSON.stringify({ f: { qty: '3' }, p: {} }));
+      E.flush(); await E.tick(30);
+      await ec.resolve('dpc_v1', 'cloud');
+      var applied = {};
+      try { applied = JSON.parse(E.w.localStorage.getItem('dpc_v1')); } catch (e) {}
+      ok('v1.10 云同步：选「用云端」→ 本地被服务端值覆盖',
+        !!applied && !!applied.f && applied.f.qty === '9');
+      ok('v1.10 云同步：选「用云端」→ 版本跟随服务端且冲突清空',
+        (function () { var m = metaOf(E, 'dpc_v1'); return !!m && m.version === 4 && ec.conflicts().length === 0; })());
+
+      var F = conflictCtx(function (url) { return /\.conflict\.\d+$/.test(url) ? { status: 200, body: { version: 1 } } : null; });
+      var fc = F.cloud;
+      await F.tick(25);
+      F.w.localStorage.setItem('dpc_v1', JSON.stringify({ f: { qty: '3' }, p: {} }));
+      F.flush(); await F.tick(30);
+      await fc.resolve('dpc_v1', 'both');
+      var bothCall = F.calls.filter(function (x) { return /\.conflict\.\d+$/.test(x.url); }).pop();
+      ok('v1.10 云同步：选「两边都留」→ 本地先上传到 key.conflict.<ts>',
+        !!bothCall && /dpc_v1\.conflict\./.test(bothCall.url));
+      ok('v1.10 云同步：选「两边都留」后本地取云端',
+        /"qty":"9"/.test(F.w.localStorage.getItem('dpc_v1') || ''));
+
+      /* ---- 拉取：服务端更新且本地干净 → 覆盖 + 现有重渲染 ---- */
+      var G = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com' } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 2, items: {
+            dpc_orders_v1: { value: [{ id: 'o1', no: 'DPC-1', status: 'draft', customer: '云端客户', lines: [], orderLevel: {}, totals: {} }], version: 3 }
+          } } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          return { status: 404, body: {} };
+        }
+      });
+      var gc = G.cloud;
+      await G.tick(30);
+      ok('v1.10 云同步：拉取服务端更新的键并写回本地',
+        /云端客户/.test(G.w.localStorage.getItem('dpc_orders_v1') || ''));
+      ok('v1.10 云同步：拉取后走页面现有重渲染（订单已载入）',
+        gc.loadOrders().length === 1 && gc.loadOrders()[0].customer === '云端客户');
+      ok('v1.10 云同步：拉取后 dpc_meta 记录服务端版本',
+        (metaOf(G, 'dpc_orders_v1') || {}).version === 3);
+
+      /* ---- 离线降级 + 指数退避 + online 立即重试 ---- */
+      var H = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com' } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          return null;
+        }
+      });
+      var hc = H.cloud;
+      await H.tick(25);
+      H.w.localStorage.setItem('dpc_v1', JSON.stringify({ f: { qty: '4' }, p: {} }));
+      H.flush(); await H.tick(30);
+      var retry1 = H.timers.filter(function (x) { return !x.fired && !x.dead; }).pop();
+      ok('v1.10 云同步：推送失败静默降级为「离线」，不抛错',
+        /离线/.test(H.d.getElementById('amStat').textContent), H.d.getElementById('amStat').textContent);
+      ok('v1.10 云同步：失败保留 dirty 并按 5 秒退避', !!retry1 && retry1.ms === 5000 &&
+        (metaOf(H, 'dpc_v1') || {}).dirtyAt > 0, retry1 && retry1.ms);
+      H.flush(); await H.tick(30);
+      var retry2 = H.timers.filter(function (x) { return !x.fired && !x.dead; }).pop();
+      ok('v1.10 云同步：第二次失败退避 15 秒', !!retry2 && retry2.ms === 15000, retry2 && retry2.ms);
+
+      H.state.handler = function (url, init) {
+        if (/\/v1\/sync\/batch$/.test(url)) {
+          var ch = bodyOf({ init: init }).changes || [];
+          return { status: 200, body: { results: ch.map(function (x) { return { key: x.key, status: 'ok', version: 8 }; }) } };
+        }
+        return { status: 200, body: { revision: 1, items: {} } };
+      };
+      var before = H.calls.length;
+      H.w.dispatchEvent(new H.w.Event('online'));
+      await H.tick(40);
+      ok('v1.10 云同步：网络恢复（online）立即补推，无需刷新',
+        H.calls.length > before && /已同步/.test(H.d.getElementById('amStat').textContent),
+        H.d.getElementById('amStat').textContent);
+      ok('v1.10 云同步：裸字符串键（view=order）按字符串同步',
+        (function () {
+          var b = callsTo(H, /\/sync\/batch$/).pop() || {};
+          var it = (bodyOf(b).changes || []).filter(function (x) { return x.key === 'dpc_view_v1'; })[0];
+          return !it || typeof it.value === 'string';
+        })());
+
+      /* ---- 注册 / 验证码请求形状（契约字段，服务端默认 product=aibox） ---- */
+      var R = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 401, body: { error: { code: 'token_expired' } } };
+          if (/\/v1\/auth\/register$/.test(url)) return { status: 202, body: { verify_id: 'vid-1', resend_after: 60 } };
+          if (/\/v1\/auth\/verify-email$/.test(url)) return { status: 200, body: {
+            user: { id: 'u2', email: 'new@example.com', mfa_enabled: false } } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          return { status: 404, body: {} };
+        }
+      });
+      var rc = R.cloud;
+      await R.tick(25);
+      var reg = await rc.register('new@example.com', 'password12345');
+      var regBody = bodyOf(callsTo(R, /\/auth\/register$/)[0] || {});
+      ok('v1.10 云同步：注册带 product=dpc 且含 turnstile_token 字段',
+        reg.ok === true && regBody.product === 'dpc' && ('turnstile_token' in regBody));
+      var ver = await rc.verifyEmail('123456');
+      var verBody = bodyOf(callsTo(R, /\/auth\/verify-email$/)[0] || {});
+      ok('v1.10 云同步：验证码请求带 verify_id + code，成功后即为登录态',
+        ver.ok === true && verBody.verify_id === 'vid-1' && verBody.code === '123456' &&
+        !!rc.state().user && R.d.getElementById('acctBtn').textContent === 'N',
+        R.d.getElementById('acctBtn').textContent);
+
+      /* ---- 退出登录：数据保留 ---- */
+      var I = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com' } };
+          if (/\/v1\/auth\/logout$/.test(url)) return { status: 204, body: null };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          return { status: 404, body: {} };
+        }
+      });
+      var ic = I.cloud;
+      await I.tick(25);
+      I.w.localStorage.setItem('dpc_orders_v1', JSON.stringify([{ id: 'k1' }]));
+      await ic.logout();
+      ok('v1.10 云同步：退出登录后 localStorage 数据仍在',
+        /k1/.test(I.w.localStorage.getItem('dpc_orders_v1') || ''));
+      ok('v1.10 云同步：退出后账号区回到「登录 / 注册」',
+        /登录 \/ 注册/.test(I.d.getElementById('acctBtn').textContent));
+
+      /* ---- 端到端：两个「设备」共享一个假服务端（同一账号） ---- */
+      var srvStore = {}, srvRev = 0;
+      function sharedServer(url, init) {
+        if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u9', email: 'dev@example.com', mfa_enabled: false } };
+        if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: srvRev, items: srvStore } };
+        if (/\/v1\/sync\/batch$/.test(url)) {
+          var ch = (bodyOf({ init: init }).changes) || [];
+          var results = ch.map(function (c) {
+            var cur = srvStore[c.key];
+            if (cur && (cur.version || 0) !== (c.base_version || 0)) {
+              return { key: c.key, status: 'conflict', server: cur };
+            }
+            var v = (cur ? cur.version : 0) + 1;
+            srvStore[c.key] = { value: c.value, version: v };
+            srvRev++;
+            return { key: c.key, status: 'ok', version: v };
+          });
+          return { status: 200, body: { results: results } };
+        }
+        return { status: 404, body: {} };
+      }
+      var DEV1 = mk({ handler: sharedServer });
+      await DEV1.tick(30);
+      DEV1.w.localStorage.setItem('dpc_presets_v3',
+        JSON.stringify({ device: [{ id: 'u-d-1', name: 'A机', brand: '我的设备' }], material: [] }));
+      DEV1.flush();
+      await DEV1.tick(40);
+      ok('v1.10 云同步：端到端 A 改预设后 3 秒内推上服务端并显示已同步',
+        !!srvStore.dpc_presets_v3 && /已同步/.test(DEV1.d.getElementById('amStat').textContent),
+        DEV1.d.getElementById('amStat').textContent);
+
+      var DEV2 = mk({ handler: sharedServer });
+      await DEV2.tick(60);
+      ok('v1.10 云同步：端到端 B 登录后拉到 A 的预设',
+        /A机/.test(DEV2.w.localStorage.getItem('dpc_presets_v3') || ''));
+      ok('v1.10 云同步：端到端 B 刷新仍是登录态（账号区显示邮箱首字母）',
+        DEV2.d.getElementById('acctBtn').textContent === 'D',
+        DEV2.d.getElementById('acctBtn').textContent);
+
+      /* ---- 断网 + 空存储：本地功能不受影响 ---- */
+      var J = mk({ handler: function () { return null; } });
+      await J.tick(25);
+      var qty = J.d.querySelector('[data-field="qty"]');
+      qty.value = '5'; qty.dispatchEvent(new J.w.Event('input', { bubbles: true }));
+      var costTxt = (J.d.getElementById('totalCost') || {}).textContent || '';
+      ok('v1.10 云同步：断网 + 空存储时计算功能照常（不白屏）',
+        !!qty && /¥\s*\d/.test(costTxt) && !/¥0\.00/.test(costTxt), costTxt);
+
+      /* ---- 2FA（可选）：setup 展示 secret ---- */
+      var K = mk({
+        handler: function (url) {
+          if (/\/v1\/me$/.test(url)) return { status: 200, body: { id: 'u1', email: 'a@b.com' } };
+          if (/\/v1\/mfa\/totp\/setup$/.test(url)) return { status: 200, body: {
+            secret: 'JBSWY3DPEHPK3PXP', otpauth_url: 'otpauth://totp/x', recovery_codes: ['aa', 'bb'] } };
+          if (/\/v1\/sync$/.test(url)) return { status: 200, body: { revision: 1, items: {} } };
+          if (/\/v1\/sync\/batch$/.test(url)) return { status: 200, body: { results: [] } };
+          return { status: 404, body: {} };
+        }
+      });
+      var kc = K.cloud;
+      await K.tick(25);
+      await kc.mfaSetup();
+      ok('v1.10 云同步：2FA setup 调 /mfa/totp/setup 并展示 secret',
+        /JBSWY3DPEHPK3PXP/.test(K.d.getElementById('auSecret').textContent || ''),
+        K.d.getElementById('auSecret').textContent);
+
+      done();
+    })().catch(function (e) {
+      ok('v1.10 云同步：测试自身未抛异常', false, String((e && e.stack) || e));
+      done();
+    });
+  }
+
   function finish() {
     console.log(out.join('\n'));
     console.log('\n结果: ' + out.filter(function (x) { return x.indexOf('PASS') === 0; }).length + '/' + out.length + ' 通过');
@@ -2173,7 +2557,7 @@ setTimeout(function () {
          w.localStorage.getItem('dpc_presets_v3') === JSON.stringify(bj.data.presets));
       ok('分类与备份逐字节一致',
          w.localStorage.getItem('dpc_cats_v1') === JSON.stringify(bj.data.cats));
-      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(function () { runAdaptiveTests(function () { runV19Tests(finish); }); }); }); }); }); }); }); }); }); }); }); }); });
+      runUpdateTests(function () { runUpdUiTests(function () { runChangelogTests(function () { runV120Tests(function () { runStlTests(function () { runThemeTests(function () { runOrderTests(function () { runOrderViewTests(function () { runV18Tests(function () { runAnimTests(function () { runDashTests(function () { runScrollLockTests(function () { runAdaptiveTests(function () { runV19Tests(function () { runCloudTests(finish); }); }); }); }); }); }); }); }); }); }); }); }); }); });
     }, 900);
   });
 }, 300);

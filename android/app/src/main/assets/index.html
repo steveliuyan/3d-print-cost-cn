@@ -808,6 +808,35 @@
     html{scroll-behavior:auto}
     .hero::before{animation:none!important}   /* 无限循环的流光在减弱动效下整个关掉 */
   }
+/* ===== v1.10.0 账号 / 云同步（可选） ===== */
+.acct{position:relative; display:inline-flex; align-items:center}
+.acct-btn{min-width:46px; max-width:120px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.acct-btn.on{font-weight:700; letter-spacing:.02em}
+.acct-dot{position:absolute; top:-6px; right:-6px; min-width:17px; height:17px; padding:0 5px; border-radius:9px;
+  background:var(--danger); color:#fff; font-size:10.5px; line-height:17px; text-align:center; font-weight:700; cursor:pointer}
+.acct-dot[hidden]{display:none}
+.acct-menu{position:absolute; right:0; top:calc(100% + 8px); z-index:70; width:232px; padding:8px;
+  background:var(--surface); border:1px solid var(--line2); border-radius:12px; box-shadow:var(--sh-2)}
+.acct-menu[hidden]{display:none}
+.am-head{font-size:12.5px; font-weight:650; padding:6px 8px 2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.am-stat{font-size:11.5px; color:var(--text3); padding:0 8px 8px; border-bottom:1px solid var(--line); margin-bottom:6px}
+.acct-menu button{display:block; width:100%; text-align:left; border:0; background:transparent; color:var(--text);
+  font-size:12.5px; padding:8px; border-radius:8px; cursor:pointer}
+.acct-menu button:hover{background:var(--line-soft)}
+.au-msg{margin:0 0 10px; font-size:12.5px; color:var(--text2); background:var(--card-2);
+  border:1px solid var(--line); border-radius:10px; padding:8px 10px}
+.au-msg.bad{color:var(--danger); border-color:var(--danger-line); background:var(--danger-soft)}
+.au-lb{display:block; font-size:12px; color:var(--text2); margin:0 0 10px}
+.au-lb input{display:block; width:100%; margin-top:5px; padding:9px 10px; border:1px solid var(--line2);
+  border-radius:9px; background:var(--card); color:var(--text); font-size:13px}
+.au-lb input:focus{outline:2px solid var(--accent); outline-offset:1px}
+.au-go{width:100%; justify-content:center; margin:2px 0 8px}
+.au-alt{font-size:12px; color:var(--text3); margin:0 0 4px}
+.au-note{font-size:12.5px; color:var(--text2); margin:0 0 10px}
+.au-secret{font-family:var(--mono); font-size:13px; letter-spacing:.06em; background:var(--card-2);
+  border:1px dashed var(--line3); border-radius:9px; padding:10px; margin:0 0 8px; word-break:break-all}
+.au-url{font-size:10.5px; color:var(--text3); word-break:break-all; margin:0 0 10px}
+.cf-key{font-family:var(--mono); font-size:12px; color:var(--text2); margin:0 0 6px}
 </style>
 <script>
 /* 主题：尽早应用，避免刷新瞬间闪白（FOUC）。
@@ -830,6 +859,79 @@
 </script>
 </head>
 <body>
+<!-- ===== v1.10.0 可选账号 / 云同步 ===== -->
+<div class="modal" id="authModal">
+  <div class="modal-bg" data-authclose></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="账号" style="width:min(440px,calc(100vw - 28px))">
+    <div class="modal-head">
+      <h3 id="auTitle">登录</h3>
+      <button class="x" data-authclose aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="au-msg" id="auMsg" hidden></div>
+
+      <section id="auLogin">
+        <label class="au-lb">邮箱<input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
+        <label class="au-lb">密码<input id="auPwd" type="password" autocomplete="current-password" placeholder="至少 10 位"></label>
+        <div class="au-turn" id="auTurn" hidden></div>
+        <button type="button" class="btn primary au-go" data-au="login">登录</button>
+        <p class="au-alt">还没有账号？<button type="button" class="lnk" data-au="toReg">注册</button></p>
+      </section>
+
+      <section id="auReg" hidden>
+        <label class="au-lb">邮箱<input id="auEmail2" type="email" autocomplete="username" placeholder="you@example.com"></label>
+        <label class="au-lb">密码<input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位，别用常见弱密码"></label>
+        <div class="au-turn" id="auTurn2" hidden></div>
+        <button type="button" class="btn primary au-go" data-au="register">注册并发送验证码</button>
+        <p class="au-alt">已有账号？<button type="button" class="lnk" data-au="toLogin">去登录</button></p>
+      </section>
+
+      <section id="auCode" hidden>
+        <p class="au-note">验证码已发到 <b id="auCodeMail"></b>，10 分钟内有效（同码最多试 5 次）。</p>
+        <label class="au-lb">6 位验证码<input id="auCodeInput" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+        <button type="button" class="btn primary au-go" data-au="verify">验证并登录</button>
+        <p class="au-alt"><button type="button" class="lnk" id="auResend" data-au="resend">重新发送</button> <span id="auCount"></span></p>
+      </section>
+
+      <section id="auMfa" hidden>
+        <p class="au-note">该账号已开启两步验证，请输入验证器里的 6 位动态码。</p>
+        <label class="au-lb">动态码<input id="auMfaInput" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+        <button type="button" class="btn primary au-go" data-au="mfa">验证</button>
+      </section>
+
+      <section id="auTwo" hidden>
+        <p class="au-note">用验证器 App（Google Authenticator / 1Password 等）添加下面这条密钥（或导入 otpauth 链接），再输入当前动态码启用。</p>
+        <div class="au-secret" id="auSecret"></div>
+        <div class="au-url" id="auOtp"></div>
+        <label class="au-lb">当前 6 位动态码<input id="auTwoCode" inputmode="numeric" maxlength="6" autocomplete="one-time-code"></label>
+        <button type="button" class="btn primary au-go" data-au="twoEnable">启用两步验证</button>
+        <p class="au-alt" id="auCodes"></p>
+      </section>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="conflictModal">
+  <div class="modal-bg" data-cfclose></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-label="同步冲突" style="width:min(520px,calc(100vw - 28px))">
+    <div class="modal-head">
+      <h3>同步冲突</h3>
+      <button class="x" data-cfclose aria-label="关闭">×</button>
+    </div>
+    <div class="modal-body">
+      <p class="cf-key" id="cfKey"></p>
+      <p class="au-note" id="cfSummary"></p>
+    </div>
+    <div class="modal-foot">
+      <button type="button" class="btn primary" data-cf="cloud">用云端</button>
+      <button type="button" class="btn" data-cf="local">用本地</button>
+      <button type="button" class="btn" data-cf="both">两边都留</button>
+      <span class="sp"></span>
+      <button type="button" class="btn ghost" data-cfclose>稍后</button>
+    </div>
+  </div>
+</div>
+
 <div class="wrap">
 
   <header class="topbar">
@@ -856,6 +958,17 @@
       <button class="btn" id="btnPrint"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 8V4h10v4"/><rect x="4" y="8" width="16" height="8" rx="2"/><path d="M7 16h10v4H7z"/></svg>打印 / PDF</button>
       <button class="btn ghost" id="btnReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3.2-6.9"/><path d="M3 4v5h5"/></svg>重置</button>
     </div>
+      <div class="acct" id="acct">
+        <button type="button" class="btn ghost acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false" title="账号与云同步（可选）">登录 / 注册</button>
+        <span class="acct-dot" id="acctDot" hidden title="有同步冲突待处理">0</span>
+        <div class="acct-menu" id="acctMenu" hidden>
+          <div class="am-head" id="amMail">未登录</div>
+          <div class="am-stat" id="amStat">数据仅保存在本机</div>
+          <button type="button" data-am="sync">立即同步</button>
+          <button type="button" data-am="mfa">两步验证</button>
+          <button type="button" data-am="logout">退出登录</button>
+        </div>
+      </div>
   </header>
 
   <main class="grid">
@@ -2373,7 +2486,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.9.0";
+  var APP_VERSION = "1.10.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -4826,6 +4939,664 @@
     if(_lastView === "order" || _lastView === "dash") setView(_lastView);
   }catch(e){}
 
+  /* ================= v1.10.0 可选账号 + 云同步 =================
+     服务端权威契约：https://api.20050905.xyz/v1（笔记本服务器/docs/API-CONTRACT.md）
+     硬约束：
+       1) 不登录也能完整使用，本地 localStorage 是唯一真相；
+       2) 任何 token / 密码 / 验证码都不进 localStorage / sessionStorage（认证只靠 HttpOnly cookie）；
+       3) 网络失败一律静默降级，绝不阻塞计算、绝不白屏；
+       4) 只调用契约里的接口，不自造路径。 */
+  var Cloud = (function(){
+    var API_BASE = "https://api.20050905.xyz/v1";
+    var PRODUCT = "dpc";            /* 服务端 DEFAULT_PRODUCT=aibox，必须显式声明产品线 */
+    var KEYS = ["dpc_v1", "dpc_cats_v1", "dpc_presets_v3", "dpc_quotes_v1", "dpc_customers_v1",
+                "dpc_orders_v1", "dpc_order_draft_v1", "dpc_dash_v1", "dpc_theme_v1", "dpc_view_v1"];
+    var META_KEY = "dpc_meta", CONFLICT_KEY = "dpc_conflicts";
+    var BATCH_MAX = 20, DEBOUNCE_MS = 3000, BACKOFF = [5000, 15000, 60000, 300000], MAX_TRIES = 10;
+    /* 人机验证：服务端 GET /v1/health 返回 turnstile 开关。当前生产为 false（跳过校验），
+       故默认不加载 Cloudflare 脚本；服务端一旦开启，把 3d 站点的 widget sitekey 填进下面即可。 */
+    var TURNSTILE_SITEKEY = "";
+    /* 只在契约允许的来源启用：服务端 CORS 白名单只有 3d.20050905.xyz / 20050905.xyz。
+       file:// 或 localhost 打开时保持纯离线（不探测、不发请求），加 ?cloud=1 可临时调试。 */
+    var ENABLED = (function(){
+      try{
+        var h = location.hostname || "", q = location.search || "";
+        return h === "3d.20050905.xyz" || h === "20050905.xyz" || h === "www.20050905.xyz" ||
+               /(?:^|[?&])cloud=1(?:&|$)/.test(q);
+      }catch(e){ return false; }
+    })();
+
+    var st = { user:null, status:"out", tries:0, timer:null, timerApi:null, fetchImpl:null,
+               turnstile:"", verifyId:"", mfaToken:"", mfaSecret:"", busy:false, lastSyncAt:0 };
+    var realTimers = {
+      set: function(fn, ms){ return window.setTimeout(fn, ms); },
+      clear: function(id){ window.clearTimeout(id); }
+    };
+    function tm(){ return st.timerApi || realTimers; }
+    function now(){ return Date.now(); }
+
+    /* ---------- 存储（本地键名/结构绝不改动） ---------- */
+    function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+    function lsSet(k, v){ try{ localStorage.setItem(k, v); return true; }catch(e){ return false; } }
+    function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+    function readVal(k){
+      var raw = lsGet(k);
+      if(raw === null || raw === undefined) return undefined;
+      try{ return JSON.parse(raw); }catch(e){ return raw; }   /* dpc_view_v1/dpc_theme_v1 是裸字符串 */
+    }
+    function writeVal(k, v){
+      if(typeof v === "string") lsSet(k, v);
+      else lsSet(k, JSON.stringify(v));
+    }
+    function metaAll(){
+      try{ var m = JSON.parse(lsGet(META_KEY) || "{}"); return (m && typeof m === "object" && !Array.isArray(m)) ? m : {}; }
+      catch(e){ return {}; }
+    }
+    function metaSave(m){ lsSet(META_KEY, JSON.stringify(m)); }
+    function dirtyKeys(){
+      var m = metaAll();
+      return KEYS.filter(function(k){ return m[k] && m[k].dirtyAt > 0; });
+    }
+    function conflictsAll(){
+      try{ var a = JSON.parse(lsGet(CONFLICT_KEY) || "[]"); return Array.isArray(a) ? a : []; }
+      catch(e){ return []; }
+    }
+    function conflictsSave(a){ lsSet(CONFLICT_KEY, JSON.stringify(a)); renderAcct(); }
+    function upsertConflict(list, item){
+      var out = [], hit = false;
+      for(var i = 0; i < list.length; i++){
+        if(list[i] && list[i].key === item.key){ out.push(item); hit = true; }
+        else out.push(list[i]);
+      }
+      if(!hit) out.push(item);
+      return out;
+    }
+
+    /* ---------- 网络 ---------- */
+    function csrf(){
+      var m = document.cookie.match(/(?:^|;\s*)csrf=([^;]+)/);
+      return m ? decodeURIComponent(m[1]) : "";
+    }
+    function api(path, opt){
+      opt = opt || {};
+      var method = (opt.method || "GET").toUpperCase();
+      var headers = {};
+      if(method !== "GET"){
+        headers["Content-Type"] = "application/json";
+        headers["X-CSRF-Token"] = csrf();
+      }
+      var init = { method: method, credentials: "include", headers: headers, cache: "no-store" };
+      if(opt.body !== undefined) init.body = JSON.stringify(opt.body);
+      var f = st.fetchImpl || function(u, o){
+        if(typeof window.fetch !== "function") return Promise.reject(new Error("fetch unavailable"));
+        return window.fetch(u, o);
+      };
+      return Promise.resolve().then(function(){ return f(API_BASE + path, init); }).then(function(res){
+        return res.json().catch(function(){ return null; }).then(function(body){
+          return { status: res.status, ok: res.status >= 200 && res.status < 300, body: body };
+        });
+      });
+    }
+    function errMsg(r){
+      var b = r && r.body;
+      if(b && b.error && b.error.message) return b.error.message;
+      if(r && r.status === 401) return "登录已过期，请重新登录";
+      if(r && r.status === 429) return "操作太频繁，请稍后再试";
+      return "请求失败（HTTP " + (r && r.status) + "）";
+    }
+
+    /* ---------- 状态与账号区 ---------- */
+    function setStatus(s){ st.status = s; renderAcct(); }
+    function statusText(){
+      if(!st.user) return "数据仅保存在本机";
+      if(st.status === "pending") return "待同步…";
+      if(st.status === "syncing") return "同步中…";
+      if(st.status === "offline") return "离线，稍后自动重试";
+      if(st.status === "error") return "同步失败，稍后重试";
+      if(st.status === "synced" && st.lastSyncAt) return "已同步 · " + new Date(st.lastSyncAt).toLocaleTimeString();
+      return "已同步";
+    }
+    function renderAcct(){
+      var btn = document.getElementById("acctBtn"), dot = document.getElementById("acctDot"),
+          mail = document.getElementById("amMail"), stat = document.getElementById("amStat"),
+          mfaBtn = document.querySelector('[data-am="mfa"]');
+      if(!btn) return;
+      if(st.user){
+        var email = st.user.email || "";
+        btn.textContent = (email.charAt(0) || "U").toUpperCase();
+        btn.title = email;
+        btn.classList.add("on");
+        if(mail) mail.textContent = email;
+      }else{
+        btn.textContent = "登录 / 注册";
+        btn.title = "账号与云同步（可选）";
+        btn.classList.remove("on");
+        if(mail) mail.textContent = "未登录";
+      }
+      if(stat) stat.textContent = ENABLED ? statusText() : "云同步仅在在线版可用（本地功能不受影响）";
+      var n = conflictsAll().length;
+      if(dot){ dot.hidden = !n; dot.textContent = n > 9 ? "9+" : String(n); }
+      if(mfaBtn) mfaBtn.style.display = st.user ? "" : "none";
+      var out = document.querySelector('[data-am="logout"]');
+      if(out) out.style.display = st.user ? "" : "none";
+      var sync = document.querySelector('[data-am="sync"]');
+      if(sync) sync.style.display = st.user ? "" : "none";
+    }
+
+    /* ---------- dirty 标记 / 防抖推送 ---------- */
+    function markDirty(key){
+      if(KEYS.indexOf(key) < 0) return;
+      var m = metaAll();
+      m[key] = m[key] || { version: 0 };
+      m[key].dirtyAt = now();
+      metaSave(m);
+      if(st.user) setStatus("pending");
+      schedulePush();
+    }
+    function schedulePush(delay){
+      var t = tm();
+      if(st.timer){ try{ t.clear(st.timer); }catch(e){} st.timer = null; }
+      var d = (delay === undefined) ? DEBOUNCE_MS : delay;
+      st.timer = t.set(function(){ st.timer = null; pushNow(); }, d);
+    }
+    function pushNow(){
+      if(!st.user) return Promise.resolve(false);
+      var keys = dirtyKeys();
+      if(!keys.length){ st.lastSyncAt = now(); setStatus("synced"); return Promise.resolve(true); }
+      setStatus("syncing");
+      var chunks = [], i;
+      for(i = 0; i < keys.length; i += BATCH_MAX) chunks.push(keys.slice(i, i + BATCH_MAX));
+      var chain = Promise.resolve(true);
+      chunks.forEach(function(chunk){
+        chain = chain.then(function(){
+          var meta = metaAll();
+          var changes = chunk.map(function(k){
+            var v = readVal(k);
+            return { key: k, value: (v === undefined ? null : v), base_version: (meta[k] && meta[k].version) || 0 };
+          });
+          return api("/sync/batch", { method: "POST", body: { changes: changes } }).then(function(r){
+            if(!r.ok || !r.body || !Array.isArray(r.body.results)) throw new Error("batch failed");
+            var m = metaAll(), cl = conflictsAll();
+            r.body.results.forEach(function(res){
+              if(!res || !res.key) return;
+              if(res.status === "ok"){
+                m[res.key] = m[res.key] || {};
+                m[res.key].version = res.version || 0;
+                m[res.key].dirtyAt = 0;
+              }else if(res.status === "conflict"){
+                var srv = res.server || {};
+                cl = upsertConflict(cl, { key: res.key, local: readVal(res.key),
+                                          server: srv.value, version: srv.version || 0, at: now() });
+              }
+            });
+            metaSave(m);
+            if(cl.length) conflictsSave(cl);
+            return true;
+          });
+        });
+      });
+      return chain.then(function(){
+        st.tries = 0; st.lastSyncAt = now();
+        setStatus(dirtyKeys().length ? "pending" : "synced");
+        if(conflictsAll().length) showConflict();
+        return true;
+      }).catch(function(){
+        st.tries++;
+        setStatus("offline");
+        if(st.tries <= MAX_TRIES) schedulePush(BACKOFF[Math.min(st.tries - 1, BACKOFF.length - 1)]);
+        return false;
+      });
+    }
+
+    /* ---------- 拉取 ---------- */
+    function pull(){
+      if(!st.user) return Promise.resolve(false);
+      setStatus("syncing");
+      return api("/sync").then(function(r){
+        if(!r.ok || !r.body || typeof r.body.items !== "object") throw new Error("pull failed");
+        var items = r.body.items || {}, m = metaAll(), cl = conflictsAll(),
+            changed = false, i;
+        for(i = 0; i < KEYS.length; i++){
+          var k = KEYS[i], srv = items[k], meta = m[k] || null, raw = lsGet(k);
+          if(srv && srv.value !== undefined){
+            if(meta && meta.dirtyAt > 0){
+              cl = upsertConflict(cl, { key: k, local: readVal(k), server: srv.value,
+                                        version: srv.version || 0, at: now() });
+            }else if(!meta || (srv.version || 0) > (meta.version || 0)){
+              writeVal(k, srv.value);
+              m[k] = { version: srv.version || 0, dirtyAt: 0 };
+              changed = true;
+            }
+          }else if(raw !== null && raw !== undefined && meta && !meta.version && !meta.dirtyAt){
+            m[k] = { version: 0, dirtyAt: now() };     /* 本地独有 → 随后补推 */
+          }
+        }
+        metaSave(m);
+        if(cl.length) conflictsSave(cl);
+        if(changed) hydrate();
+        renderAcct();
+        return true;
+      }).catch(function(){
+        setStatus("offline");
+        return false;
+      });
+    }
+
+    /* ---------- 冲突三选一 ---------- */
+    function showConflict(){
+      var list = conflictsAll();
+      var box = document.getElementById("conflictModal");
+      if(!box) return;
+      if(!list.length){ box.classList.remove("open"); return; }
+      var c = list[0];
+      var keyEl = document.getElementById("cfKey"), sumEl = document.getElementById("cfSummary");
+      if(keyEl) keyEl.textContent = c.key;
+      if(sumEl) sumEl.textContent = "云端版本 v" + (c.version || 0) + "，本地也有未推送的改动。请选择保留哪一份。";
+      box.classList.add("open");
+    }
+    function resolve(key, how){
+      var list = conflictsAll(), item = null, rest = [];
+      list.forEach(function(c){ if(!item && c.key === key) item = c; else rest.push(c); });
+      if(!item) return Promise.resolve(false);
+      function finish(){
+        conflictsSave(rest);
+        if(rest.length) showConflict();
+        else { var b = document.getElementById("conflictModal"); if(b) b.classList.remove("open"); }
+        renderAcct();
+      }
+      if(how === "cloud"){
+        suppressUp();
+        writeVal(key, item.server);
+        var m = metaAll(); m[key] = { version: item.version || 0, dirtyAt: 0 }; metaSave(m);
+        hydrate(); suppressDown();
+        finish();
+        return Promise.resolve(true);
+      }
+      if(how === "local"){
+        return api("/sync/" + encodeURIComponent(key), { method: "PUT", body: {
+          value: readVal(key), base_version: item.version || 0 } }).then(function(r){
+          if(r.ok && r.body){
+            var mm = metaAll(); mm[key] = { version: r.body.version || 0, dirtyAt: 0 }; metaSave(mm);
+            finish(); return true;
+          }
+          return false;
+        }).catch(function(){ return false; });
+      }
+      /* both：云端另存一份 key.conflict.<时间戳>，本地取云端 */
+      var ck = key + ".conflict." + now();
+      return api("/sync/" + encodeURIComponent(ck), { method: "PUT", body: {
+        value: item.local, base_version: 0 } }).then(function(){
+        suppressUp();
+        writeVal(key, item.server);
+        var m3 = metaAll(); m3[key] = { version: item.version || 0, dirtyAt: 0 }; metaSave(m3);
+        hydrate(); suppressDown();
+        finish();
+        return true;
+      }).catch(function(){ return false; });
+    }
+
+    /* ---------- 用现有渲染入口重建界面（不另造一套） ---------- */
+    var suppress = 0;
+    function suppressUp(){ suppress++; }
+    function suppressDown(){ if(suppress > 0) suppress--; }
+    function hydrate(){
+      suppressUp();
+      try{
+        try{
+          var rc = lsGet(CKEY), pc = rc ? JSON.parse(rc) : null;
+          if(pc && pc.init && Array.isArray(pc.device)){
+            cats = { device: pc.device.slice(), material: Array.isArray(pc.material) ? pc.material.slice() : [] };
+          }
+        }catch(e){}
+        try{
+          var rp = lsGet(PKEY), pp = rp ? JSON.parse(rp) : null;
+          if(pp && Array.isArray(pp.device)){
+            custom = { device: pp.device, material: Array.isArray(pp.material) ? pp.material : [] };
+          }
+        }catch(e){}
+        try{ loadState(); }catch(e){}
+        try{
+          if(!findPreset("device", cur.device)) cur.device = "";
+          if(!findPreset("material", cur.material)) cur.material = "";
+        }catch(e){}
+        try{ renderSelects(); }catch(e){}
+        try{ renderLists(); }catch(e){}
+        try{ renderCats(); }catch(e){}
+        try{ update(); }catch(e){}
+        try{ loadOrders(); renderQuotes(); }catch(e){}
+        try{ loadCustomers(); renderCustList(); }catch(e){}
+        try{ loadDashRange(); if(currentView() === "dash") renderDash(); }catch(e){}
+        try{ themeApply(themeGetPref(), false); }catch(e){}
+        try{ var v = currentView(); if(v === "order" || v === "dash") setView(v); }catch(e){}
+      }finally{
+        suppressDown();
+      }
+    }
+
+    /* ---------- 认证 ---------- */
+    function afterLogin(user){
+      st.user = user; st.tries = 0; setStatus("syncing"); renderAcct();
+      pull().then(function(){ return pushNow(); }).then(function(){
+        renderAcct();
+        if(conflictsAll().length) showConflict();
+      });
+    }
+    function me(){
+      return api("/me").then(function(r){
+        if(r.ok && r.body && r.body.email){ afterLogin(r.body); return r.body; }
+        if(r.status === 401){ st.user = null; setStatus("out"); }
+        renderAcct();
+        return null;
+      }).catch(function(){ setStatus("offline"); return null; });
+    }
+    function login(email, password){
+      return api("/auth/login", { method: "POST", body: {
+        email: email, password: password, turnstile_token: st.turnstile || "", product: PRODUCT } })
+        .then(function(r){
+          if(r.ok && r.body && r.body.user){
+            st.turnstile = "";
+            afterLogin(r.body.user);
+            return { ok: true };
+          }
+          if(r.body && r.body.error && r.body.error.code === "mfa_required"){
+            st.mfaToken = r.body.mfa_token || "";
+            return { ok: false, mfa: true, message: r.body.error.message || "需要两步验证" };
+          }
+          return { ok: false, message: errMsg(r) };
+        }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+    function register(email, password){
+      return api("/auth/register", { method: "POST", body: {
+        email: email, password: password, turnstile_token: st.turnstile || "", product: PRODUCT } })
+        .then(function(r){
+          if(r.ok && r.body && r.body.verify_id){
+            st.verifyId = r.body.verify_id;
+            st.turnstile = "";
+            return { ok: true, verifyId: r.body.verify_id, resendAfter: r.body.resend_after || 60 };
+          }
+          return { ok: false, message: errMsg(r) };
+        }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+    function verifyEmail(code){
+      return api("/auth/verify-email", { method: "POST", body: { verify_id: st.verifyId, code: code } })
+        .then(function(r){
+          if(r.ok && r.body && r.body.user){ afterLogin(r.body.user); return { ok: true }; }
+          if(r.body && r.body.error && r.body.error.code === "email_taken"){
+            return { ok: false, message: "该邮箱已注册，请直接登录", needLogin: true };
+          }
+          return { ok: false, message: errMsg(r) };
+        }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+    function resendCode(){
+      return api("/auth/resend-code", { method: "POST", body: {
+        verify_id: st.verifyId, turnstile_token: st.turnstile || "" } })
+        .then(function(r){
+          if(r.ok){ return { ok: true, resendAfter: (r.body && r.body.resend_after) || 60 }; }
+          return { ok: false, message: errMsg(r) };
+        }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+    function mfaVerify(code){
+      return api("/auth/mfa/verify", { method: "POST", body: { mfa_token: st.mfaToken, code: code } })
+        .then(function(r){
+          if(r.ok && r.body && r.body.user){ st.mfaToken = ""; afterLogin(r.body.user); return { ok: true }; }
+          return { ok: false, message: errMsg(r) };
+        }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+    function logout(){
+      var done = function(){
+        st.user = null; st.status = "out"; st.lastSyncAt = 0;
+        conflictsSave([]);
+        renderAcct();
+        var b = document.getElementById("conflictModal"); if(b) b.classList.remove("open");
+      };
+      return api("/auth/logout", { method: "POST" }).then(done).catch(done);
+    }
+    function mfaSetup(){
+      return api("/mfa/totp/setup", { method: "POST" }).then(function(r){
+        if(r.ok && r.body && r.body.secret){
+          st.mfaSecret = r.body.secret;
+          var elS = document.getElementById("auSecret"); if(elS) elS.textContent = r.body.secret;
+          var elU = document.getElementById("auOtp"); if(elU) elU.textContent = r.body.otpauth_url || "";
+          var elC = document.getElementById("auCodes");
+          if(elC && r.body.recovery_codes) elC.textContent = "恢复码（请抄下）：" + r.body.recovery_codes.join("、");
+          return { ok: true, data: r.body };
+        }
+        return { ok: false, message: errMsg(r) };
+      }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+    function mfaEnable(code){
+      return api("/mfa/totp/enable", { method: "POST", body: { secret: st.mfaSecret, code: code } })
+        .then(function(r){
+          if(r.ok){ return { ok: true }; }
+          return { ok: false, message: errMsg(r) };
+        }).catch(function(){ return { ok: false, message: "网络不可用，请稍后再试" }; });
+    }
+
+    /* ---------- 监听现有写入口（不逐个改 34 处调用点） ---------- */
+    var hooked = false;
+    function installHook(){
+      if(hooked) return; hooked = true;
+      try{
+        var proto = window.Storage && window.Storage.prototype;
+        if(!proto || !proto.setItem) return;
+        var orig = proto.setItem;
+        proto.setItem = function(k, v){
+          orig.call(this, k, v);
+          if(suppress) return;
+          if(KEYS.indexOf(k) >= 0) markDirty(k);
+        };
+      }catch(e){}
+    }
+
+    /* ---------- 弹窗 / 账号菜单交互 ---------- */
+    function $(id){ return document.getElementById(id); }
+    function auMsg(text, kind){
+      var el = $("auMsg"); if(!el) return;
+      el.hidden = !text; el.textContent = text || "";
+      el.className = "au-msg" + (kind ? " " + kind : "");
+    }
+    function showStep(step){
+      ["auLogin", "auReg", "auCode", "auMfa", "auTwo"].forEach(function(id){
+        var el = $(id); if(el) el.hidden = (id !== step);
+      });
+      var titles = { auLogin:"登录", auReg:"注册", auCode:"验证邮箱", auMfa:"两步验证", auTwo:"两步验证设置" };
+      var t = $("auTitle"); if(t) t.textContent = titles[step] || "账号";
+      auMsg("");
+    }
+    function openAuth(step){
+      var box = $("authModal");
+      if(!box) return;
+      showStep(step || (st.user ? "auTwo" : "auLogin"));
+      box.classList.add("open");
+      if(st.mfaToken) showStep("auMfa");
+    }
+    function closeAuth(){ var b = $("authModal"); if(b) b.classList.remove("open"); }
+    function closeMenu(){ var m = $("acctMenu"); if(m){ m.hidden = true; } var b = $("acctBtn"); if(b) b.setAttribute("aria-expanded", "false"); }
+    function toggleMenu(){
+      var m = $("acctMenu"); if(!m) return;
+      var open = m.hidden;
+      m.hidden = !open;
+      var b = $("acctBtn"); if(b) b.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+
+    document.addEventListener("click", function(e){
+      var t = e.target;
+      if(!t || !t.closest) return;
+      var btn = t.closest("#acctBtn");
+      if(btn){
+        if(!ENABLED){ openAuth("auLogin"); auMsg("云同步仅在 https://3d.20050905.xyz 可用；本地功能不受影响"); return; }
+        if(st.user) toggleMenu(); else openAuth("auLogin");
+        return;
+      }
+      if(t.closest("#acctDot")){ showConflict(); return; }
+      if(t.closest("[data-authclose]")){ closeAuth(); return; }
+      if(t.closest("[data-am]")){
+        var act = t.closest("[data-am]").getAttribute("data-am");
+        closeMenu();
+        if(act === "sync"){ st.tries = 0; pushNow(); }
+        else if(act === "mfa"){ openAuth("auTwo"); doMfaSetup(); }
+        else if(act === "logout"){ logout(); }
+        return;
+      }
+      var au = t.closest("[data-au]");
+      if(au){
+        var a = au.getAttribute("data-au");
+        if(a === "toReg"){ showStep("auReg"); }
+        else if(a === "toLogin"){ showStep("auLogin"); }
+        else if(a === "login"){ doLogin(); }
+        else if(a === "register"){ doRegister(); }
+        else if(a === "verify"){ doVerify(); }
+        else if(a === "resend"){ doResend(); }
+        else if(a === "mfa"){ doMfaVerify(); }
+        else if(a === "twoEnable"){ doMfaEnable(); }
+        return;
+      }
+      var cf = t.closest("[data-cf]");
+      if(cf){
+        var how = cf.getAttribute("data-cf");
+        var list = conflictsAll();
+        if(list.length){ resolve(list[0].key, how); }
+        return;
+      }
+      if(t.closest("[data-cfclose]")){
+        var box = $("conflictModal"); if(box) box.classList.remove("open");
+      }
+    });
+
+    function doLogin(){
+      var email = ($("auEmail") && $("auEmail").value || "").trim();
+      var pwd = ($("auPwd") && $("auPwd").value) || "";
+      if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
+      auMsg("正在登录…");
+      login(email, pwd).then(function(r){
+        if(r.ok){ closeAuth(); return; }
+        if(r.mfa){ showStep("auMfa"); auMsg(r.message || "请输入两步验证码"); return; }
+        auMsg(r.message || "登录失败", "bad");
+      });
+    }
+    function doRegister(){
+      var email = ($("auEmail2") && $("auEmail2").value || "").trim();
+      var pwd = ($("auPwd2") && $("auPwd2").value) || "";
+      if(!email || !pwd){ auMsg("请填写邮箱和密码"); return; }
+      auMsg("正在注册…");
+      register(email, pwd).then(function(r){
+        if(r.ok){
+          var m = $("auCodeMail"); if(m) m.textContent = email;
+          showStep("auCode"); countdown(r.resendAfter || 60);
+          auMsg("验证码已发送，请查收邮箱");
+        }else auMsg(r.message || "注册失败", "bad");
+      });
+    }
+    function doVerify(){
+      var code = ($("auCodeInput") && $("auCodeInput").value || "").trim();
+      if(!/^\d{6}$/.test(code)){ auMsg("请输入 6 位数字验证码"); return; }
+      auMsg("正在验证…");
+      verifyEmail(code).then(function(r){
+        if(r.ok){ closeAuth(); return; }
+        auMsg(r.message || "验证失败", "bad");
+        if(r.needLogin) showStep("auLogin");
+      });
+    }
+    function doResend(){
+      resendCode().then(function(r){
+        if(r.ok){ countdown(r.resendAfter || 60); auMsg("已重新发送"); }
+        else auMsg(r.message || "发送失败", "bad");
+      });
+    }
+    function doMfaVerify(){
+      var code = ($("auMfaInput") && $("auMfaInput").value || "").trim();
+      if(!/^\d{6}$/.test(code)){ auMsg("请输入 6 位动态码"); return; }
+      auMsg("正在验证…");
+      mfaVerify(code).then(function(r){
+        if(r.ok){ closeAuth(); return; }
+        auMsg(r.message || "验证失败", "bad");
+      });
+    }
+    function doMfaSetup(){
+      if(!st.user){ openAuth("auLogin"); return; }
+      auMsg("正在生成密钥…");
+      mfaSetup().then(function(r){
+        if(!r.ok){ auMsg(r.message || "生成失败", "bad"); return; }
+        st.mfaSecret = r.data.secret;
+        var s = $("auSecret"); if(s) s.textContent = r.data.secret;
+        var u = $("auOtp"); if(u) u.textContent = r.data.otpauth_url || "";
+        var c = $("auCodes");
+        if(c && r.data.recovery_codes) c.textContent = "恢复码（请抄下）：" + r.data.recovery_codes.join("、");
+        showStep("auTwo");
+      });
+    }
+    function doMfaEnable(){
+      var code = ($("auTwoCode") && $("auTwoCode").value || "").trim();
+      if(!/^\d{6}$/.test(code)){ auMsg("请输入 6 位动态码"); return; }
+      auMsg("正在启用…");
+      mfaEnable(code).then(function(r){
+        if(r.ok){ auMsg("两步验证已启用"); showStep("auTwo"); }
+        else auMsg(r.message || "启用失败", "bad");
+      });
+    }
+    var cdTimer = null;
+    function countdown(sec){
+      var el = $("auCount"), n = Math.max(0, sec | 0);
+      if(cdTimer){ try{ window.clearInterval(cdTimer); }catch(e){} cdTimer = null; }
+      function tick(){
+        if(!el) return;
+        el.textContent = n > 0 ? n + " 秒后可重发" : "";
+        var b = $("auResend"); if(b) b.disabled = n > 0;
+        if(n-- <= 0 && cdTimer){ try{ window.clearInterval(cdTimer); }catch(e){} cdTimer = null; }
+      }
+      tick();
+      cdTimer = window.setInterval(tick, 1000);
+    }
+
+    /* ---------- Turnstile（可选，仅在服务端开启时加载） ---------- */
+    function loadTurnstile(){
+      if(!TURNSTILE_SITEKEY) return;
+      window.onTurnstile = function(token){ st.turnstile = token || ""; };
+      try{
+        var s = document.createElement("script");
+        s.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit";
+        s.async = true; s.defer = true; document.head.appendChild(s);
+        var c = $("auTurn");
+        if(c){
+          c.hidden = false;
+          c.innerHTML = '<div class="cf-turnstile" data-sitekey="' + TURNSTILE_SITEKEY + '" data-callback="onTurnstile"></div>';
+        }
+      }catch(e){}
+    }
+
+    /* ---------- 启动 ---------- */
+    function boot(){
+      try{
+        installHook();
+        renderAcct();
+        if(!ENABLED) return;
+        loadTurnstile();
+        me();
+      }catch(e){}
+      try{
+        window.addEventListener("online", function(){
+          if(st.user && dirtyKeys().length){ st.tries = 0; pushNow(); }
+        });
+      }catch(e){}
+    }
+
+    return {
+      API_BASE: API_BASE, PRODUCT: PRODUCT, KEYS: KEYS, META_KEY: META_KEY, CONFLICTS_KEY: CONFLICT_KEY,
+      boot: boot, meta: metaAll, conflicts: conflictsAll, dirtyKeys: dirtyKeys,
+      state: function(){ return { user: st.user, status: st.status, tries: st.tries, lastSyncAt: st.lastSyncAt }; },
+      markDirty: markDirty, pushNow: pushNow, pull: pull, resolve: resolve, hydrate: hydrate,
+      login: login, register: register, verifyEmail: verifyEmail, resendCode: resendCode,
+      mfaVerify: mfaVerify, mfaSetup: mfaSetup, mfaEnable: mfaEnable, logout: logout, me: me,
+      loadOrders: loadOrders,
+      _test: {
+        setTimers: function(t){ st.timerApi = t; },
+        setFetch: function(f){ st.fetchImpl = f; },
+        csrf: csrf, readVal: readVal, writeVal: writeVal, showConflict: showConflict, installHook: installHook
+      }
+    };
+  })();
+  try{ Cloud.boot(); }catch(e){}
+
   /* 纯函数测试接口：离线单文件应用，暴露纯计算 / 存储函数便于 jsdom 回归断言（无副作用） */
   try{
     window.__DPC = {
@@ -4840,7 +5611,8 @@
       quoteBreakdown: quoteBreakdown, shareSummaryRows: shareSummaryRows, QUOTE_LOCKED: QUOTE_LOCKED,
       drawShareImage: drawShareImage, drawOrderShareImage: drawOrderShareImage,
       dashStats: dashStats, dashRangeStart: dashRangeStart, renderDash: renderDash,
-      currentView: currentView, DASH_RANGE_LABEL: DASH_RANGE_LABEL
+      currentView: currentView, DASH_RANGE_LABEL: DASH_RANGE_LABEL,
+      cloud: Cloud
     };
   }catch(e){}
 })();
