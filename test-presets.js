@@ -540,7 +540,7 @@ setTimeout(function () {
       }
     });
     var wU = domU.window, dU = wU.document;
-    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.3',
+    ok('更新：footer 显示当前版本号 1.8.3', dU.getElementById('footVer').textContent === '1.10.4',
        dU.getElementById('footVer').textContent);
     dU.getElementById('btnCheckUpd').dispatchEvent(new wU.MouseEvent('click', { bubbles: true }));
     setTimeout(function () {
@@ -656,7 +656,7 @@ setTimeout(function () {
       /* —— 版本徽标 + 平台产物行（网页） —— */
       var badge = dA.getElementById('updVerBadge');
       ok('更新弹窗：版本徽标同时含当前与新版本',
-         !!badge && /v1\.10\.3/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
+         !!badge && /v1\.10\.4/.test(badge.textContent) && /v9\.9\.9/.test(badge.textContent),
          badge && badge.textContent);
       var dl = dA.querySelector('#updBody .upd-dl');
       var fname = dl ? (dl.querySelector('.fname') || {}).textContent : '';
@@ -714,7 +714,7 @@ setTimeout(function () {
             ok('更新弹窗：已是最新渲染 .upd-state.ok',
                !!dOk.querySelector('#updBody .upd-state.ok'));
             ok('更新弹窗：已是最新文案含版本号',
-               /已是最新版本 v1\.10\.3/.test(dOk.getElementById('updBody').textContent));
+               /已是最新版本 v1\.10\.4/.test(dOk.getElementById('updBody').textContent));
             ok('更新弹窗：已是最新不显示升级按钮', dOk.getElementById('updGo').hidden === true);
 
             /* —— 检查失败态 + 重试 —— */
@@ -842,7 +842,7 @@ setTimeout(function () {
 
     /* 批量优惠：字段存在且参与计算（数字滚动为 rAF 动画，需等其结算） */
     ok('v1.2：存在批量优惠字段 bulkDisc', !!dV.querySelector('[data-field="bulkDisc"]'));
-    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.3');
+    ok('v1.2：footer 显示当前版本号', dV.getElementById('footVer').textContent === '1.10.4');
     ok('v1.2：结果卡带「保存报价 / 报价历史 / 分享长图」三个入口',
        !!dV.getElementById('btnQuoteSave') && !!dV.getElementById('btnQuoteList') && !!dV.getElementById('btnShareImg'));
     var field2 = dV.querySelector('[data-field="qty"]');
@@ -1553,7 +1553,7 @@ setTimeout(function () {
     ok('v1.8 品牌：打印头 BRAND_SVG 与规范同几何（描边版，无 ¥）',
        /18\.5 24\.2 32 32 32 47\.6 18\.5 39\.8Z/.test(E.BRAND_SVG || '') &&
        !/<circle/.test(E.BRAND_SVG || '') && !/M6\.5 4 12 12\.5/.test(E.BRAND_SVG || ''));
-    ok('v1.8：版本号已升到 1.10.3', d8.getElementById('footVer').textContent === '1.10.3',
+    ok('v1.8：版本号已升到 1.10.4', d8.getElementById('footVer').textContent === '1.10.4',
        d8.getElementById('footVer').textContent);
 
     /* --- 造两张订单：王小明（带联系方式）/ 李四 --- */
@@ -2234,7 +2234,8 @@ setTimeout(function () {
       var lbody = bodyOf(loginCall);
       ok('v1.10 云同步：登录成功并记住用户（账号区显示首字母）',
         lr.ok === true && bc.state().user && bc.state().user.email === 'maker@example.com' &&
-        B.d.getElementById('acctBtn').textContent === 'M', B.d.getElementById('acctBtn').textContent);
+        B.d.getElementById('acctIni').textContent === 'M' && !B.d.getElementById('acctIni').hidden,
+        B.d.getElementById('acctIni').textContent);
       ok('v1.10 云同步：登录走 /v1/auth/login + credentials:include',
         /^https:\/\/api\.20050905\.xyz\/v1\/auth\/login$/.test(loginCall.url || '') &&
         loginCall.init.credentials === 'include');
@@ -2457,8 +2458,8 @@ setTimeout(function () {
         })());
       ok('v1.10 云同步：验证码请求带 verify_id + code，成功后即为登录态',
         ver.ok === true && verBody.verify_id === 'vid-1' && verBody.code === '123456' &&
-        !!rc.state().user && R.d.getElementById('acctBtn').textContent === 'N',
-        R.d.getElementById('acctBtn').textContent);
+        !!rc.state().user && R.d.getElementById('acctIni').textContent === 'N',
+        R.d.getElementById('acctIni').textContent);
 
       /* ---- captcha_failed：服务端 400 时给出可操作提示 ---- */
       var CAP = mk({
@@ -2596,6 +2597,19 @@ setTimeout(function () {
       await UT.tick(5);
       ok('v1.10.3 注册：两次一致后红字消失', e3.hidden === true);
 
+      /* ---- 按钮/链接视觉一致性（v1.10.4） ---- */
+      var AB = UT.d.getElementById('acctBtn');
+      ok('v1.10.4 顶栏账号按钮改为有框按钮（不再是 ghost）',
+        !!AB && AB.classList.contains('btn') && !AB.classList.contains('ghost'));
+      ok('v1.10.4 顶栏账号按钮含头像与文字节点',
+        !!UT.d.querySelector('#acctBtn .av') && !!UT.d.getElementById('acctLabel'));
+      var lnk = UT.d.querySelector('#auReg [data-au="toLogin"]');
+      var cs = lnk ? UT.w.getComputedStyle(lnk) : null;
+      ok('v1.10.4 弹窗内「去登录」为链接样式（无原生按钮边框）',
+        !!lnk && lnk.classList.contains('lnk') && !!cs &&
+        (cs.borderTopStyle === 'none' || cs.borderTopWidth === '0px' || cs.borderTopWidth === ''),
+        cs ? (cs.borderTopStyle + ' / ' + cs.borderTopWidth) : '(无节点)');
+
       /* ---- 退出登录：数据保留 ---- */
       var I = mk({
         handler: function (url) {
@@ -2651,8 +2665,8 @@ setTimeout(function () {
       ok('v1.10 云同步：端到端 B 登录后拉到 A 的预设',
         /A机/.test(DEV2.w.localStorage.getItem('dpc_presets_v3') || ''));
       ok('v1.10 云同步：端到端 B 刷新仍是登录态（账号区显示邮箱首字母）',
-        DEV2.d.getElementById('acctBtn').textContent === 'D',
-        DEV2.d.getElementById('acctBtn').textContent);
+        DEV2.d.getElementById('acctIni').textContent === 'D',
+        DEV2.d.getElementById('acctIni').textContent);
 
       /* ---- 断网 + 空存储：本地功能不受影响 ---- */
       var J = mk({ handler: function () { return null; } });

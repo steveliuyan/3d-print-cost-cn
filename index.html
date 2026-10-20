@@ -100,6 +100,14 @@
   .brand p{margin:2px 0 0; font-size:12px; color:var(--text3);
            white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:60vw}
   .hd-r{display:flex; gap:8px; flex-wrap:wrap; align-items:center}
+.acct-btn{border-color:var(--line2); background:var(--surface); font-weight:600; padding:0 11px; gap:7px}
+.acct-btn:hover{border-color:var(--accent); color:var(--accent)}
+.acct-btn .av{width:22px; height:22px; border-radius:50%; flex:none; display:inline-flex; align-items:center;
+  justify-content:center; color:#fff; font-size:11px; font-weight:700; line-height:1;
+  background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+.acct-btn .av svg{width:13px; height:13px}
+.acct-btn.on .av{background:linear-gradient(135deg,#10b981,#059669)}
+.acct-btn .acct-txt{max-width:150px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   /* 主题切换：三档分段控件（浅色 / 深色 / 自动） */
   .themebox{display:inline-flex; gap:2px; padding:3px; border:1px solid var(--line2); background:var(--surface);
             border-radius:10px; box-shadow:var(--sh-1)}
@@ -831,7 +839,11 @@
   border-radius:9px; background:var(--card); color:var(--text); font-size:13px}
 .au-lb input:focus{outline:2px solid var(--accent); outline-offset:1px}
 .au-go{width:100%; justify-content:center; margin:2px 0 8px}
-.au-alt{font-size:12px; color:var(--text3); margin:0 0 4px}
+.au-alt{font-size:12px; color:var(--text3); margin:0 0 4px; display:flex; align-items:center; gap:2px}
+#authModal .lnk{appearance:none; -webkit-appearance:none; border:0; background:none; padding:1px 4px; margin-left:2px;
+  font:inherit; font-weight:650; color:var(--accent); cursor:pointer; border-radius:6px; line-height:1.5}
+#authModal .lnk:hover{background:rgba(99,102,241,.12); text-decoration:underline}
+#authModal .lnk:active{transform:translateY(.5px)}
 .au-note{font-size:12.5px; color:var(--text2); margin:0 0 10px}
 .au-secret{font-family:var(--mono); font-size:13px; letter-spacing:.06em; background:var(--card-2);
   border:1px dashed var(--line3); border-radius:9px; padding:10px; margin:0 0 8px; word-break:break-all}
@@ -993,7 +1005,7 @@
       <button class="btn ghost" id="btnReset"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3.2-6.9"/><path d="M3 4v5h5"/></svg>重置</button>
     </div>
       <div class="acct" id="acct">
-        <button type="button" class="btn ghost acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false" title="账号与云同步（可选）">登录 / 注册</button>
+        <button type="button" class="btn acct-btn" id="acctBtn" aria-haspopup="true" aria-expanded="false" title="账号与云同步（可选）"><span class="av" aria-hidden="true"><svg class="av-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="3.4"/><path d="M4.8 20c.6-3.6 3.6-5.6 7.2-5.6s6.6 2 7.2 5.6"/></svg><span class="av-ini" id="acctIni" hidden></span></span><span class="acct-txt" id="acctLabel">登录 / 注册</span></button>
         <span class="acct-dot" id="acctDot" hidden title="有同步冲突待处理">0</span>
         <div class="acct-menu" id="acctMenu" hidden>
           <div class="am-head" id="amMail">未登录</div>
@@ -2520,7 +2532,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.3";
+  var APP_VERSION = "1.10.4";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5099,14 +5111,18 @@
           mail = document.getElementById("amMail"), stat = document.getElementById("amStat"),
           mfaBtn = document.querySelector('[data-am="mfa"]');
       if(!btn) return;
+      var lab = document.getElementById("acctLabel"), ini = document.getElementById("acctIni");
       if(st.user){
         var email = st.user.email || "";
-        btn.textContent = (email.charAt(0) || "U").toUpperCase();
+        var ch = (email.charAt(0) || "U").toUpperCase();
+        if(lab) lab.textContent = email; else btn.textContent = ch;
+        if(ini){ ini.textContent = ch; ini.hidden = false; }
         btn.title = email;
         btn.classList.add("on");
         if(mail) mail.textContent = email;
       }else{
-        btn.textContent = "登录 / 注册";
+        if(lab) lab.textContent = "登录 / 注册"; else btn.textContent = "登录 / 注册";
+        if(ini){ ini.textContent = ""; ini.hidden = true; }
         btn.title = "账号与云同步（可选）";
         btn.classList.remove("on");
         if(mail) mail.textContent = "未登录";
