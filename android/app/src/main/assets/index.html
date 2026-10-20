@@ -837,6 +837,13 @@
   border:1px dashed var(--line3); border-radius:9px; padding:10px; margin:0 0 8px; word-break:break-all}
 .au-url{font-size:10.5px; color:var(--text3); word-break:break-all; margin:0 0 10px}
 .cf-turnstile{margin:2px 0 10px; min-height:65px}
+#authModal .modal-panel{width:min(460px,calc(100vw - 28px)); max-height:92vh}
+#authModal .modal-body{padding:2px 22px 12px}
+#authModal .au-lb{margin:0 0 9px}
+#authModal .au-lb input{height:42px}
+#authModal .au-go{height:42px}
+#authModal .cf-turnstile{margin:0 0 8px}
+.au-hint{margin:-2px 0 12px; font-size:11.5px; color:var(--text3); line-height:1.5}
 .au-lb .pw{position:relative; display:block; margin-top:5px}
 .au-lb .pw input{margin-top:0; padding:11px 44px 11px 12px; height:44px}
 .eye{position:absolute; right:6px; top:50%; transform:translateY(-50%); width:32px; height:32px;
@@ -887,6 +894,7 @@
 
       <section id="auLogin">
         <label class="au-lb">邮箱<input id="auEmail" type="email" autocomplete="username" placeholder="you@example.com"></label>
+        <p class="au-hint">登录后 10 个本地数据键会自动增量同步，不登录也能正常使用。</p>
         <label class="au-lb">密码<span class="pw"><input id="auPwd" type="password" autocomplete="current-password" placeholder="至少 10 位"><button type="button" class="eye" data-eye="auPwd" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
         <div class="cf-turnstile" id="auTurn" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="login">登录</button>
@@ -895,7 +903,8 @@
 
       <section id="auReg" hidden>
         <label class="au-lb">邮箱<input id="auEmail2" type="email" autocomplete="username" placeholder="you@example.com"></label>
-        <label class="au-lb">密码（至少 10 位，别用常见弱密码）<span class="pw"><input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位"><button type="button" class="eye" data-eye="auPwd2" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
+        <p class="au-hint">注册后验证码会发到这个邮箱，10 分钟内有效。</p>
+        <label class="au-lb">密码<span class="pw"><input id="auPwd2" type="password" autocomplete="new-password" placeholder="至少 10 位，别用弱密码"><button type="button" class="eye" data-eye="auPwd2" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
         <label class="au-lb">确认密码<span class="pw"><input id="auPwd3" type="password" autocomplete="new-password" placeholder="再输入一次"><button type="button" class="eye" data-eye="auPwd3" aria-label="显示密码" aria-pressed="false"><svg class="ioff" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8 21.5 12 21.5 12 18 18.2 12 18.2 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3.2"/></svg><svg class="ion" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5.8 12 5.8a9.6 9.6 0 0 1 4.2 1"/><path d="M21.5 12S18 18.2 12 18.2a9.6 9.6 0 0 1-4.2-1"/><path d="M3 3l18 18"/><path d="M9.9 9.9a3.2 3.2 0 0 0 4.2 4.2"/></svg></button></span></label>
         <div class="cf-turnstile" id="auTurn2" data-sitekey="0x4AAAAAAFcfg4zaO7N3n25b"></div>
         <button type="button" class="btn primary au-go" data-au="register">注册并发送验证码</button>
@@ -2503,7 +2512,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.10.1";
+  var APP_VERSION = "1.10.2";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
