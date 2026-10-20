@@ -18,7 +18,7 @@
 | 本地 HEAD | 以 `git log --oneline -1` 为准；**已发布 = tag `v1.9.0` → `173f1bbd91984ffbcb71cb96a29d6c446877bac4`**（v1.8.3 / v1.8.2 / v1.8.1 / v1.8.0 / v1.5.1 保留） |
 | 回归测试 | **536/536 通过**（`test-presets.js`，jsdom） |
 | 三副本 md5 | `830f827f299113603009760c22967fec`（330,797 B，逐字节一致） |
-| 最新 Release | **v1.9.0 平台活动报名 + 建议零售价主视觉**（tag 15 个 / Release 15 个，latest = v1.9.0） |
+| 最新 Release | **v1.11.0 账号与云同步 + 抬头模板 / 材料价格库**（tag 16 个 / Release 16 个，latest = v1.11.0，3 附件） |
 | 在线版 | **https://3d.20050905.xyz**（GitHub Pages + Cloudflare 自定义域）；**线上当前 = v1.11.0**，`index.html` md5 `830f827f299113603009760c22967fec`（330,797 B） |
 | 仓库 | `https://github.com/steveliuyan/3d-print-cost-cn`（公开）；**站点仓库 = `steveliuyan/myweb`**（`www.20050905.xyz`，项目页 `project-dpc.html`） |
 | 唯一待办 | PAT 仍为 classic 权限过大，待换 fine-grained（见 §11） |
@@ -401,8 +401,8 @@ md5 `93cef3b2c588c2ef2aaf315b4737d8e8`（298,017 B，与源码一致），`APP_V
   再到 <https://github.com/settings/tokens> 撤销旧的。**新 token 请粘贴文本给 Agent，勿发截图。**
 - ✅ **已发版**：v1.5.1 / v1.6.0 / v1.7.0 / v1.8.0 / v1.8.1 / v1.8.2 / **v1.8.3 / v1.9.0** 均已打包 + 建 Release（各 3 附件）。
   最新 = **v1.9.0**（提交 `173f1bb`；tag 15 个 / Release 15 个）；产物在 `dist/release/3d-print-cost-cn-1.9.0-{web.html,…-portable.exe,.apk}`。
-- ✅ **v1.11.0 已上线**（2026-10-20：`fe5e2df`→`fb707fe`，Pages `built`；线上 md5 = 源码）。
-  **未打 tag / 未建 Release / 未打包三端**；需要时补 tag + Release + 三端产物。
+- ✅ **v1.11.0 已发版**（2026-10-20：Pages `built` @ `fb707fe`；tag `v1.11.0` + Release id `418264709`）。
+  附件：`3d-print-cost-cn-1.11.0-web.html` 330,797 B / `-portable.exe` 74,271,205 B / `.apk` 1,287,248 B（vc29），三个 `state=uploaded`；APK 内 `assets/index.html` 与 EXE `app.asar` 内 `index.html` md5 均 = 源码 `830f827f…`。
 - 💡 登录/注册后续可做：记住邮箱、2FA 二维码（当前展示 secret 手输）。
 - 💡 服务端已放开同步键白名单（500 键 / 50MB / 单键 2MB），`GET /sync` 带 `updated_at`，并已上线后台「云同步数据」页（`/v1/admin/sync*`，可看/编辑/删除/导出/回滚，旧值快照进 `sync_item_history`）。已做：`dpc_profile_v1`（抬头模板 + 账号级默认参数）、`dpc_prices_v1`（材料价格库）。待做：订单键 2MB 分片（约 1200+ 单）、冲突提示接 `updated_at`（v1.10.10 已在冲突弹窗显示云端更新时间）。
 - 💡 **可选**：个人站点 `myweb` 其他页面的 favicon 尚未统一（目前只 `project-dpc.html` 加了）；站点「应用预览」截图仍为较早版本界面。
