@@ -2671,7 +2671,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.21.0";
+  var APP_VERSION = "1.21.1";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5361,7 +5361,9 @@
     /* ---------- 自动拉取：别的设备改了东西，这边不用手动点同步 ---------- */
     var autoPullTimer = null;
     function autoPullTick(){
-      if(!ENABLED || !st.user) return;
+      if(!ENABLED) return;
+      // 没登录也要刷新公告（45 秒一次），否则新公告收不到
+      if(!st.user){ if(!document.hidden) loadNotifications(); return; }
       if(typeof document !== "undefined" && document.hidden) return;   /* 后台不拉 */
       if(dirtyKeys().length) return;      /* 本地有没推上去的改动，先别拉，免得打架 */
       if(st.status === "syncing") return;
@@ -5427,6 +5429,7 @@ function ntBadge(){
             return it;
           });
           NT.unread = NT.items.filter(function(x){ return !x.read; }).length;
+          try{ ntPopupIfAny(); }catch(e){}
           ntBadge();
           return true;
         }).catch(function(){ return false; });
@@ -6898,7 +6901,7 @@ function ntBadge(){
         if(!ENABLED) return;
         me();
         try{ startAutoPull(); }catch(e){}
-        try{ window.setTimeout(function(){ if(st.user) loadNotifications(); }, 1500); }catch(e){}
+        try{ window.setTimeout(function(){ loadNotifications(); }, 1500); }catch(e){}   // 未登录也拉公告
       }catch(e){}
       try{
         window.addEventListener("online", function(){
