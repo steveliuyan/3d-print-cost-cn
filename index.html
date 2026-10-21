@@ -2671,7 +2671,7 @@
       '<div class="pp-rule"></div>';
   }
 
-  var APP_VERSION = "1.20.1";
+  var APP_VERSION = "1.21.0";
   var UPD_REPO = "steveliuyan/3d-print-cost-cn";
   var updInfo = null;
 
@@ -5384,7 +5384,24 @@
     /* ---------- 应用内通知 ---------- */
     var NT = { items: [], unread: 0, box: null };
 
-    function ntBadge(){
+    /** 未登录时的公告已读记录（只存本机 localStorage）。 */
+var NT_LOCAL_KEY = "dpc_nt_read_ids";
+function ntLocalSeen(){
+  try{
+    var raw = localStorage.getItem(NT_LOCAL_KEY);
+    var arr = raw ? JSON.parse(raw) : [];
+    return Array.isArray(arr) ? arr.map(Number) : [];
+  }catch(e){ return []; }
+}
+function ntLocalMark(id){
+  try{
+    var arr = ntLocalSeen();
+    if(arr.indexOf(Number(id)) < 0) arr.push(Number(id));
+    localStorage.setItem(NT_LOCAL_KEY, JSON.stringify(arr.slice(-200)));
+  }catch(e){}
+}
+
+function ntBadge(){
       var dot = document.getElementById("amNotiDot");
       var btn = document.querySelector('[data-am="notify"]');
       if(dot){
@@ -5398,7 +5415,23 @@
     }
 
     function loadNotifications(){
-      if(!st.user || !ENABLED) return Promise.resolve(false);
+      // 没登录也能看公告：走公开接口，已读只记在本机 localStorage
+      if(!st.user){
+        if(!ENABLED) return Promise.resolve(false);
+        return api("/notifications/public?product=dpc").then(function(r){
+          if(!r.ok){ return false; }
+          var items = (r.body && r.body.items) || [];
+          var seen = ntLocalSeen();
+          NT.items = items.map(function(it){
+            it.read = seen.indexOf(Number(it.id)) >= 0;
+            return it;
+          });
+          NT.unread = NT.items.filter(function(x){ return !x.read; }).length;
+          ntBadge();
+          return true;
+        }).catch(function(){ return false; });
+      }
+      if(!ENABLED) return Promise.resolve(false);
       return api("/notifications").then(function(r){
         if(!r.ok){ return false; }
         NT.items = (r.body && r.body.items) || [];
@@ -5410,7 +5443,7 @@
     }
 
     function openNotify(){
-      if(!st.user){ bkToast("请先登录账号"); return; }
+      // 没登录也能看公告，不再拦
       if(!NT.box){
         NT.box = document.createElement("div");
         NT.box.id = "ntOverlay";
@@ -5469,6 +5502,14 @@
             if(!id) return;
             btn.disabled = true;
             btn.textContent = "…";
+            if(!st.user){
+              ntLocalMark(id);
+              NT.items.forEach(function(x){ if(x.id === id) x.read = true; });
+              NT.unread = Math.max(0, (NT.unread || 1) - 1);
+              ntBadge();
+              btn.outerHTML = '<span style="font-size:11.5px;color:#5c6675">已读</span>';
+              return;
+            }
             api("/notifications/read", { method:"POST", body:{ ids: [id] } }).then(function(){
               NT.items.forEach(function(x){ if(x.id === id) x.read = true; });
               NT.unread = Math.max(0, (NT.unread || 1) - 1);
@@ -5510,7 +5551,7 @@
     }
 
     function ntPopupIfAny(){
-      if(!st.user) return;
+      // 未登录也弹公告（公开通知）
       var shown = ntShownIds();
       var hit = null;
       for(var i = 0; i < NT.items.length; i++){
