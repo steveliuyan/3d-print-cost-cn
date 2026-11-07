@@ -19,8 +19,8 @@ android {
     applicationId 'com.dpc.printcost'
     minSdk 24
     targetSdk 35
-    versionCode 38
-    versionName '1.19.0'
+    versionCode 39
+    versionName '1.21.2'
   }
 
   signingConfigs {

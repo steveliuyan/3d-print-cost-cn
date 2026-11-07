@@ -354,3 +354,62 @@ DELETE /v1/backup/{id}                   → 204
 - `.ov-panel` 写死 `margin-top:8vh` + `max-height` → 总高超出屏幕，底部按钮被裁
 - 强制推送用本地 `base_version` 覆盖 → 服务端版本更高时被判成并发修改，弹冲突选择；
   正确做法是先 `GET /v1/sync` 取版本再覆盖
+
+
+---
+
+## §十六 v1.20.0 → v1.20.1（2026-10-21 凌晨）
+
+### 通知：逐条确认 + 头像红点
+
+| 问题 | 原因 | 修法 |
+|---|---|---|
+| 头像右上角没有红点 | HTML 里**根本没有** `#acctNotiDot` 元素，只有 CSS 和 JS 引用它 | 补上 `<span id="acctNotiDot">` |
+| 打开通知面板后红点立刻消失 | 面板一打开就 `POST /notifications/read` 把**全部**标记已读 | 去掉整体已读，改成每条一个「确认」按钮 |
+| 看不到「已读」状态 | 无 | 已读条目右侧显示灰色「已读」 |
+
+现在的行为：
+
+```
+头像右上角红点      有未读就亮，逐条确认完才灭
+菜单「通知 ①」      数字角标，同步更新
+面板每条            未读 → 蓝色「确认」按钮；已读 → 灰色「已读」
+点「确认」          只标记这一条，红点数字 -1
+```
+
+实现位置：`ntBadge()` / `openNotify()`（index.html，搜索 `data-ntok`）。
+
+### 版本
+
+`APP_VERSION = "1.20.1"`，已推送 `index.html` / `desktop/index.html` / `android/.../index.html` 三份副本到
+`steveliuyan/3d-print-cost-cn`（main 分支，GitHub Pages 直接生效）。
+
+### 与服务端的接口对齐（2026-10-21 上午）
+
+- 通知：后台可删除，删除后 `GET /v1/notifications` 不再返回该条 —— 本地不用做缓存清理
+- 设备/会话：服务端已按 `kind` 区分客户端与后台，3D 端依赖的 `/v1/sessions*` 行为不变
+- 头像未读红点：由 `ntBadge()` 统一维护 `#acctNotiDot`（头像）与 `#amNotiDot`（菜单项），两者必须同时更新
+
+### v1.21.0：未登录也能收公告
+
+- `loadNotifications()` 在未登录时改走 `GET /v1/notifications/public?product=dpc`
+- `openNotify()` / `ntPopupIfAny()` 不再要求登录（原来直接 return）
+- 已读状态记本机：`localStorage["dpc_nt_read_ids"]`（最多 200 条），对应 `ntLocalSeen()` / `ntLocalMark()`
+- 点头像菜单「通知」→ 面板里逐条「确认」
+
+### v1.21.1：修「未登录收不到公告」
+
+v1.21.0 虽然加了公开接口的调用，但**三处都被 `if(st.user)` 拦住**，所以未登录时
+根本不会去拉。真机上表现为"完全没反应"，很容易误判成接口问题。
+
+| 位置 | 原来的写法 | 现在 |
+|---|---|---|
+| `boot()` 里启动加载 | `if(st.user) loadNotifications()` | 无条件调用 |
+| `autoPullTick()`（45 秒定时） | `if(!ENABLED \|\| !st.user) return` | 未登录时改为 `loadNotifications()` 后 return |
+| `loadNotifications()` 公开分支 | 只更新 `NT`，不弹窗 | 补 `ntPopupIfAny()` |
+
+配套：`ntLocalSeen()` / `ntLocalMark()` 用 `localStorage["dpc_nt_read_ids"]` 记已读
+（最多 200 条），因为公开通知没有账号可挂。
+
+**排查经验**：这类"改了没效果"的问题，先搜 `st.user`，很多时候不是接口坏了，
+而是根本没人调它。
