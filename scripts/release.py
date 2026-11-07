@@ -72,7 +72,7 @@ def main() -> None:
     token = load_token()
 
     assets = []
-    for suffix, kind in (("web.html", "网页版"), ("portable.exe", "Windows"), (".apk", "Android")):
+    for suffix, kind in (("web.html", "网页版"), ("portable.exe", "Windows"), ("apk", "Android")):
         p = os.path.join(DIST, f"3d-print-cost-cn-{ver}-{suffix}")
         if os.path.exists(p):
             assets.append((f"3d-print-cost-cn-{ver}-{suffix}", p, kind))
