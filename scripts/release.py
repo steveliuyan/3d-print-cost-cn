@@ -72,12 +72,17 @@ def main() -> None:
     token = load_token()
 
     assets = []
-    for suffix, kind in (("web.html", "网页版"), ("portable.exe", "Windows"), ("apk", "Android")):
-        p = os.path.join(DIST, f"3d-print-cost-cn-{ver}-{suffix}")
-        if os.path.exists(p):
-            assets.append((f"3d-print-cost-cn-{ver}-{suffix}", p, kind))
-    if not assets:
-        raise SystemExit(f"dist/release 下没有 {ver} 的产物，先打包")
+    # 命名规则并不统一：web / exe 用「-」，apk 用「.」，所以直接写全名模板。
+    for tpl, kind in (("3d-print-cost-cn-{ver}-web.html", "网页版"),
+                      ("3d-print-cost-cn-{ver}-portable.exe", "Windows"),
+                      ("3d-print-cost-cn-{ver}.apk", "Android")):
+        name = tpl.format(ver=ver)
+        p = os.path.join(DIST, name)
+        if not os.path.exists(p):
+            # 缺产物必须硬失败：以前这里是 if exists 静默跳过，
+            # 拼错名字会把 Android 包漏传且不报错（v1.21.2 就是这么漏的）。
+            raise SystemExit(f"缺少产物：{p}，先打包")
+        assets.append((name, p, kind))
 
     body = "## 本次更新\n\n（未提供更新说明）\n"
     if args.notes and os.path.exists(args.notes):
